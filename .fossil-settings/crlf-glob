@@ -1,0 +1,15 @@
+*.php
+*.html
+*.css
+*.js
+*.json
+*.xml
+*.md
+*.txt
+*.sql
+*.htaccess
+*.env
+*.config
+*.yml
+*.yaml
+

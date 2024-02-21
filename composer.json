@@ -1,0 +1,75 @@
+{   
+    "name": "gtk/gtk-data-access",
+    "description": "Functional ORM",
+    "type": "project",
+    "license": "Private",
+    "authors": [
+        {
+            "name": "Gustavo Tavares",
+            "email": "mucholove@fastmail.com"         
+        }
+    ],
+    "toConsider": {
+         "composer": [
+	           "composer suggest --all"
+        ],
+        "homebrew": [
+            "brew unlink php",
+            "brew unlink php@8.0" 
+        ],
+        "ramsey/uuid": "5.x-dev"
+    },
+    "platform": {
+        "php": "8.1"
+    },
+    "minimum-stability": "stable",
+    "repositories-options": { 
+        "documentation": [
+            {
+                "type": "path",
+                "url": "/abosolute-or-relative-path/to-your-project"
+            },
+            {
+                "type": "vcs",
+                "url": "https://point-to-publicly-available-vcs"
+            },
+            {
+                "type": "vcs",
+                "url": "git@github.com:vendor/my-private-repo.git"
+            }
+        ]
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../gtk-helpers"
+        },
+        {
+            "type": "vcs",
+            "url": "https://fossil.palo.do/gtk-helpers"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "phpmailer/phpmailer": "^6.8",
+        "gtk/gtk-helpers": "*"
+    },
+    "autloadFilesComment": [
+        "Files in `files` are loaded in the order listed"
+    ],
+    "autoloadMaybe": {
+        "files": [
+            "src/startup.php"
+        ]
+    },
+
+    "autoload": {
+        "files": [
+            "configure/databases.php",
+            "configure/lang.php"
+        ],
+        "classmap": [
+            "src/"
+        ]
+    }
+}

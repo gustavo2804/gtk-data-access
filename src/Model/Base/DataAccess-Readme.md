@@ -1,0 +1,64 @@
+// ChatGPT prompt for GTKColumnMapping
+// **************************************
+// Sure, here's a prompt you can use to start another instance of a chat and have it provide a similar `GTKColumnMapping` for a different table:
+// 
+// "Create a `GTKColumnMapping` for the following table:
+// 
+// ```sql
+// CREATE TABLE [dbo].[Your_Table_Name] (
+//     [Your_Column1] data_type,
+//     [Your_Column2] data_type,
+//     [Your_Column3] data_type,
+//     -- Add more columns as needed
+//     PRIMARY KEY ([Your_Primary_Key_Column])
+// );
+// ```
+// 
+// Please format the mapping with 0 as the first argument, use snake_case for the second argument (self-documenting variable name), keep the third argument as the column name in SQL, and provide a description in Spanish for the fourth argument (UI label)."
+// 
+// ***************************************/
+/*
+You are my junior programmer. 
+For every SQL statement I send you—can you read the given SQL and 
+create for me a PHP array where every entry is another array with 4 entries. 
+The first object is a 0. 
+The second object is a camel cased string interpretation what the column store. 
+If for some reason, the column names for the SQL statement use use a prefix—please remove the prefix from the columns such that they are easy to read.
+The third object is the column name which you will take from SQL as is.
+The fourth and last entry is a label which can be used in a form. The label should be in Spanish.
+Please make sure to use space-align all the array entries such that all 
+the first entries start on the same column number, 
+the 2nd entries start on the same column number for the text line,
+the 3rd entries start on the same column number for the text line,
+and so forth.
+
+As an example...if the statement reads like so:
+
+CREATE TABLE [dbo].[ffFactGral] (
+    [FGEseq] int,
+    [FGEcli] nvarchar,
+    [FGEncl] nvarchar,
+    [FGEcom] nvarchar,
+    [USRcod] nvarchar,
+    [USRcodEdit] nvarchar,
+    [USRnom] nvarchar,
+    [USRnomEdit] nvarchar
+);
+
+You should be able to prepare the following:
+
+$columns = [
+    [0, 'fge_seq',        'FGEseq',        'Sequence'],
+    [0, 'cliente_id',     'FGEcli',        'ID Cliente'],
+    [0, 'encl',           'FGEncl',        'FGE Enclosure'],
+    [0, 'comentario',     'FGEcom',        'FGE Comment'],
+    [0, "user_id",        "USRcod",        "ID Usuario",
+    [0, "user_edit_id_",  "USRcodEdit",    "ID Usuario Edit",
+    [0, "nombre",         "USRnom",        "Nombre Usuario",
+    [0, "nombre_edit",    "USRnomEdit",    "Nombre Usuario Edit",
+];
+    
+
+
+
+*/

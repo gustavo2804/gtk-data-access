@@ -1,0 +1,17 @@
+.secret/*
+vendor/*
+*.env
+.idea/*
+*.sublime-*
+.vscode/*
+.DS_Store
+Thumbs.db
+cache/*
+tmp/*
+log/*
+node_modules/*
+build/*
+dist/*
+*.lock
+_FOSSIL_
+*~
