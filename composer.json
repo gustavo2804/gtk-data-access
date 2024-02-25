@@ -29,15 +29,16 @@
             "url": "../gtk-helpers"
         },
         {
+            "type": "path",
+            "url": "../gtk-helpers"
+        },
+        {
             "type": "vcs",
             "url": "https://fossil.palo.do/gtk-helpers"
         }
     ],
     "repositories": [
-        {
-            "type": "path",
-            "url": "../gtk-helpers"
-        },
+
         {
             "type": "vcs",
             "url": "https://github.com/mucholove/gtk-data-access"
