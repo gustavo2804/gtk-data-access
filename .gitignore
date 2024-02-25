@@ -1,3 +1,6 @@
+environment.php
+.secret/
+.secretapp.sqlite
 .secret/*
 vendor/*
 *.env
@@ -15,3 +18,4 @@ dist/*
 *.lock
 _FOSSIL_
 *~
+auth.json

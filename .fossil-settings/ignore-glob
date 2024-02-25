@@ -1,6 +1,4 @@
-*-original
 .secret/*
-vendor/*
 *.env
 .idea/*
 *.sublime-*
@@ -14,3 +12,4 @@ node_modules/*
 build/*
 dist/*
 *.lock
+vendor/*
