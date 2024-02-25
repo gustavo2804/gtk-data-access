@@ -38,10 +38,9 @@
         }
     ],
     "repositories": [
-
         {
             "type": "vcs",
-            "url": "https://github.com/mucholove/gtk-data-access"
+            "url": "https://github.com/mucholove/gtk-helpers"
         }
     ],
     "require": {
