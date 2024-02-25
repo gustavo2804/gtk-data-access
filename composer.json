@@ -23,7 +23,7 @@
         "php": "8.2"
     },
     "minimum-stability": "stable",
-    "repositories": [
+    "repositoriesFossil": [
         {
             "type": "path",
             "url": "../gtk-helpers"
@@ -31,6 +31,16 @@
         {
             "type": "vcs",
             "url": "https://fossil.palo.do/gtk-helpers"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../gtk-helpers"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/mucholove/gtk-data-access"
         }
     ],
     "require": {
