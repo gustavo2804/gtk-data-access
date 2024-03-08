@@ -462,10 +462,14 @@ class DataAccessManager
 
     public function getDataAccessor($name, $throwException = true) 
     {
-        if (!array_key_exists($name, $this->dataAccessors)) 
+        $debug=true;
+		if (!array_key_exists($name, $this->dataAccessors)) 
         {
 			$key = $this->keyForDataAccessorConstructions($name);
-
+				if($debug)
+				{
+					error_log($key);
+				}
             // if (!isset($this->dataAccessorConstructions[$name])) 
 			if (!$key) 
             {

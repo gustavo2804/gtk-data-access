@@ -217,42 +217,73 @@ class DataAccess /* implements Serializable */
     }
 
     
-	public function __construct($p_db, $options = null)
+	public function __construct($p_db, $options)
     {
-        $debug = false;
+        $debug = true;
 
 		$this->db = $p_db;
 
         $this->dataAccessorName = get_class($this);
-
+        
+        if($debug)
+        {
+            error_log("esto es dataAccessorName: ".$this->dataAccessorName);
+        }
         $this->_actions = [];
 
         $this->_allowsCreation = true;
 		
-		$this->register();
-
+        
+        
+        if($options["tableName"])
+        {
+            $this->tableName=$options["tableName"];
+        }
+        
+        $this->register();//no hace nada en DataAccess
+        
         $this->dataMapping->setDataAccessor($this);
 
         if ($this->tableName)
         {
             $this->dataMapping->tableName = $this->tableName;
+            
+            if($debug)
+            {
+                error_log("esto es dataMapping->tableName: ".$this->dataMapping->tableName);
+            }
+
         }
 
         global $_GLOBALS;
         
+
+        
         if (isset($_GLOBALS["RUN_CREATE_TABLE"]))
         {
             $runCreateTable = $_GLOBALS["RUN_CREATE_TABLE"];
+            if($debug)
+            {
+                error_log("runCreateTable si es true: ".$runCreateTable);
+            }
         }
         else
         {
-            $runCreateTable = true;
+            $runCreateTable = false;
+            
         }
-
+        {
+            error_log("valor de options: ".$options);
+        }
+        
         if ($options)
         {
-            $runCreateTable = arrayValueIfExists("runCreateTable", $options);
+            //$runCreateTable = arrayValueIfExists("runCreateTable", $options);
         }
+        if($debug)
+            {
+                error_log("runcreatetable si es false: ".$runCreateTable);
+            }
 
         if ($runCreateTable)
         {
@@ -265,6 +296,11 @@ class DataAccess /* implements Serializable */
             if ($this->isSqlite())
             {
                 $this->createTable();
+                if ($debug)
+                {
+                    error_log("Did create table");
+                }
+
             }
             
         }
@@ -276,10 +312,7 @@ class DataAccess /* implements Serializable */
             }
         }
 
-        if ($debug)
-        {
-            error_log("Did create table");
-        }
+        
 
         if (method_exists($this, "migrate"))
         {
