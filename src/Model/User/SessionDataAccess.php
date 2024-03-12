@@ -252,9 +252,9 @@ class SessionDataAccess extends DataAccess {
 	public function newSessionForUser($user)
 	{
 		$query = "INSERT INTO {$this->tableName()} 
-			(session_guid,  user_id, created_at, valid_until,  canceled)
+			(cedula, session_guid,  user_id, created_at, valid_until,  canceled)
 			VALUES
-			(:session_guid,  :user_id,  :created_at, :valid_until,  :canceled)";
+			(:cedula ,:session_guid,  :user_id,  :created_at, :valid_until,  :canceled)";
 			
 		$statement = $this->getDB()->prepare($query);
 		
@@ -262,6 +262,7 @@ class SessionDataAccess extends DataAccess {
 
 		$defaultSessionLength = 60 * 60 * 24 * 30; // 30 days
 		
+		$statement->bindValue(':cedula', DataAccessManager::get("persona")->valueForKey("cedula", $user));
 		$statement->bindValue(':session_guid', $session_value);
 		$statement->bindValue(':user_id',     DataAccessManager::get("persona")->valueForKey("id", $user));
 		$statement->bindValue(':created_at',  date(DATE_ATOM));
