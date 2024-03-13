@@ -362,7 +362,7 @@ class DataAccessManager
 		
 		if (!$envPath)
 		{
-			die("No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
+			die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
 		}
 		
 		if ($debug)

@@ -197,12 +197,12 @@ class DataAccess /* implements Serializable */
         // $instance = new self($db, $config);
         $instance = new static($db, $config);
         
-        /*
+        
 		if (isset($config["tableName"]))
 		{
 			$instance->setTableName($config["tableName"]);
 		}
-        */
+
 
 		if (isset($config["permissions"]))
 		{
