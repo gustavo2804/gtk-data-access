@@ -1037,7 +1037,10 @@ class DataAccess /* implements Serializable */
 		}
 	}
 
-    
+    public function setTableName($name)
+    {
+        $this->tableName = $name;
+    }
 	
 	public function tableName() {
 		if ($this->tableName)
