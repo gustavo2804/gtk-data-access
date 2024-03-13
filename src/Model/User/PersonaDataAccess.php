@@ -495,18 +495,29 @@ class PersonaDataAccess extends DataAccess
 
 	public function isActive($user)
 	{
+		$debug=1;
 		if (!$user)
 		{
 			return false;
 		}
 
 		$activeValue = $this->valueForKey("estado", $user);
-
-		if ($activeValue != "activo")
+		if ($debug)
+			{
+				error_log("este usuario esta: ".$activeValue);
+			}
+		if ($activeValue !== "activo")
 		{
+			if($debug)
+			{
+				error_log("false");
+			}
 			return false;
 		}
-
+		if($debug)
+		{
+			error_log("true");
+		}
 		return true;
 
 	}

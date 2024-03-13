@@ -103,6 +103,9 @@ class LoginUser
 			if (!$user)
 			{
 				$user = $user_data_access->getOne($key, $userName);
+				if($debug){
+					error_log("el usuario ingresado fue: ".print_r($user,true));
+				}
 			}
 			else
 			{
@@ -115,8 +118,12 @@ class LoginUser
 			return $delegate->userDoesNotExist();
 		}
 
-		if (!$user_data_access->isActive($user))
+		if ($user_data_access->isActive($user))
 		{
+			if($debug)
+			{
+				error_log("no esta activo");
+			}
 			return $delegate->userDoesNotExist();
 		}
 
