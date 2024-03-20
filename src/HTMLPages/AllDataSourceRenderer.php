@@ -1,5 +1,7 @@
 <?php
 
+use function Deployer\error;
+
 class AllDataSourceRenderer extends GTKHTMLPage
 {
     public $dataSource;
@@ -13,7 +15,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	public $page;
 	public $offset;
 	public $queryOptions = [];
-	public $count;
+	public $_count;
 	public $items;
 	public $itemsPerPage;
     public $echoSelectedIfTrue;
@@ -39,10 +41,68 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	   return $editHref."?isNew=true";
 	}
-    
+
+	public function count()
+	{
+		if ($this->_count != null)
+		{
+			return $this->_count;
+		}
+		else
+		{
+			return $this->queryObject()->count();
+		}
+	} 
+	
+
+	public function getItems()
+	{
+		if ($this->items != null)
+		{
+			return $this->items;
+		}
+		else
+		{
+			return $this->queryObject()->executeAndYield();
+		}
+	
+	}
+
+	public function queryObject()
+	{
+		$debug = true;
+
+		if ($debug)
+		{
+			error_log("Querying for user: ".print_r($this->user, true));
+			error_log("Offset: ".$this->offset);
+			error_log("Items per page: ".$this->itemsPerPage);
+			error_log("Query options: ".print_r($this->queryOptions, true));
+		}
+
+		$options = $this->queryOptions;
+
+		if (!isset($options['limit']))
+		{
+			$options['limit'] = $this->itemsPerPage;
+		}
+
+		if (!isset($options['offset']))
+		{
+			$options['offset'] = $this->offset;
+		}	
+
+		return $this->dataSource->selectQueryObjectFromOffsetForUser(
+			$this->user,
+			$this->offset, 
+			$this->itemsPerPage, 
+			$this->queryOptions);
+	}
+	
+	
 	public function processGet($getObject)
 	{
-        $debug = false;
+        $debug = true;
 
         
         if (!$this->dataSource)
@@ -104,39 +164,15 @@ class AllDataSourceRenderer extends GTKHTMLPage
         
         // Calculate the offset based on the page number and number of items per page
         $this->offset = ($this->page - 1) * $this->itemsPerPage;
-        
-        
+    
         $this->echoSelectedIfTrue = function($columnName) { return false; };
-
-		
-        if (!$this->count)
-        {
-        	$this->count = $this->dataSource->countForUser($this->user, $this->queryOptions);
-        }
-
-        if (!$this->items)
-        {
-        	if ($debug)
-        	{
-        		error_log("Will get items.");
-        	}
-        	$this->items = $this->dataSource->selectFromOffsetForUser(
-                $this->user,
-        		$this->offset, 
-        		$this->itemsPerPage, 
-        		$this->queryOptions);
-        	if ($debug)
-        	{
-        		error_log("Got ".count($this->items)." items.");
-        	}
-        }
 	}
 
 	public function pageSection()
 	{
 		$toReturn = "";
 
-	    $totalPages = ceil($this->count / $this->itemsPerPage);
+	    $totalPages = ceil($this->count() / $this->itemsPerPage);
     
 	    $query_parameters_for_page_link = $_GET;
     
@@ -180,13 +216,15 @@ class AllDataSourceRenderer extends GTKHTMLPage
         <?php endif; ?>
 			
         <h3 class="ml-8">
-			Count: <?php echo $this->count; ?>
+			Count: <?php echo $this->count(); ?>
 	    </h3>
+
+		
 
 		<?php echo generateTableForUser(
 			DataAccessManager::get("persona")->getCurrentUser(),
 			$this->columnsToDisplay,
-			$this->items, 
+			$this->getItems(), 
 			$this->dataSource, 
 			$this->dataSource->dataAccessorName, 
 			$debug);

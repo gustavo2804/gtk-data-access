@@ -16,6 +16,22 @@ class RoleDataAccess extends DataAccess
         return "name";
     }
 
+    public function isQualifiedRole($role)
+    {
+        $value =  $role["needs_qualifier"];
+
+        switch ($value)
+        {
+            case "TRUE":
+            case "true":
+            case true:
+            case 1:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public function register()
     {
         $columnMappings = [
@@ -143,4 +159,203 @@ class RoleDataAccess extends DataAccess
 
         return $query->executeAndReturnAll();
     }
+
+    public function getPermissionsForRole(&$role)
+    {
+        $useDB = false;
+
+        if ($role["permissions"])
+        {
+            return $role["permissions"];
+        }
+
+        $permissions = [];
+
+        if ($useDB)
+        {
+            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+
+            $permissions = [];
+    
+            foreach ($rolePermissions as $rolePermission)
+            {
+                $permissions[] = DataAccessManager::get("permissions")->getOne("id", $rolePermission["permission_id"]);
+            }
+        }
+        else
+        {
+            $permissionsArray = $role["permissionsArray"];
+
+            $permissions = json_decode($permissionsArray);
+        }
+
+        $role["permissions"] = $permissions;
+
+        return $permissions;
+    }
+
+    public function addPermissionToRole(&$role, $permission)
+    {
+        $useDB = false;
+
+        if ($useDB)
+        {
+            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+
+            $rolePermissions[] = [
+                "role_id"       => $role["id"],
+                "permission_id" => $permission["id"],
+            ];
+
+            DataAccessManager::get("role_permission_relationships")->create($rolePermissions);
+        }
+        else
+        {
+            $permissions = $this->getPermissionsForRole($role);
+
+            $permissions[] = $permission;
+
+            $toUpdate = [
+                "id" => $role["id"],
+                "permissionsArray" => json_encode($permissions),
+            ];
+
+            $this->update($toUpdate);
+        }
+    }
+
+    public function removePermissionFromRole(&$role, $permissionToRemove)
+    {
+        $useDB = false;
+
+        if ($useDB)
+        {
+            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+
+            foreach ($rolePermissions as $rolePermission)
+            {
+                if ($rolePermission["permission_id"] == $permission["id"])
+                {
+                    DataAccessManager::get("role_permission_relationships")->delete($rolePermission);
+                }
+            }
+        }
+        else
+        {
+            $permissions = $this->getPermissionsForRole($role);
+
+            if (!in_array($permissionToRemove, $permissions))
+            {
+                return;
+            }
+            
+            $newPermissions = array_filter($permissions, function($permission) use ($permissionToRemove) {
+                return $permission !== $permissionToRemove;
+            });
+
+            $toUpdate = [
+                "id"               => $role["id"],
+                "permissionsArray" => json_encode($newPermissions),
+            ];
+
+
+
+        }
+    }
+
+    public function createRole(&$role)
+    {
+        $debug = true;
+        $didInsert = $this->insertAssociativeArray($role);
+
+        if ($didInsert)
+        {
+            if ($debug)
+            {
+                gtk_log("Role Created: ".serialize($role));
+            }
+
+            $role = $this->getOne("name", $role["name"]);
+        }
+        else
+        {
+            if ($debug)
+            {
+                gtk_log("Role Not Created: ".serialize($role));
+            }
+        }
+    }
+
+    public function manageRole(&$existingRole, &$roleInConfig)
+    {
+        $debug = true;
+
+        $permissions = $this->getPermissionsForRole($role);
+
+        if (isset($role["permissions_to_remove"])) 
+        {
+            $permissionsToRemove = $roleInConfig["permissions_to_remove"];
+
+            foreach ($permissionsToRemove as $permission)
+            {
+                if ($debug)
+                {
+                    gtk_log("Removing Permission: ".serialize($permission));
+                }
+                if (in_array($permission, $permissions))
+                {
+                    $this->removePermissionFromRole($existingRole, $permission);
+                }
+            }
+        }
+
+        if (isset($role["permissions"])) 
+        {
+            $permissionsToAdd = $roleInConfig["permissions"];
+
+            foreach ($permissionsToAdd as $permission)
+            {
+                if ($debug)
+                {
+                    gtk_log("Adding Permission: ".serialize($permission));
+                }
+                if (!in_array($permission, $permissions))
+                {
+                    $this->addPermissionToRole($existingRole, $permission);
+                }
+            }
+        }
+    }
+
+    public function createOrManageRole(&$role)
+    {
+        $debug = true;
+
+        if ($debug)
+        {
+            gtk_log("Role: ".serialize($role));
+        }
+
+        $roleName = $role["name"];
+
+        $existingRole = $this->getOne("name", $roleName);
+
+        if ($existingRole)
+        {
+            if ($debug)
+            {
+                gtk_log("Role Exists: ".serialize($role));
+            }
+            $this->manageRole($existingRole, $role);
+        }
+        else
+        {
+            if ($debug)
+            {
+                gtk_log("Role Does Not Exist: ($roleName) ".serialize($role));
+            }
+            $this->createRole($role);
+        }
+    }
+
 }

@@ -119,6 +119,8 @@ $_GLOBALS["languages"]["es"] = [
         "Favor introducir todos sus datos en el formulario.",
     "login_form/user_not_found" =>
         "Su usuario no fue encontrado en el sistema.",
+    "login_form/user_not_active" =>
+        "Su usuario no esta activo.",
     "login_form/please_create_password_email/message_sent_page" =>
         "Favor chequear su correo. Dentro de los próximos 5 minutos recibirá instrucciones sobre cómo establecer su clave.",
     "login_form/user_password_does_not_match" => 

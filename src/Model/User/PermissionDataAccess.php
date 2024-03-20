@@ -12,7 +12,7 @@ class PermissionDataAccess extends DataAccess
     public function register()
     {
         $columnMappings = [
-			new GTKColumnMapping($this, "permission_id",  [
+			new GTKColumnMapping($this, "id",  [
                 "formLabel"    => "ID",
                 "isPrimaryKey" => true, 
                 "isAutoIncrement" => true, 

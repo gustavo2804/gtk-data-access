@@ -235,12 +235,17 @@ class DataAccess /* implements Serializable */
 		
         
         
-        if($options["tableName"])
+        if(isset($options["tableName"]))
         {
             $this->tableName=$options["tableName"];
         }
         
         $this->register();//no hace nada en DataAccess
+
+        if (!$this->dataMapping)
+        {
+            throw new Exception("DataMapping is not set for: ".get_class($this));
+        }
         
         $this->dataMapping->setDataAccessor($this);
 
@@ -257,32 +262,30 @@ class DataAccess /* implements Serializable */
 
         global $_GLOBALS;
         
-
+        $runCreateTable = false;
         
         if (isset($_GLOBALS["RUN_CREATE_TABLE"]))
         {
             $runCreateTable = $_GLOBALS["RUN_CREATE_TABLE"];
-            if($debug)
-            {
-                error_log("runCreateTable si es true: ".$runCreateTable);
-            }
         }
-        else
+        else if (isset($options["runCreateTable"]) && $options["runCreateTable"] == true)
         {
-            $runCreateTable = false;
-            
+            $runCreateTable = true;
         }
+
+        if($debug)
         {
-            error_log("valor de options: ".$options);
+            error_log("runCreateTable si es true: ".$runCreateTable);
         }
         
         if ($options)
         {
             //$runCreateTable = arrayValueIfExists("runCreateTable", $options);
         }
+        
         if($debug)
             {
-                error_log("runcreatetable si es false: ".$runCreateTable);
+                error_log("RunCreateTable is...: ".$runCreateTable);
             }
 
         if ($runCreateTable)
@@ -1041,6 +1044,7 @@ class DataAccess /* implements Serializable */
     {
         $this->tableName = $name;
     }
+
 	
 	public function tableName() {
 		if ($this->tableName)
@@ -1504,19 +1508,21 @@ class DataAccess /* implements Serializable */
 
         $query = new SelectQuery($this, null, $whereClauses);
 
-        $result = $query->executeAndReturnAll();
+        $count = $query->count();
 
-        if (count($result) === 0)
+        if ($count === 0)
         {
             return [];
         }
-        else if ($num === 1)
+        else if ($count === 1)
         {
+            $result = $query->executeAndReturnAll();
             return $result[0];
+            // return $generator->current();
         }
         else
         {
-            return $result;
+            return $query->executeAndYield();
         }
     }
 
@@ -1548,20 +1554,23 @@ class DataAccess /* implements Serializable */
 
         $query = new SelectQuery($this, null, $whereClauses);
 
-        $result = $query->executeAndReturnAll();
+        $count = $query->count();
+        
 
-        if (!$result || (count($result) == 0))
+        if ($count == 0)
         {
             return null;
         }
 
-        if ($num === 1)
+        if ($count === 1)
         {
+            $result = $query->executeAndReturnAll();
             return $result[0];
         }
         else
         {
-            return $result;
+            return $query->executeAndYield();
+            
         }
     }
 
@@ -1991,35 +2000,18 @@ class DataAccess /* implements Serializable */
 
     public function countForUser($user, $options = [])
     {
-        $debug = false;
-
-        $query = $this->baseQueryForUser($user, $options);
-
-        $query->isCountQuery = true;
-
-        $result = $query->executeAndReturnAll();
-
-        if ($debug)
-        {
-             error_log("Count Result: ".print_r($result, true));
-        }
-
-        $count = $result[0]["COUNT"];
-
-        return $count;
+        return $this->baseQueryForUser($user, $options)->getCount();
     }
 
-    public function selectFromOffsetForUser(
+    public function selectQueryObjectFromOffsetForUser(        
         $user,
         $offset,
         $limit,
         $options = []
     ){
-        $debug = false;
+        $debug = true;
 
-        $offset = false;
-        $limit  = false;
-
+        /*
         if (isset($options["offset"]))
         {
             $offset = $options["offset"];
@@ -2029,6 +2021,7 @@ class DataAccess /* implements Serializable */
         {
             $limit = $options["limit"];
         }
+        */
 
         $selectQuery = $this->baseQueryForUser($user, $options);
 
@@ -2046,6 +2039,7 @@ class DataAccess /* implements Serializable */
             }
 
             $orderByColumn = $this->dbColumnNameForKey($orderBy);
+
             if ($debug)
             {
                 gtk_log("Order by column defined from options!");
@@ -2064,10 +2058,33 @@ class DataAccess /* implements Serializable */
             {
                 $selectQuery->setOffset($offset);
             }
-        }
-        
 
-        return $selectQuery->executeAndReturnAll();
+            if ($debug)
+            {
+                gtk_log("`selectQueryObjectFromOffsetForUser` - Limit: ".$limit);
+                gtk_log("`selectQueryObjectFromOffsetForUser` - Offset: ".$offset);
+            }
+        }
+        else
+        {
+            if ($debug)
+            {
+                gtk_log("`selectQueryObjectFromOffsetForUser` - No limit set.");
+            }
+        }
+    
+        return $selectQuery;
+    }
+
+    public function selectFromOffsetForUser(
+        $user,
+        $offset,
+        $limit,
+        $options = []
+    ){
+        $selectQuery = $this->selectQueryObjectFromOffsetForUser($user, $offset, $limit, $options);
+
+        return $selectQuery->executeAndYield();
         
     }     
 
@@ -2342,11 +2359,18 @@ class DataAccess /* implements Serializable */
     {
         $debug = true;
 
-        if (isDictionary($input))
+        // $isDictionary = isDictionary($input);
+
+        $isDictionary = count(array_filter(array_keys($input), function($key) {
+            return is_string($key);
+        })) > 0;
+
+        if ($isDictionary)
         {
             if ($debug)
             {
                 gtk_log("`insert` - isDictionary - saving with PHP Keys :) ");
+                gtk_log(print_r($input, true));
             }
             $toReturn = $this->insertWithPHPKeys($input, $outError);
         }
@@ -2551,8 +2575,20 @@ class DataAccess /* implements Serializable */
         return $toReturn;
     }
 
+
+    public function insertWithPHPKeys(
+        &$item, 
+        &$isInvalid = '',
+        $options = null
+    ){
+        return $this->insertAssociativeArray(
+            $item, 
+            $isInvalid,
+            $options
+        );
+    }
     
-	public function insertWithPHPKeys(
+	public function insertAssociativeArray(
         &$item, 
         &$isInvalid = '',
         $options = null
@@ -2573,11 +2609,17 @@ class DataAccess /* implements Serializable */
             $debug = $option["debug"];
         }
 
+        if ($debug)
+        {
+            gtk_log("Object: ".print_r($item, true));
+        }
+
         $sql = $this->insertSqlWithPHPKeys($item);
 
         if ($debug)
         {
             gtk_log("SQL `insertWithPHPKeys` : {$sql}");
+            gtk_log("Object: ".print_r($item, true));
         }
 
         $stmt = $this->getDB()->prepare($sql);
@@ -3369,6 +3411,11 @@ class DataAccess /* implements Serializable */
 
     }
 
+
+    // AlquiladoraDataAccess::--generateSelectForUserColumnValueName($user, $dataAccessor, $objectID, $foreignColumnName, $foreignColumnValue, $options = []) 
+    // DataAccess::-------------generateSelectForUserColumnValueName($foreignColumnMapping, $user, $item, $currentValue, $options = [])
+    
+    /*
     public function generateSelectForUserColumnValueName(
         $foreignColumnMapping,
         $user,
@@ -3376,6 +3423,15 @@ class DataAccess /* implements Serializable */
 		$currentValue,
 		$options = []
     ){
+    */
+    public function generateSelectForUserColumnValueName(
+        $user,
+		$dataAccessor,
+		$objectID,
+		$foreignColumnName,
+		$foreignColumnValue,
+		$options = []
+	){
         $debug = true;
 
         if ($debug)
@@ -3514,6 +3570,112 @@ class DataAccess /* implements Serializable */
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /*
+    {
+        "name": "RENTER",
+    }
+
+    */
+
+    public function registerPermissions($setupObject, $qualifier = null)
+    {
+        $useInheritance = true;
+
+        $actionsInOrder = [
+            "read",
+            "list",
+            "create",      
+            "update", 
+            "delete",
+        ];
+
+        $currentIndex = 0;
+
+        foreach ($actionsInOrder as $action)
+        {
+            $roles = $permissions[$action] ?? [];
+
+            foreach ($roles as $maybeRole)
+            {   
+                $roleName            = null;
+                $canGrantPermission  = false;
+                $canRemovePermission = false;
+
+                if (is_string($maybeRole))
+                {
+                    $roleName     = $maybeRole;
+                    $canGrantRole = false;
+
+                }
+                else if (is_array($maybeRole))
+                {
+                    $roleName            = $maybeRole["name"];
+                    $canGrantPermission  = $maybeRole["canGrant"] ?? false;
+                    $canRemovePermission = $maybeRole["canRemove"] ?? false; 
+                    
+                }
+                else
+                {
+                    throw new Exception("Invalid object in setup on: ".get_class($this)." - Action: ".$action." - Object Type: ".gettype($maybeRole));
+                }
+
+                if (!$roleName)
+                {
+                    throw new Exception("No role name found for action: ".$action);
+                }
+
+                $roleID = DataAccessManager::get("roles")->getByName($roleName);
+
+                $permission["actionName"] = get_class($this).".".$action;
+                $permission["roleID"]     = $roleID;
+                $permission["canGrant"]   = $canGrantPermission;
+                $permission["canRemove"]  = $canRemovePermission;
+
+
+                // addWhereClauseForUser($user)
+
+                /*
+                $isQualifiedBy      = "function|columnValue";
+                $qualifierName      = null;
+                $qualifierValue     = $qualifier; 
+
+                $isQualifiedBy = $permission["isQualifiedBy"];
+
+                switch ($isQualifiedBy)
+                {
+                    case "function":
+                        $functionName = $permission["qualifierName"];
+                        return $functionName($action, $user, $object);
+                        break;
+                    case "columnValue":
+                        $permission["qualifierColumn"] = $qualifier;
+                        break;
+                    default:
+                        // Do Nothing
+                }
+                function qualiferFunction($actionName, $user, $object)
+                {
+                    return true;
+                }
+                */
+                
+                DataAccessManager::get("RolePermissions")->addPermission($permission);
+            
+                if ($useInheritance && ($currentIndex > 0))
+                {
+                    $actionsInOrder = array_slice($actionsInOrder, 0, $currentIndex);
+
+                    foreach ($actionsInOrder as $localAction)
+                    {
+                        $permission["actionName"] = get_class($this).".".$localAction;
+                        DataAccessManager::get("RolePermissions")->addPermission($permission);
+                    }
+                }
+            }
+            $currentIndex++;
         }
     }
 
@@ -3666,5 +3828,45 @@ class DataAccess /* implements Serializable */
 
     }
 }
-/*
-*/
+
+function TestableDataAccess_generateMicroTimeUUID() 
+    {
+        $microTime = microtime(true);
+        $microSeconds = sprintf("%06d", ($microTime - floor($microTime)) * 1e6);
+        $time = new DateTime(date('Y-m-d H:i:s.' . $microSeconds, $microTime));
+        $time = $time->format("YmdHisu"); // Format time to a string with microseconds
+        return md5($time); // You can also use sha1 or any other algorithm
+    }   
+
+class TestableDataAccess extends DataAccess
+{
+    public function register()
+    {
+
+        $columns = [
+            GTKColumnMapping::stdStyle($this, "id",             null, "ID", [
+                "isPrimaryKey"    => true,
+                "isAutoIncrement" => true,
+            ]),
+            GTKColumnMapping::stdStyle($this, "a",              null, "A"),
+            GTKColumnMapping::stdStyle($this, "b",              null, "B"),
+            GTKColumnMapping::stdStyle($this, "date_created",   null, "Date Created"),
+            GTKColumnMapping::stdStyle($this, "date_modified",  null, "Date Modified"),
+        ]; 
+
+        $this->dataMapping = new GTKDataSetMapping($this, $columns);
+
+        // $this->tableName = 'TestableTable_'.$this->generateMicroTimeUUID();
+    }
+ 
+
+    private function generateMicroTimeUUID() 
+    {
+        $microTime = microtime(true);
+        $microSeconds = sprintf("%06d", ($microTime - floor($microTime)) * 1e6);
+        $time = new DateTime(date('Y-m-d H:i:s.' . $microSeconds, $microTime));
+        $time = $time->format("YmdHisu"); // Format time to a string with microseconds
+        return md5($time); // You can also use sha1 or any other algorithm
+    }   
+
+}

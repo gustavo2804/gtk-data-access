@@ -129,7 +129,9 @@ class SelectQuery
 
     public function getSQLAndUpdateParams(&$params, $pdo = null) 
     {
-        $debug = false;
+        
+
+        $debug = true;
 
         $sql = "";
         $sql .= "SELECT ";
@@ -169,50 +171,77 @@ class SelectQuery
             $sql .= ' WHERE ' . $this->whereGroup->getSQLForDataAccess($this->dataSource, $params);
         }          
         
-        if (is_array($this->orderBy) && (count($this->orderBy) > 0))
+        if (!$this->isCountQuery)
         {
-            $sql .= ' ORDER BY ';
-            $isFirst = true;
-            $isEven  = false;
-            foreach ($this->orderBy as $orderBy) 
+            $didSetOrderBy = false;
+
+            if (is_array($this->orderBy) && (count($this->orderBy) > 0))
             {
-                if ($debug)
+                $sql .= ' ORDER BY ';
+                $isFirst = true;
+                $isEven  = false;
+                foreach ($this->orderBy as $orderBy) 
                 {
-                    error_log("Handling order by case: ".print_r($orderBy,true));
+                    if ($debug)
+                    {
+                        error_log("Handling order by case: ".print_r($orderBy,true));
+                    }
+                    if (!$isFirst)
+                    {
+                        $sql .= ', ';
+                    }
+                    $isFirst = false;
+    
+                    if (is_string($orderBy))
+                    {
+                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy)." ASC";
+                    }
+                    else if (is_array($orderBy) && (count($orderBy) == 2))
+                    {
+    
+                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
+                    }
+                    else if ($orderBy instanceof OrderBy)
+                    {
+                        $sql .= $orderBy->column." ".$orderBy->order;
+                    }
+                    else
+                    {
+                        throw new Exception("Don't know how to handle ORDER BY object of gtype: ".get_class($orderBy));
+                    }
+                    
+    
+                    $isEven = !$isEven;
                 }
-                if (!$isFirst)
-                {
-                    $sql .= ', ';
-                }
-                $isFirst = false;
+    
+                $didSetOrderBy = true;
+            }
+            else if (is_string($this->orderBy))
+            {
+    
+            }
 
-                if (is_string($orderBy))
-                {
-                    $sql .= $this->dataSource->dbColumnNameForKey($orderBy)." ASC";
-                }
-                else if (is_array($orderBy) && (count($orderBy) == 2))
-                {
+            if ($this->limit || $this->offset)
+            {
+                $driverName = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-                    $sql .= $this->dataSource->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
-                }
-                else if ($orderBy instanceof OrderBy)
+                if (!$didSetOrderBy && ($driverName == "sqlsrv"))
                 {
-                    $sql .= $orderBy->column." ".$orderBy->order;
-                }
-                else
-                {
-                    throw new Exception("Don't know how to handle ORDER BY object of gtype: ".get_class($orderBy));
+                    $orderByColumn = $this->dataSource->defaultOrderByColumn;
+                    $orderByOrder  = $this->dataSource->defaultOrderByOrder ?? "DESC";
+                
+                    if (!$orderByColumn)
+                    {
+                        throw new Exception("Cannot do limit/offset without an ORDER BY clause - SQL: ".$sql);
+                    }
+
+                    $sql .= " ORDER BY ".$orderByColumn." ".$orderByOrder;
                 }
                 
-
-                $isEven = !$isEven;
+                $sql .= $this->sqlForLimitOffset($this->limit, $this->offset, $pdo);
             }
-        }
-        else if (is_string($this->orderBy))
-        {
 
         }
-        
 
         if ($debug)
         {
@@ -234,19 +263,21 @@ class SelectQuery
             case 'sqlite':
                 if ($limit > 0)
                 {
-                    $sql .= " ";
-                    $sql .= "LIMIT {$limit} 
-                             OFFSET {$offset}";
+                    $sql .= " LIMIT {$limit}";
+                    if ($offset)
+                    {
+                        $sql .= " OFFSET {$offset}";    
+                    } 
+                    
                 }
                 break;
             case 'pgsql':
             case 'sqlsrv':
                 if ($limit > 0)
                 {
-                    $sql .= " ";
-                    $sql .= "OFFSET {$offset} 
-                            ROWS FETCH NEXT {$limit} 
-                            ROWS ONLY";
+                   $offsetToUse = $offset ?? 0;                    
+                    $sql .= " OFFSET ".$offsetToUse." ROWS";
+                    $sql .= " FETCH NEXT {$limit} ROWS ONLY";
                 }
                 break;
             case 'oci': // Oracle
@@ -289,12 +320,48 @@ class SelectQuery
         // return $this->dataSource->execute($sql, $params);
     }
 
+    public function getCount()
+    {
+        return $this->count();
+    }
+
+    public function count()
+    {
+        $debug = true;
+        $this->isCountQuery = true;
+        $params = [];
+        $pdoStatement = $this->getPDOStatement($params);
+        $pdoStatement->execute($params);
+        $result = $pdoStatement->fetch(PDO::FETCH_ASSOC);
+        if ($debug)
+        {
+            error_log("COUNT: ".print_r($result, true));
+        }
+        $this->isCountQuery = false;
+        return $result['COUNT'];
+    }
+
+    public function getSQL()
+    {
+        $params = [];
+        return $this->getSQLAndUpdateParams($params, $this->dataSource->getPDO());
+    }
+
     public function executeAndReturnStatement()
     {
         $params = [];
         $statement = $this->getPDOStatement($params);
         $statement->execute($params);
         return $statement;
+    }
+
+    public function executeAndYield()
+    {
+        $statement = $this->executeAndReturnStatement();
+    
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+            yield $row;
+        }
     }
 
     public function executeAndReturnAll()

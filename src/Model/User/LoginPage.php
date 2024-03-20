@@ -4,6 +4,7 @@ interface LoginDelegate
 {
 	public function userDoesNotExist();
 	public function userDoesNotHavePassword($user);
+	public function userIsNotActive($user);
 	public function userAndPasswordDoNotMatch();
 	public function tooManyLoginAttempts();
 	public function successfulMatchFromUntrustedDevice();
@@ -118,13 +119,13 @@ class LoginUser
 			return $delegate->userDoesNotExist();
 		}
 
-		if ($user_data_access->isActive($user))
+		if (!$user_data_access->isActive($user))
 		{
 			if($debug)
 			{
 				error_log("no esta activo");
 			}
-			return $delegate->userDoesNotExist();
+			return $delegate->userIsNotActive($user);
 		}
 
 		$passwordHash = $user_data_access->valueForKey("password_hash", $user);
@@ -256,6 +257,10 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 	public function userDoesNotExist()
 	{
 		$this->messages[] = Glang::get("login_form/user_not_found");
+	}
+	public function userIsNotActive($user)
+	{
+		$this->messages[] = Glang::get("login_form/user_not_active");
 	}
 	public function userDoesNotHavePassword($user)
 	{

@@ -150,8 +150,8 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"permissions" => $devControlPermissions,
 	],
 	"permissions" => [
-		"class" => "PermissionDataAccess",                               
-		"db" => "appDB",
+		"class"       => "PermissionDataAccess",                               
+		"db" 		  => "appDB",
 		"permissions" => $adminExclusive,
 	],
     "SetPasswordTokenDataAccess" => [

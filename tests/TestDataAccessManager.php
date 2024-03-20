@@ -7,14 +7,14 @@ class TestableDataAccess extends DataAccess
     {
 
         $columns = [
-            GTKColumnMapping::stdStyle(1, "id",             null, "ID", [
+            GTKColumnMapping::stdStyle($this, "id",             null, "ID", [
                 "isPrimaryKey"    => true,
                 "isAutoIncrement" => true,
             ]),
-            GTKColumnMapping::stdStyle(1, "a",              null, "A"),
-            GTKColumnMapping::stdStyle(1, "b",              null, "B"),
-            GTKColumnMapping::stdStyle(1, "date_created",   null, "Date Created"),
-            GTKColumnMapping::stdStyle(1, "date_modified",  null, "Date Modified"),
+            GTKColumnMapping::stdStyle($this, "a",              null, "A"),
+            GTKColumnMapping::stdStyle($this, "b",              null, "B"),
+            GTKColumnMapping::stdStyle($this, "date_created",   null, "Date Created"),
+            GTKColumnMapping::stdStyle($this, "date_modified",  null, "Date Modified"),
         ]; 
 
         $this->tableName = 'TestableTable_'.$this->generateMicroTimeUUID();

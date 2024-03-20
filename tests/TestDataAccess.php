@@ -69,35 +69,3 @@ final class TestDataAccess extends TestCase
         $testableDataAccess = getTestableSqliteDataAccess();
     }
 }
-
-
-class TestableDataAccess extends DataAccess
-{
-    public function register()
-    {
-
-        $columns = [
-            GTKColumnMapping::stdStyle(1, "id",             null, "ID", [
-                "isPrimaryKey"    => true,
-                "isAutoIncrement" => true,
-            ]),
-            GTKColumnMapping::stdStyle(1, "a",              null, "A"),
-            GTKColumnMapping::stdStyle(1, "b",              null, "B"),
-            GTKColumnMapping::stdStyle(1, "date_created",   null, "Date Created"),
-            GTKColumnMapping::stdStyle(1, "date_modified",  null, "Date Modified"),
-        ]; 
-
-        $this->tableName = 'TestableTable_'.$this->generateMicroTimeUUID();
-    }
- 
-
-    private function generateMicroTimeUUID() 
-    {
-        $microTime = microtime(true);
-        $microSeconds = sprintf("%06d", ($microTime - floor($microTime)) * 1e6);
-        $time = new DateTime(date('Y-m-d H:i:s.' . $microSeconds, $microTime));
-        $time = $time->format("YmdHisu"); // Format time to a string with microseconds
-        return md5($time); // You can also use sha1 or any other algorithm
-    }   
-
-}

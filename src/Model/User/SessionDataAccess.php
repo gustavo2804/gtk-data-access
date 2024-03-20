@@ -252,22 +252,22 @@ class SessionDataAccess extends DataAccess {
 	public function newSessionForUser($user)
 	{
 		$query = "INSERT INTO {$this->tableName()} 
-			(cedula, session_guid,  user_id, created_at, valid_until,  canceled)
+			(session_guid,  user_id, created_at, valid_until,  canceled)
 			VALUES
-			(:cedula ,:session_guid,  :user_id,  :created_at, :valid_until,  :canceled)";
+			(:session_guid,  :user_id,  :created_at, :valid_until,  :canceled)";
 			
 		$statement = $this->getDB()->prepare($query);
 		
 		$session_value = uniqid();
 
 		$defaultSessionLength = 60 * 60 * 24 * 30; // 30 days
-		
-		$statement->bindValue(':cedula', DataAccessManager::get("persona")->valueForKey("cedula", $user));
+
 		$statement->bindValue(':session_guid', $session_value);
-		$statement->bindValue(':user_id',     DataAccessManager::get("persona")->valueForKey("id", $user));
-		$statement->bindValue(':created_at',  date(DATE_ATOM));
-		$statement->bindValue(':valid_until', time() + $defaultSessionLength);
-		$statement->bindValue(':canceled', 	  0);
+		// $statement->bindValue(':user_id_column_name',   DataAccessManager::get("persona")->dbColumnNameForKey("id"));
+		$statement->bindValue(':user_id',     			DataAccessManager::get("persona")->valueForKey("id", $user));
+		$statement->bindValue(':created_at', 		 	date(DATE_ATOM));
+		$statement->bindValue(':valid_until', 			time() + $defaultSessionLength);
+		$statement->bindValue(':canceled', 	  			0);
 		
 		// Execute the INSERT statement
 		$result = $statement->execute();

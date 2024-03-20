@@ -726,6 +726,72 @@ class PersonaDataAccess extends DataAccess
 	{	
 		return $this->isInGroup($user, "SOFTWARE_ADMIN");
 	}
+
+	public function assignRoleToUser($role, $user)
+	{
+		$this->assignRoleToUserByUserDetails($role, $user, null, null);
+	}
+
+	public function assignRoleToUserByUserDetails($maybeRole, $user, $grantingUser = null, $grantingDetails = null)
+	{	
+		$debug = true;
+
+		$role = null;
+
+		if (is_array($maybeRole))
+		{
+			$role = $maybeRole;
+		}
+		else
+		{
+			$role = DataAccessManager::get("roles")->getOne("name", $maybeRole);
+		}
+
+		if (!$role)
+		{
+			throw new Exception("Role not found `{$maybeRole}`");
+		}
+
+		if ($debug)
+		{
+			error_log("Role: ".print_r($role, true));
+		}
+
+		$roleID = $this->valueForKey("id", $role);
+		$userID = $this->valueForKey("id", $user);
+
+		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
+		// $rolePersonRelationships = DataAccessManager::get("flat_roles");
+
+		if (DataAccessManager::get("roles")->isQualifiedRole($role))
+		{
+			if ($debug)
+			{
+				error_log("Qualified role");
+			}
+
+			if (!$grantingUser)
+			{
+				throw new Exception("A qualified role must be granted by a specific user");
+			}
+
+			$grantingUserID = $this->valueForKey("id", $grantingUser);
+		}
+		else
+		{
+			if ($debug)
+			{
+				error_log("Not a qualified role");
+			}
+
+			$toInsert = [
+				"role_id" => $roleID,
+				"user_id" => $userID,
+			];
+			
+			DataAccessManager::get("flat_roles")->insert($toInsert);
+		}
+	}
 }
 
 

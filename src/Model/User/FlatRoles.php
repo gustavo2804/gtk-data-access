@@ -243,6 +243,8 @@ class FlatRoleDataAccess extends DataAccess
                 "hideOnForms" => true, 
                 "hideOnLists" => true,
             ]),
+            new GTKColumnMapping($this, "canGrantRole"),
+            new GTKColumnMapping($this, "ownsRole"),
 			new GTKColumnMapping($this, "date_created"),
 			new GTKColumnMapping($this, "date_modified"),
 		];

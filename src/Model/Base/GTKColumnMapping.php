@@ -24,7 +24,15 @@ class GTKColumnMapping extends GTKColumnBase
         }
 
         $toReturn     = "";
+        
         $value        = $this->valueFromDatabase($item);
+
+        $transformValueOnLists = $this->transformValueOnLists;
+
+        if ($transformValueOnLists)
+        {
+            $value = $transformValueOnLists($item, $value);
+        }
         
         $wrapStart    = "<td ";
         $wrapStart   .= ' id="cell-'.$dataSource->dataAccessorName.'-'.$itemIdentifier.'-'.$this->phpKey.'"';
@@ -54,10 +62,15 @@ class GTKColumnMapping extends GTKColumnBase
                 $linkToModel = $this->linkTo;
                 $lookupOnKey = "id";
             }
-            else
+            else if (is_array($this->linkTo))
             {
                 $linkToModel = $this->linkTo["model"];
-                $lookupOnKey = $this->linkTo["lookupOnKey"];
+                $lookupOnKey = $this->linkTo["lookupOnKey"] ?? "id";
+            }
+
+            if (!$linkToModel || !$lookupOnKey)
+            {
+                throw new Exception("Invalid `linkTo` protocol for ".get_class($this)." `linkTo`: ".print_r($this->linkTo, true));
             }
 
             $baseURL = $linkToModel."/edit";
@@ -83,12 +96,7 @@ class GTKColumnMapping extends GTKColumnBase
             $htmlForValue .= ">";
         }
 
-        $transformValueOnLists = $this->transformValueOnLists;
 
-        if ($transformValueOnLists)
-        {
-            $value = $transformValueOnLists($item, $value);
-        }
 
         $htmlForValue .= $value;
       
@@ -120,12 +128,12 @@ class GTKColumnMapping extends GTKColumnBase
         return isset($item[$this->sqlServerKey]);
     }
 
-    public static function stdStyle($isUpdateKey, $phpKey, $sqlServerKey, $formLabel, $options = [])
+    public static function stdStyle($dataSource, $phpKey, $sqlServerKey, $formLabel, $options = [])
     {
         $options["dbKey"]     = $sqlServerKey;
         $options["formLabel"] = $formLabel;
 
-        $toReturn = new GTKColumnMapping($this, $phpKey, $options);
+        $toReturn = new GTKColumnMapping($dataSource, $phpKey, $options);
         
         return $toReturn;
     }

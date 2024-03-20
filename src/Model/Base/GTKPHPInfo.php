@@ -1,5 +1,6 @@
 <?php 
 
+// class GTKPHPInfoDataAccess implements DataAccessInterface
 class GTKPHPInfoDataAccess
 {
     public function render()
@@ -8,6 +9,10 @@ class GTKPHPInfoDataAccess
     }
     public function renderObjectForRoute($routeAsString, $user)
     {
-		return $this;
+		  return $this;
+    }
+    public function getPluralItemName()
+    {
+        return "PHPInfo";
     }
 }
