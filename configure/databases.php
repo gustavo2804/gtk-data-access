@@ -140,9 +140,15 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"permissions" => $adminExclusive,
 	],
 	"email_queue" => [
-		"class"       => "EmailQueueManager", 
-		"db"          => "appDB",
-		"permissions" => $devControlPermissions,
+		"class"       			=> "EmailQueueManager", 
+		"db"          			=> "appDB",
+		"permissions" 			=> $devControlPermissions,
+		"tableName"  		    => "EmailQueue",
+		"defaultOrderByColumn"  => "CreatedAt",
+		"defaultOrderByOrder"   => "DESC",
+		"singleItemName"	    => "Email",
+		"pluralItemName"	    => "Emails",
+		// "_allowsCreation"      => false;,	
 	],
 	"mail_list_manager" => [
 		"class"       => "MailListManager",
@@ -150,14 +156,19 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"permissions" => $devControlPermissions,
 	],
 	"permissions" => [
-		"class"       => "PermissionDataAccess",                               
-		"db" 		  => "appDB",
-		"permissions" => $adminExclusive,
+		"class"                => "PermissionDataAccess",                               
+		"db" 		           => "appDB",
+		"permissions"          => $adminExclusive,
+		"tableName"            => "permissions",
+		"defaultOrderByColumn" => "name",
+		"defaultOrderByOrder"  => "DESC",
 	],
     "SetPasswordTokenDataAccess" => [
-		"class"       => "SetPasswordTokenDataAccess",
-		"db"          => "appDB",
-		"permissions" => $defaultPermissions,
+		"class"                 => "SetPasswordTokenDataAccess",
+		"db"                    => "appDB",
+		"permissions"           => $defaultPermissions,
+		"defaultOrderByColumn" => "fecha_creado",
+		"defaultOrderByOrder"  => "DESC",  
 	],
 	"session" => [
 		"class"       => "SessionDataAccess",
@@ -165,8 +176,11 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"permissions" => $defaultPermissions,
 	],
 	"solicitud_usuario" => [
-        "class"       => "SolicitudUsuarioDataAccess",
-        "db"          => "appDB",
+        "class"       		   => "SolicitudUsuarioDataAccess",
+        "db"          		   => "appDB",
+		"tableName" 		   => "solicitudes_usuario",
+		"defaultOrderByColumn" => "fecha_creado",
+		"defaultOrderByOrder"  => "DESC",
         "permissions" => [
 			"type" => "strict",
 			"delete" => [

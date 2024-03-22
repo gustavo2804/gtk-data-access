@@ -34,8 +34,7 @@ class PermissionDataAccess extends DataAccess
                 "formLabel" => "Fecha Modificado"
             ]),
 		];
-
-		$this->tableName  		    = "permissions";
+        
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
 		$this->defaultOrderByColumn = "name";
 		$this->defaultOrderByOrder  = "DESC";

@@ -199,8 +199,6 @@ class SessionDataAccess extends DataAccess {
 
 	public function register()
 	{	
-		$this->tableName = "sessions";
-
 		$columnMappings = [
 			new GTKColumnMapping($this, "id",		 	    [ 
 				"formLabel"    => "ID", 

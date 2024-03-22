@@ -196,7 +196,6 @@ class SolicitudUsuarioDataAccess extends DataAccess
 		];
 
 		$this->dataMapping		    = new GTKDataSetMapping($this, $columnMappings);
-		$this->tableName 			= "solicitudes_usuario";
 		$this->defaultOrderByColumn = "fecha_creado";
 		$this->defaultOrderByOrder  = "DESC";
 
