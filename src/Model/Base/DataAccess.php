@@ -1091,7 +1091,7 @@ class DataAccess /* implements Serializable */
 
     public function createTableSQLString()
     {
-        $debug = false;
+        $debug = true;
 
         $columns = $this->dataMapping->ordered;
 
@@ -1137,6 +1137,11 @@ class DataAccess /* implements Serializable */
         foreach ($additionalIndexQueries as $query)
         {
             $sql .= $query.";";
+        }
+
+        if ($debug)
+        {
+            error_log("Create Table - SQL: ".$sql);
         }
 
         return $sql;
