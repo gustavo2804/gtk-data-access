@@ -3105,7 +3105,7 @@ class DataAccess /* implements Serializable */
 
     public function tableExists()
     {
-        $debug = false;
+        $debug = true;
 
         $driverName = $this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);
         
@@ -3122,9 +3122,14 @@ class DataAccess /* implements Serializable */
                 break;
     
             case 'sqlite':
-                $sql .= "SELECT name FROM sqlite_master";
-                $sql .= " WHERE type='table' AND name=?";
-                $param = [$tableName];
+                $sql .= "SELECT name";
+                $sql .= " FROM sqlite_master";
+                $sql .= " WHERE";
+                $sql .= " type='table'";
+                $sql .= " AND name=?";
+                $param = [
+                    $tableName
+                ];
                 break;
     
             case 'sqlsrv':
@@ -3134,7 +3139,10 @@ class DataAccess /* implements Serializable */
 
                 $dbName = $this->getDatabaseName();
 
-                $param = [$dbName, $tableName];
+                $param = [
+                    $dbName, 
+                    $tableName
+                ];
                 break;
     
             default:
@@ -3146,6 +3154,11 @@ class DataAccess /* implements Serializable */
 
         if ($driverName == 'sqlite') {
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($debug)
+            {
+                gtk_log("Query: ".$sql);
+                gtk_log("Query Result: ".print_r($result, true));
+            }
             return $result !== false;
         } 
         else 
