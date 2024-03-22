@@ -1172,7 +1172,7 @@ class DataAccess /* implements Serializable */
 
     public function createTable()
     {
-        $debug = false;
+        $debug = true;
 
         if ($debug)
         {
@@ -1191,6 +1191,11 @@ class DataAccess /* implements Serializable */
         }
         else
         {
+            if ($debug)
+            {
+                error_log("Table already exists.");
+                error_log("Creating missing columns...");
+            }
             $columns = $this->dataMapping->ordered;
 
             foreach ($columns as $columnMapping)
