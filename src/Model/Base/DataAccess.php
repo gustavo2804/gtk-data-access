@@ -266,27 +266,20 @@ class DataAccess /* implements Serializable */
         
         if (isset($_GLOBALS["RUN_CREATE_TABLE"]))
         {
+            if ($debug)
+            {
+                gtk_log('Will use `$_GLOBALS["RUN_CREATE_TABLE"]` for: '.get_class($this));
+            }
             $runCreateTable = $_GLOBALS["RUN_CREATE_TABLE"];
         }
         else if (isset($options["runCreateTable"]) && $options["runCreateTable"] == true)
         {
+            if ($debug)
+            {
+                gtk_log('Will use `$options[runCreateTable]` for: '.get_class($this));
+            }
             $runCreateTable = true;
         }
-
-        if($debug)
-        {
-            error_log("runCreateTable si es true: ".$runCreateTable);
-        }
-        
-        if ($options)
-        {
-            //$runCreateTable = arrayValueIfExists("runCreateTable", $options);
-        }
-        
-        if($debug)
-            {
-                error_log("RunCreateTable is...: ".$runCreateTable);
-            }
 
         if ($runCreateTable)
         {
@@ -303,9 +296,14 @@ class DataAccess /* implements Serializable */
                 {
                     error_log("Did create table");
                 }
-
             }
-            
+            else
+            {
+                if ($debug)
+                {
+                    error_log("NOT SQLITE --- CANNOT create table for: ".get_class($this));
+                }
+            }
         }
         else
         {
