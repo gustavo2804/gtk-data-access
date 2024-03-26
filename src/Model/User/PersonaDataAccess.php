@@ -11,7 +11,7 @@
 	*/
 function validatePasswordIsSecure($password, $delegate = null)
 {
-	$debug = true;
+	$debug = false;
 	if ($debug)
 	{
 		if ($delegate)
@@ -129,7 +129,7 @@ class PersonaDataAccess extends DataAccess
 
 	public function addWhereClauseForUser($user, &$query)
     {
-		$debug = true;
+		$debug = false;
 		
         $flatRoleDataAccess = DataAccessManager::get("flat_roles");
 
@@ -403,7 +403,7 @@ class PersonaDataAccess extends DataAccess
 			*/
 			// return DataAccessManager::get("permission")->hasPermission("toggle_user_active", $user, $userToBeActivated);
 
-			$debug = true;
+			$debug = false;
 
 			if (DataAccessManager::get("persona")->isInGroups($user, [
 			   "SOFTWARE_ADMIN",
@@ -734,7 +734,7 @@ class PersonaDataAccess extends DataAccess
 
 	public function assignRoleToUserByUserDetails($maybeRole, $user, $grantingUser = null, $grantingDetails = null)
 	{	
-		$debug = true;
+		$debug = false;
 
 		$role = null;
 
@@ -791,6 +791,47 @@ class PersonaDataAccess extends DataAccess
 			
 			DataAccessManager::get("flat_roles")->insert($toInsert);
 		}
+	}
+
+	public function permissionsForUser($user)
+	{
+		$roles = DataAccessManager::get("flat_roles")->rolesForUser($user);
+
+		$permissions = [];
+
+		foreach ($roles as $role)
+		{
+			$rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+			$permissions = array_merge($permissions, $rolePermissions);
+		}
+
+		$permissions = array_unique($permissions);
+		sort($permissions);
+
+		return $permissions;
+		
+	}
+
+	
+	public function hasPermission($permission, &$user, $item = null)
+	{
+		$debug = true;
+
+		$permissions = $this->permissionsForUser($user);
+
+		if ($debug)
+		{
+			gtk_log("User has permissions: ".print_r($permissions, true));
+		}
+
+		$hasPermission = in_array($permission, $permissions);
+
+		if ($hasPermission)
+		{
+			return true;
+		}
+
+		return $hasPermission;
 	}
 }
 

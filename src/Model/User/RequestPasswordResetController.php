@@ -55,7 +55,7 @@ class RequestPasswordResetController
 
 	public function passwordSetLinkForUser($persona, $origin = null)
 	{
-		$debug = true;
+		$debug = false;
 
 		$token = DataAccessManager::get('SetPasswordTokenDataAccess')->createTokenForUserFromOrigin($persona, $origin);
 
@@ -82,7 +82,7 @@ class RequestPasswordResetController
 
 	public function sendResetPasswordLinkFromAdminForUser($user, $options = null)
 	{
-        $debug = true;
+        $debug = false;
 
 		$origin = null;
 

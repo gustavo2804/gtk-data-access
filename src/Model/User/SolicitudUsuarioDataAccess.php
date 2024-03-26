@@ -64,7 +64,7 @@ class SolicitudUsuarioDataAccess extends DataAccess
 
 	public function isIllegalPromotionToUserByUserItem($user, $item)
 	{
-		$debug = true;
+		$debug = false;
 
 		if (!DataAccessManager::get("persona")->isInGroup($user, [ "DEVS", "SOFTWARE_ADMIN" ]))
 		{
@@ -91,7 +91,7 @@ class SolicitudUsuarioDataAccess extends DataAccess
 
 	public function createUserByUserItemDelegateOptions(&$user, &$item, &$delegate = null, $options = null)
 	{
-		$debug = true;
+		$debug = false;
 
 		error_log("`createUserByUserItemDelegateOptions` - Item: ".print_r($item, true));
 		error_log("Is cedula truthy?: ".isTruthy($item["cedula"]));

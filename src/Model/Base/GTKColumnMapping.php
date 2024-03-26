@@ -302,7 +302,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function callCustomInputFunctionForUserItemOptions($user, $item, $options = null)
     {
-        $debug = true;
+        $debug = false;
         $value = ''; // $this->defaultValue;
 
         if ($item)

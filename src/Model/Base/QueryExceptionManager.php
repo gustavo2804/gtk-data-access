@@ -106,7 +106,7 @@ class QueryExceptionManager
         {
             $errorMessage = "Error grave";
         }
-        else if (($exCode == "23000") || strpos($exMessage, "UNIQUE constraint failed"))
+        else if (static::isUniqueConstraintException($exception))        
         {
             $dataSourceTableName = $this->dataSource->tableName();
             $errorTable = extractTableNameFromUniqueConstraintError($exMessage);
@@ -116,6 +116,13 @@ class QueryExceptionManager
         }
         throw new Exception($errorMessage);
         return $errorMessage;
+    }
+
+    // ($exCode == "23000") || strpos($exMessage, "UNIQUE constraint failed"))
+    public static function isUniqueConstraintException($exception) {
+        $exCode = $exception->getCode();
+        $exMessage = $exception->getMessage();
+        return ($exCode == "23000") || strpos($exMessage, "UNIQUE constraint failed");
     }
     
     public function handleForDeveloper(

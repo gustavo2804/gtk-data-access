@@ -162,32 +162,24 @@ class RoleDataAccess extends DataAccess
 
     public function getPermissionsForRole(&$role)
     {
-        $useDB = false;
+        $debug = true;
 
-        if ($role["permissions"])
+        if (isset($role["permissions"]))
         {
             return $role["permissions"];
         }
 
         $permissions = [];
-
-        if ($useDB)
-        {
-            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
-
-            $permissions = [];
     
-            foreach ($rolePermissions as $rolePermission)
-            {
-                $permissions[] = DataAccessManager::get("permissions")->getOne("id", $rolePermission["permission_id"]);
-            }
-        }
-        else
-        {
-            $permissionsArray = $role["permissionsArray"];
+        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+        
+        $permissions = [];
 
-            $permissions = json_decode($permissionsArray);
+        foreach ($rolePermissions as $rolePermission)
+        {
+            $permissions[] = DataAccessManager::get("permissions")->getOne("id", $rolePermission["permission_id"]);
         }
+    
 
         $role["permissions"] = $permissions;
 
@@ -196,76 +188,37 @@ class RoleDataAccess extends DataAccess
 
     public function addPermissionToRole(&$role, $permission)
     {
-        $useDB = false;
+        $debug = true;
 
-        if ($useDB)
-        {
-            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
-
-            $rolePermissions[] = [
-                "role_id"       => $role["id"],
-                "permission_id" => $permission["id"],
-            ];
-
-            DataAccessManager::get("role_permission_relationships")->create($rolePermissions);
-        }
-        else
-        {
-            $permissions = $this->getPermissionsForRole($role);
-
-            $permissions[] = $permission;
-
-            $toUpdate = [
-                "id" => $role["id"],
-                "permissionsArray" => json_encode($permissions),
-            ];
-
-            $this->update($toUpdate);
-        }
+        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+        
+        $rolePermissions[] = [
+            "role_id"       => $role["id"],
+            "permission_id" => $permission["id"],
+        ];
+        
+        DataAccessManager::get("role_permission_relationships")->create($rolePermissions);
+    
     }
 
     public function removePermissionFromRole(&$role, $permissionToRemove)
     {
-        $useDB = false;
+        $debug = true;
 
-        if ($useDB)
+        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+        
+        foreach ($rolePermissions as $rolePermission)
         {
-            $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
-
-            foreach ($rolePermissions as $rolePermission)
+            if ($rolePermission["permission_id"] == $permission["id"])
             {
-                if ($rolePermission["permission_id"] == $permission["id"])
-                {
-                    DataAccessManager::get("role_permission_relationships")->delete($rolePermission);
-                }
+                DataAccessManager::get("role_permission_relationships")->delete($rolePermission);
             }
-        }
-        else
-        {
-            $permissions = $this->getPermissionsForRole($role);
-
-            if (!in_array($permissionToRemove, $permissions))
-            {
-                return;
-            }
-            
-            $newPermissions = array_filter($permissions, function($permission) use ($permissionToRemove) {
-                return $permission !== $permissionToRemove;
-            });
-
-            $toUpdate = [
-                "id"               => $role["id"],
-                "permissionsArray" => json_encode($newPermissions),
-            ];
-
-
-
         }
     }
 
     public function createRole(&$role)
     {
-        $debug = true;
+        $debug = false;
         $didInsert = $this->insertAssociativeArray($role);
 
         if ($didInsert)
@@ -290,7 +243,7 @@ class RoleDataAccess extends DataAccess
     {
         $debug = true;
 
-        $permissions = $this->getPermissionsForRole($role);
+        $permissions = $this->getPermissionsForRole($existingRole);
 
         if (isset($role["permissions_to_remove"])) 
         {
@@ -329,7 +282,7 @@ class RoleDataAccess extends DataAccess
 
     public function createOrManageRole(&$role)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {

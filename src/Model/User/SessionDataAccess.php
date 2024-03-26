@@ -26,8 +26,31 @@ class SessionDataAccess extends DataAccess {
 		header("Cache-Control: no-cache, must-revalidate"); // HTTP 1.1
 		header("Pragma: no-cache");                         // HTTP 1.0
 		header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");   // Date in the past
-		redirectToPath("/auth/login.php", null);
 
+
+		// Notify successful logout and redirect to the home page after 3 seconds
+		$message = 'Has cerrado sesión correctamente. En 3 segundos serás redirigido a la página de inicio.';
+		$redirectURL = '/index.php'; // Change this to the URL of your home page
+		
+		echo "<!DOCTYPE html>
+		<html lang='es'>
+		<head>
+			<meta charset='UTF-8'>
+			<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+			<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+			<title>Cierre de sesión</title>
+			<script>
+				setTimeout(function() {
+					window.location.href = '$redirectURL';
+				}, 3000);
+			</script>
+		</head>
+		<body>
+			<p>$message</p>
+			<p>Si no eres redirigido automáticamente, haz clic <a href='$redirectURL'>aquí</a>.</p>
+		</body>
+		</html>";
+		die(); // Terminate the script execution
 	}
 
 	public function isDeveloper()
@@ -39,7 +62,7 @@ class SessionDataAccess extends DataAccess {
 
 	public function getCurrentUser()
 	{
-		$debug = true;
+		$debug = false;
 
 		static $session     = null;
 		static $currentUser = null;
@@ -53,9 +76,11 @@ class SessionDataAccess extends DataAccess {
 				$currentUser = $this->getUserFromSession($session);
 			}
 			
-
-			error_log("`getCurrentUser` - Got current user: ".print_r($currentUser, true));
-			error_log("`getCurrentUser` - Got session: ".print_r($session, true));
+			if ($debug)
+			{
+				error_log("`getCurrentUser` - Got current user: ".print_r($currentUser, true));
+				error_log("`getCurrentUser` - Got session: ".print_r($session, true));	
+			}
 
 			$didCheck = true;
 		}

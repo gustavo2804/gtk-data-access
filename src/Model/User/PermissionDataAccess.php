@@ -13,13 +13,14 @@ class PermissionDataAccess extends DataAccess
     {
         $columnMappings = [
 			new GTKColumnMapping($this, "id",  [
-                "formLabel"    => "ID",
-                "isPrimaryKey" => true, 
+                "formLabel"       => "ID",
+                "isPrimaryKey"    => true, 
                 "isAutoIncrement" => true, 
-                "hideOnForms" => true, 
+                "hideOnForms"     => true, 
             ]), 
 			new GTKColumnMapping($this, "name", [
-                "formLabel" => "Nombre"
+                "formLabel" => "Nombre",
+                "isUnique"  => true,
             ]),
 			new GTKColumnMapping($this, "comments", [
                 "formLabel" => "Comentarios",
@@ -38,26 +39,6 @@ class PermissionDataAccess extends DataAccess
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
 		$this->defaultOrderByColumn = "name";
 		$this->defaultOrderByOrder  = "DESC";
-    }
-
-    public function migrate()
-    {
-        $this->getDB()->query("CREATE TABLE IF NOT EXISTS {$this->tableName()} 
-        (permission_id INTEGER PRIMARY KEY, 
-         name, 
-         comments,
-         is_active,
-         date_created,
-         date_modified,
-        UNIQUE(permission_id))");
-    }
-
-    function hasPermissionOnDataAccessor($dataAccessorName, $actionName, $item)
-    {
-        
-
-        $dataSource = DataAccessManager::get($dataAccessorName);
-
     }
 
     function hasPermission($permission, $user, $options = [])
@@ -82,11 +63,5 @@ class PermissionDataAccess extends DataAccess
             return in_array($cedula, $allowedCedulas);
         }
         return false;
-    }
-
-
-    public function userHasPermissionToOnDataAccessor($dataAccessor, $maybePermission, $user)
-    {
-        
     }
 }

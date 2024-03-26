@@ -2,6 +2,8 @@
 
 class RolePermissionRelationshipsDataAccess extends DataAccess
 {
+    public $cache;
+
     public function register()
     {
             $columnMappings = [
@@ -19,7 +21,6 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
 			new GTKColumnMapping($this, "date_modified"),
 		];
 
-		$this->tableName  		    = "role_permission_relationships";
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
 		$this->defaultOrderByColumn = "name";
 		$this->defaultOrderByOrder  = "DESC";
@@ -36,6 +37,56 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
          date_created,
          date_modified,
         UNIQUE(role_permission_relationship_id))");
+    }
+
+    public function permissionsForRole($role)
+    {
+        $roleID = null;
+
+        if (is_string($role) || is_numeric($role))
+        {
+            $roleID = $role;
+        }
+        else
+        {
+            $roleID = DataAccessManager::get('roles')->identifierForItem($role);
+        }
+
+        if (isset($this->cache[$roleID]))
+        {
+            return $this->cache[$roleID];
+        }
+
+        $permissionIDS = [];
+
+        $query = new SelectQuery($this);
+
+        $query->where(new WhereClause(
+            "role_id", "=", $roleID
+        ));
+        $query->where(new WhereClause(
+            "is_active", "=",  true
+        ));
+
+        $result = $query->executeAndReturnAll();
+
+        foreach ($result as $row)
+        {
+            $permissionIDS[] = $row["permission_id"];
+        }
+
+        $permissions = DataAccessManager::get('permissions')->getByIdentifier($permissionIDS);    
+
+        $permissionsLib = [];
+
+        foreach ($permissions as $permission)
+        {
+            $permissionLib[] = $permission["name"];
+        }
+
+        $this->cache[$roleID] = $permissionsLib;
+
+        return $permissionsLib;
     }
 
 

@@ -37,7 +37,7 @@ class FlatRoleDataAccess extends DataAccess
             // new GTKColumnMapping($this, "qualifier_type"),
             new GTKColumnMapping($this, "qualifier", [
                 "customInputFunction" => function($columnMapping, $user, $item, $value, $options) {
-                    $debug = true;
+                    $debug = false;
 
                     $value = $item["role_id"];
 
@@ -121,7 +121,7 @@ class FlatRoleDataAccess extends DataAccess
                 */
                 /*
                 "customInputFunction" => function($columnMapping, $user, $item, $value, $options) {
-                    $debug = true;
+                    $debug = false;
 
                     if ($debug)
                     {
@@ -261,7 +261,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function userIDSForRoleRelationsModifiableByRoleRelation($roleRelation)
     {
-        $debug = true;
+        $debug = false;
         
         $userIDS = [];
 
@@ -282,7 +282,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function roleRelationsModifiableByUser($user)
     {
-        $debug = true;
+        $debug = false;
 
         
 		if (DataAccessManager::get("persona")->isInGroup($user, [
@@ -316,7 +316,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function rolesUserCanAddTo($user)
     {
-        $debug = true;
+        $debug = false;
 
         $roleRelations = $this->roleRelationsModifiableByUser($user);
         
@@ -347,7 +347,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function roleRelationsModifiableByRoleRelation($roleRelation)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -527,7 +527,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function addWhereClauseForUser($user, &$query)
     {
-        $debug = true;
+        $debug = false;
 
 
         $roleDataAccess = DataAccessManager::get("flat_roles");
@@ -587,6 +587,34 @@ class FlatRoleDataAccess extends DataAccess
         }
     }
 
+    public function rolesForUser($user)
+    {
+        $debug = false;
+
+        $roleRelations = $this->roleRelationsForUser($user);
+
+        $roleIDS = [];
+
+        foreach ($roleRelations as $roleRelation)
+        {
+            $roleIDS[] = $roleRelation["role_id"];
+        }
+
+        $query = new SelectQuery(DataAccessManager::get("roles"));
+
+        $query->addClause(new WhereClause(
+            "id", "IN", $roleIDS
+        ));
+
+        $toReturn = $query->executeAndReturnAll();
+
+        if ($debug)
+        {
+            error_log("Returning `rolesForUser`: ".print_r($toReturn, true));
+        }
+
+        return $toReturn;
+    }
 
 
 

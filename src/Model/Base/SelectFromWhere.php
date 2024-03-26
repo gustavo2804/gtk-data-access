@@ -131,7 +131,7 @@ class SelectQuery
     {
         
 
-        $debug = true;
+        $debug = false;
 
         $sql = "";
         $sql .= "SELECT ";
@@ -327,7 +327,7 @@ class SelectQuery
 
     public function count()
     {
-        $debug = true;
+        $debug = false;
         $this->isCountQuery = true;
         $params = [];
         $pdoStatement = $this->getPDOStatement($params);

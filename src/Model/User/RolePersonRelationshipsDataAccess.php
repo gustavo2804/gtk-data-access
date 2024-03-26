@@ -13,8 +13,6 @@ class RolePersonRelationshipsDataAccess extends DataAccess
 			new GTKColumnMapping($this, "date_created",                [ "formLabel" => "Fecha Creacion"]),
 			new GTKColumnMapping($this, "date_modified",               [ "formLabel" => "Fecha Modificado"]),
 		];
-
-		$this->tableName  		    = "";
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
 		$this->defaultOrderByColumn = "date_modified";
 		$this->defaultOrderByOrder  = "DESC";

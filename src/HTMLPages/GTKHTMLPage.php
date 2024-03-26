@@ -143,7 +143,7 @@ class GTKHTMLPage
 
 	public function render()
 	{
-		$debug = true;
+		$debug = false;
 
 		$maybeCurrentUser    = DataAccessManager::get("session")->getCurrentUser();
 		$maybeCurrentSession = DataAccessManager::get("session")->getCurrentApacheSession([

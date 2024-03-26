@@ -37,7 +37,7 @@ class DataAccessAction
 	}
 	public function hideOnListsForUserItem($user, $item)
 	{
-		$debug = true;
+		$debug = false;
 		
 		if ($this->hideOnListsForUserItemObject)
         {
@@ -55,7 +55,7 @@ class DataAccessAction
 
 	public function hideOnEditForUserItem($user, $item)
 	{
-		$debug = true; 
+		$debug = false; 
 
         if ($this->hideOnEditForUserItemObject)
         {
@@ -89,7 +89,7 @@ class DataAccessAction
     }
     public function isInvalidForUserOnItem(&$user, &$item, &$delegate = null, &$options = null)
     {
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{

@@ -22,7 +22,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 	
     public function processGet($getObject)
 	{
-		$debug = true;
+		$debug = false;
 
 		parent::processGet($getObject);
 
@@ -108,7 +108,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 
 	public function renderBody()
     {
-        $debug = true;
+        $debug = false;
 
 		$user = DataAccessManager::get("persona")->getCurrentUser();
 

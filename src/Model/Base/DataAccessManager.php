@@ -156,7 +156,7 @@ class DataAccessManager
 
 	public static function validateDataSourceName($maybeDataSourceName)
 	{
-		$debug = true;
+		$debug = false;
 
 		$dataSourceName = null;
 
@@ -199,7 +199,7 @@ class DataAccessManager
 
 	public static function allURLTo($maybeDataSourceName, $options = null)
 	{
-		$debug = true;
+		$debug = false;
 		$dataSourceName = self::validateDataSourceName($maybeDataSourceName);
 		if ($debug)
 		{
@@ -211,7 +211,7 @@ class DataAccessManager
 
 	public static function allLinkTo($dataSourceName, $options = null)
 	{
-		$debug = true;
+		$debug = false;
 
 		$dataSource = self::get($dataSourceName);
 		$href       = self::allURLTo($dataSourceName, $options);
@@ -462,14 +462,16 @@ class DataAccessManager
 
     public function getDataAccessor($name, $throwException = true) 
     {
-        $debug=true;
+        $debug = false;
+		
 		if (!array_key_exists($name, $this->dataAccessors)) 
         {
 			$key = $this->keyForDataAccessorConstructions($name);
-				if($debug)
-				{
-					error_log($key);
-				}
+			
+			if($debug)
+			{
+				error_log("`getDataAccessor`: key: ".$key);
+			}
             // if (!isset($this->dataAccessorConstructions[$name])) 
 			if (!$key) 
             {
@@ -592,10 +594,16 @@ class DataAccessManager
    
 	public function toRenderForPath($requestPath, $user)
 	{
-		$debug = false;
+		$debug = true;
 
 		$pathParts                = explode('/', trim($requestPath, '/'));
 		$potentialDataAccessorKey = $pathParts[0];
+		$toTryDataAccessorKey     = null;
+
+		if ($debug)
+		{
+			gtk_log("Potential data accessor key: ".$potentialDataAccessorKey);
+		}
 
 		$dataSource = null;
 
@@ -603,37 +611,61 @@ class DataAccessManager
 			"show", "edit", "list"
 		]))
 		{
-			$dataSource    = $this->getDataAccessor($_GET["data_source"], false);
-			$routeAsString = $potentialDataAccessorKey;
+			if (!isset($_GET["data_source"]))
+			{
+				die("Please set `data_source` parameter in URL.");
+			}
+
+			$toTryDataAccessorKey = $_GET["data_source"];
+			$requestedPermission  = $potentialDataAccessorKey;
 		}
 		else
 		{
-			$relevantPathParts = array_slice($pathParts, 1);
-			$routeAsString     = implode('/', $relevantPathParts);
-			$dataSource        = $this->getDataAccessor($potentialDataAccessorKey, false);
+			$relevantPathParts 	  = array_slice($pathParts, 1);
+			$requestedPermission  = implode('/', $relevantPathParts);
+			$toTryDataAccessorKey = $potentialDataAccessorKey;
 		}
+
+		if ($debug)
+		{
+			gtk_log("To try data accessor key: ".$toTryDataAccessorKey);
+			gtk_log("Requested permission: ".$requestedPermission);
+		}
+
+		$dataSource = $this->getDataAccessor($toTryDataAccessorKey, false);
 
 		if (!$dataSource)
 		{
 			return null;
 		}
 
-		if ($dataSource->userHasPermissionTo($routeAsString, $user))
+		$permissionURL = $toTryDataAccessorKey.".".$requestedPermission;
+
+		if ($debug)
 		{
-			return $dataSource->renderObjectForRoute($routeAsString, $user);
+			gtk_log("Permission URL: ".$permissionURL);
+		}
+
+		// $this->getDataAccessor("persona")->logAction($user, $permissionURL);
+		// if ($dataSource->userHasPermissionTo($routeAsString, $user))
+
+		$hasPermission = $this->getDataAccessor("persona")->hasPermission($user, $permissionURL);
+
+		if ($hasPermission)
+		{
+			return $dataSource->renderObjectForRoute($requestedPermission, $user);
+		}
+	
+		if (!$user)
+		{
+			echo Glang::get("DataAccessManager/RequiresRedirect");
+			header("Refresh:3; url=/auth/login.php");
+			echo "Requires redirect. No user.";
+			exit();
 		}
 		else
 		{
-			if (!$user)
-			{
-				echo Glang::get("DataAccessManager/RequiresRedirect");
-				header("Refresh:3; url=/auth/login.php");
-				exit();
-			}
-			else
-			{
-				die(Glang::get("NotAuthorizedToDoThis"));
-			}
+			die(Glang::get("NotAuthorizedToDoThis"));
 		}
 	}
 

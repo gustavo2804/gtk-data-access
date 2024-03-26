@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\QueryException;
 
 function getFunctionArgumentCount($functionName) {
     $reflectionFunction = new ReflectionFunction($functionName);
@@ -8,7 +9,7 @@ function getFunctionArgumentCount($functionName) {
 
 function generateSelectOptionsDataLabelColumn($rows, $currentValue, $dataSourceName, $dataColumn, $labelColumn)
 {
-    $debug = true;
+    $debug = false;
 
     if ($debug)
     {
@@ -188,7 +189,7 @@ class DataAccess /* implements Serializable */
 
         $db = $dataAccessManager->getDatabaseInstance($dbName);
 
-        if ($db)
+        if ($debug)
         {
             error_log("Got DB for DB Name: ".$dbName);
         }
@@ -219,7 +220,7 @@ class DataAccess /* implements Serializable */
     
 	public function __construct($p_db, $options)
     {
-        $debug = true;
+        $debug = false;
 
 		$this->db = $p_db;
 
@@ -419,7 +420,7 @@ class DataAccess /* implements Serializable */
         }
         
         // Convert class name from CamelCase to spaced format and add 's' for pluralization
-        return $this->convertCamelCaseToSpace(__CLASS__) . 's';
+        return $this->convertCamelCaseToSpace(get_class($this));
     }
 
     private function convertCamelCaseToSpace($str) {
@@ -438,7 +439,7 @@ class DataAccess /* implements Serializable */
 
     public function displayActionsForUserItem($user, $item)
     {
-        $debug = true;
+        $debug = false;
 
         $toReturn = "";
 
@@ -509,7 +510,7 @@ class DataAccess /* implements Serializable */
 
     public function linkForKeyItemOptions($key, $item, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         /*
         $requestUri = $_SERVER['REQUEST_URI'];
@@ -643,6 +644,8 @@ class DataAccess /* implements Serializable */
 
     public function getSearchableColumnsForUser($user, $groupName = null)
     {
+        $debug = false;
+
         $toReturn = [];
         
         $columns = $this->dataMapping->ordered;
@@ -680,6 +683,11 @@ class DataAccess /* implements Serializable */
         usort($toReturn, function($a, $b) {
             return strcasecmp($a->getFormLabel($this), $b->getFormLabel($this));
         });
+
+        if ($debug)
+        {
+            error_log("Searchable columns for user: ".count($toReturn));
+        }
 
         return $toReturn;
     }
@@ -799,7 +807,7 @@ class DataAccess /* implements Serializable */
 
     public function actionsForLocationUserItem($location, $user, $item) 
     { 
-        $debug = true;
+        $debug = false;
 
         $actionsForLocation = [];
 
@@ -906,8 +914,19 @@ class DataAccess /* implements Serializable */
 
     public function getByIdentifier($identifier)
     {
-        $columnName = $this->dataMapping->primaryKeyMapping->getSqlColumnName();
-        return $this->getOne($columnName, $identifier);
+        if (is_array($identifier))
+        {
+            $query = new SelectQuery($this);
+            $query->where(new WhereClause(
+                $this->primaryKeyMapping()->getSqlColumnName(), "IN", $identifier
+            ));
+            return $query->executeAndReturnAll();
+        }
+        else
+        {
+            $columnName = $this->dataMapping->primaryKeyMapping->getSqlColumnName();
+            return $this->getOne($columnName, $identifier);
+        }
     }
 
 
@@ -1091,7 +1110,7 @@ class DataAccess /* implements Serializable */
 
     public function createTableSQLString()
     {
-        $debug = true;
+        $debug = false;
 
         $columns = $this->dataMapping->ordered;
 
@@ -1172,7 +1191,7 @@ class DataAccess /* implements Serializable */
 
     public function createTable()
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -1181,13 +1200,41 @@ class DataAccess /* implements Serializable */
 
         if (!$this->tableExists())
         {
-            $query = $this->createTableSQLString();
-            if ($debug)
+            
+            $sql = $this->createTableSQLString();
+
+            try
             {
-                error_log("Will exec query: $query");
+                if ($debug)
+                {
+                    error_log("createTable :://:: Will exec query: $sql");
+                }
+
+                $this->getPDO()->exec($sql);
+
+                if ($debug)
+                {
+                    error_log("Table created.");
+                }
+
+                $this->createUniqueIndexes();
             }
-            $this->getPDO()->exec($query);
-            $this->createUniqueIndexes();
+            catch (PDOException $e)
+            {
+                die("Error creating table for ".get_class($this)." SQL: ".$sql." - ".$e->getMessage());
+                
+                $isInvalid = '';
+
+                QueryExceptionManager::manageQueryExceptionForDataSource(
+                    $this, 
+                    $e, 
+                    $sql, 
+                    null,  // $item,
+                    $isInvalid); // $isInvalid
+        
+                throw $e;
+            }
+
         }
         else
         {
@@ -2017,7 +2064,7 @@ class DataAccess /* implements Serializable */
         $limit,
         $options = []
     ){
-        $debug = true;
+        $debug = false;
 
         /*
         if (isset($options["offset"]))
@@ -2254,7 +2301,7 @@ class DataAccess /* implements Serializable */
 
     public function insertSqlWithPHPKeys($item, $debug = false)
     {
-        $debug = true;
+        $debug = false;
 
         foreach ($this->dataMapping->ordered as $columnMapping)
         {
@@ -2365,7 +2412,7 @@ class DataAccess /* implements Serializable */
 
     public function insertOrError($input, &$outError = '')
     {
-        $debug = true;
+        $debug = false;
 
         // $isDictionary = isDictionary($input);
 
@@ -2440,6 +2487,71 @@ class DataAccess /* implements Serializable */
         
     }
 
+    public function insertIfNotExists($input, &$outError = null)
+    {
+        $debug = false;
+
+        $options = [
+            "debug" => $debug,
+            "exceptionsNotToHandle" => [
+                "uniqueConstraint",
+            ],
+        ];
+
+        if (isDictionary($input))
+        {
+            if ($debug)
+            {
+                gtk_log("`insertIfNotExists` - isDictionary - saving with PHP Keys :) ");
+            }
+
+            try
+            {
+                return $this->insertWithPHPKeys($input, $outError, $options);
+            }
+            catch (Exception $e)
+            {
+                if (QueryExceptionManager::isUniqueConstraintException($e))
+                {
+                    // return $this->findByParameter("id", $input["id"]);
+                }
+                else
+                {
+                    throw $e;
+                }
+            }
+        }
+        else
+        {
+            gtk_log("`insertIfNotExists` - isArray - for-looping :) ");
+
+            $toReturn = [];
+
+            foreach ($input as $item)
+            {
+                try
+                {
+                    $value = $this->insertWithPHPKeys($item, $outError, $options);
+
+                    array_push($toReturn, $value);
+                }
+                catch (Exception $e)
+                {
+                    if (QueryExceptionManager::isUniqueConstraintException($e))
+                    {
+                        // return $this->findByParameter("id", $input["id"]);
+                    }
+                    else
+                    {
+                        throw $e;
+                    }
+                }
+                }
+
+            return $toReturn;
+        }
+    }
+
     public function insert(&$input, &$outError = null)
     {
         $debug = false;
@@ -2474,7 +2586,7 @@ class DataAccess /* implements Serializable */
 
     public function insertFromFormForUser(&$formItem, &$user, &$isInvalid, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -2601,7 +2713,7 @@ class DataAccess /* implements Serializable */
         &$isInvalid = '',
         $options = null
     ){
-        $debug = true;
+        $debug = false;
 
         $user = arrayValueIfExists("user", $options);
 
@@ -2626,7 +2738,7 @@ class DataAccess /* implements Serializable */
 
         if ($debug)
         {
-            gtk_log("SQL `insertWithPHPKeys` : {$sql}");
+            gtk_log("SQL `insertAssociativeArray` : {$sql}");
             gtk_log("Object: ".print_r($item, true));
         }
 
@@ -2709,7 +2821,26 @@ class DataAccess /* implements Serializable */
         }
         catch (Exception $e)
         {
-            $result = QueryExceptionManager::manageQueryExceptionForDataSource($this, $e, $sql, $item, $isInvalid);
+
+            if (isset($options["exceptionsNotToHandle"]))
+            {
+                if (in_array("uniqueConstraint", $options["exceptionsNotToHandle"]))
+                {
+                    if (QueryExceptionManager::isUniqueConstraintException($e))
+                    {
+                        throw $e;
+                    }
+                }
+
+            }
+
+
+            $result = QueryExceptionManager::manageQueryExceptionForDataSource(
+                $this, 
+                $e, 
+                $sql, 
+                $item, 
+                $isInvalid);
             
             if ($isInvalid != '')
             {
@@ -2797,7 +2928,7 @@ class DataAccess /* implements Serializable */
 
     public function updateFromFormForUser(&$formItem, &$user, &$isInvalid, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         foreach ($this->dataMapping->ordered as $columnMapping)
         {
@@ -3105,7 +3236,7 @@ class DataAccess /* implements Serializable */
 
     public function tableExists()
     {
-        $debug = true;
+        $debug = false;
 
         $driverName = $this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);
         
@@ -3453,7 +3584,7 @@ class DataAccess /* implements Serializable */
 		$foreignColumnValue,
 		$options = []
 	){
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -3710,9 +3841,16 @@ class DataAccess /* implements Serializable */
         return true;
     }
 
-    public function userHasPermissionTo($maybePermission, $user)
+    /*
+    public function validPermissionKeysForOption($maybePermission)
     {
-        $debug = false;
+
+    } 
+    */
+
+    public function userHasPermissionTo($maybePermission, $user, $options = null)
+    {
+        $debug = true;
 
         if ($debug)
         {
@@ -3876,8 +4014,6 @@ class TestableDataAccess extends DataAccess
         ]; 
 
         $this->dataMapping = new GTKDataSetMapping($this, $columns);
-
-        // $this->tableName = 'TestableTable_'.$this->generateMicroTimeUUID();
     }
  
 

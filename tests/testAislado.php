@@ -29,29 +29,10 @@ require_once($langPath);
 // require_once($autoloadPath);
 
 $db_path = "sqlite:C:\proyectos\stonewood-app\Data\AppStonewood-Production.db";
-$agencyAdminPermissions = [
-	"delete" => [
-		"DEV",
-		"AGENCY",
-		"SOFTWARE_ADMIN",
-	],
-	"update" => [
-		"DEV",
-		"AGENCY",
-		"SOFTWARE_ADMIN",
-	],
-	"read" => [
-		"SOFTWARE_ADMIN",
-	],
-	"none" => [
-		"ACCOUNTANTS",
-		"DISPATCHERS",
-	],
-];
+
 $config =[
 	"class" 	  => "StonewoodPersona",                     			   
 	"db" 		  => "appDB",
-	"permissions" => $agencyAdminPermissions,
 	"tableName"   => "personas",
 ];
 $sqlitePdo = new PDO($db_path);

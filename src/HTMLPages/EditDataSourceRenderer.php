@@ -12,7 +12,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 
 	public function handleIsInvalid($isInvalid)
 	{
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{
@@ -32,7 +32,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 
     public function processPost($postObject)
     {
-		$debug = true;
+		$debug = false;
 
 		$this->isNew       = $_POST["isNew"];
 		// $identifier  = $_GET[$this->primaryKeyMapping->phpKey];
@@ -177,7 +177,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 
     public function renderBody()
     {
-        $debug = true;
+        $debug = false;
 
 		$user = DataAccessManager::get("persona")->getCurrentUser();
 

@@ -70,7 +70,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function queryObject()
 	{
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{
@@ -102,7 +102,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	
 	public function processGet($getObject)
 	{
-        $debug = true;
+        $debug = false;
 
         
         if (!$this->dataSource)
@@ -153,7 +153,9 @@ class AllDataSourceRenderer extends GTKHTMLPage
         
         if (!$this->searchableColumns)
         {
-        	$this->searchableColumns = $this->dataSource->getSearchableColumnsForUser(DataAccessManager::get("persona")->getCurrentUser()); // dataMapping->ordered;
+        	$this->searchableColumns = $this->dataSource->getSearchableColumnsForUser(
+				DataAccessManager::get("persona")->getCurrentUser()
+			);
         }
         
         $this->primaryKeyMapping = $this->dataSource->dataMapping->primaryKeyMapping;
@@ -219,7 +221,28 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			Count: <?php echo $this->count(); ?>
 	    </h3>
 
-		
+		<form action="search" method="get">
+			<input type="text" name="search" id="search" value="<?php echo isset($_GET['search']) ? $_GET['search'] : ''; ?>">
+			<button type="submit">Search</button>
+			<select name="columnToSearch" id="columnToSearch_select">
+    			<?php
+        		foreach ($this->searchableColumns as $columnMapping) 
+        		{
+        		    echo '<option';
+					echo ' value="'.$columnMapping->phpKey.'"';
+					$isSelected = false;
+					if ($isSelected)
+					{
+						echo ' selected';
+					}
+					echo '>';
+        		    echo $columnMapping->getFormLabel($this->dataSource);
+        		    echo '</option>';
+        		}
+ 	    		?>
+			</select>
+		</form>
+
 
 		<?php echo generateTableForUser(
 			DataAccessManager::get("persona")->getCurrentUser(),
