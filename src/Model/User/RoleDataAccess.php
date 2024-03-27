@@ -348,16 +348,30 @@ class RoleDataAccess extends DataAccess
 
             $permissions = DataAccessManager::get("permissions")->permissionsForRole($roleFromDB);
 
+            if ($debug)
+            {
+                if (is_array($permissions))
+                {
+                    gtk_log("Permissions (Existing: ".count($permissions)." - Expected: ".count($permissionsToAdd).")");
+                }
+            }
+
             foreach ($permissionsToAdd as $permission)
             {
-                if ($debug)
-                {
-                    gtk_log("Adding Permission to $roleName: ".serialize($permission));
-                }
+  
                 if (!in_array($permission, $permissions))
                 {
+                    if ($debug)
+                    {
+                        gtk_log("Adding Permission to $roleName: ".serialize($permission));
+                    }
                     $this->addPermissionToRole($roleFromDB, $permission);
                 }
+            }
+
+            if ($debug)
+            {
+                gtk_log("Finished adding permissions to $roleName");
             }
         }
         else
