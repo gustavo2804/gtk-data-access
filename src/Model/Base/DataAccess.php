@@ -260,7 +260,7 @@ class DataAccess /* implements Serializable */
             }
             $runCreateTable = $_GLOBALS["RUN_CREATE_TABLE"];
         }
-        else if (isset($options["runCreateTable"]) && $options["runCreateTable"] == true)
+        else if (isset($options["runCreateTable"]) && ($options["runCreateTable"] == true))
         {
             if ($debug)
             {
