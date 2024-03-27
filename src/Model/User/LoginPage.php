@@ -123,7 +123,7 @@ class LoginUser
 		{
 			if($debug)
 			{
-				error_log("no esta activo");
+				gtk_log("`LoginPage` - no esta activo");
 			}
 			return $delegate->userIsNotActive($user);
 		}
