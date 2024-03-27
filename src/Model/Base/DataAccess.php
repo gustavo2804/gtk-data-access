@@ -1198,6 +1198,8 @@ class DataAccess /* implements Serializable */
 
     public function createUniqueIndexes()
     {
+        $debug = true;
+
         $tableName = $this->tableName();
         $columns   = $this->dataMapping->ordered;
 
@@ -1211,7 +1213,13 @@ class DataAccess /* implements Serializable */
                     // Assuming the table name is available in a variable $tableName
                     $uniqueIndexName = "unique_".$tableName."_".$columnName; // Generate a unique index name
                     $sql = "CREATE UNIQUE INDEX IF NOT EXISTS $uniqueIndexName ON $tableName ($columnName)"; // Append the SQL for creating a unique index
-                   $this->getPDO()->exec($sql);
+                    
+                    if ($debug)
+                    {
+                        gtk_log("Creating unique index: ".$uniqueIndexName." - SQL: ".$sql);
+                    }
+                    
+                    $this->getPDO()->exec($sql);
 
                 }
             }
@@ -1246,8 +1254,6 @@ class DataAccess /* implements Serializable */
                 {
                     error_log("Table created.");
                 }
-
-                $this->createUniqueIndexes();
             }
             catch (PDOException $e)
             {
@@ -1280,6 +1286,8 @@ class DataAccess /* implements Serializable */
                 $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
             }
         }
+
+        $this->createUniqueIndexes();
     }
 
     public function allowsCreationForUser($user)
