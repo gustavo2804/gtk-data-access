@@ -201,6 +201,10 @@ class RoleDataAccess extends DataAccess
         else if (is_string($maybePermissionIDArrayOrName))
         {
             $permission = DataAccessManager::get("permissions")->getOne("name", $maybePermissionIDArrayOrName);
+            if (!$permission)
+            {
+                throw new Exception("`addPermissionToRole` :: Invalid Permission Name: ".$maybePermissionIDArrayOrName);
+            }
             $permissionID = $permission["id"];
         }
         else if (is_array($maybePermissionIDArrayOrName))

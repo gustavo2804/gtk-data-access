@@ -1233,7 +1233,7 @@ class DataAccess /* implements Serializable */
 
         if ($debug)
         {
-            error_log("Running `DataAccess/createTable`");
+            gtk_log("Running `DataAccess/createTable`");
         }
 
         if (!$this->tableExists())
@@ -1245,14 +1245,14 @@ class DataAccess /* implements Serializable */
             {
                 if ($debug)
                 {
-                    error_log("createTable :://:: Will exec query: $sql");
+                    gtk_log("createTable :://:: Will exec query: $sql");
                 }
 
                 $this->getPDO()->exec($sql);
 
                 if ($debug)
                 {
-                    error_log("Table created.");
+                    gtk_log("Table created.");
                 }
             }
             catch (PDOException $e)
@@ -2529,10 +2529,9 @@ class DataAccess /* implements Serializable */
 
     public function insertIfNotExists($input, &$outError = null)
     {
-        $debug = false;
+        $debug = true;
 
         $options = [
-            "debug" => $debug,
             "exceptionsNotToHandle" => [
                 "uniqueConstraint",
             ],
@@ -2542,18 +2541,21 @@ class DataAccess /* implements Serializable */
         {
             if ($debug)
             {
-                gtk_log("`insertIfNotExists` - isDictionary - saving with PHP Keys :) ");
+                gtk_log("DICTIONARY - `insertIfNotExists` - isDictionary - saving with PHP Keys :) ".print_r($input, true));
             }
 
             try
             {
-                return $this->insertWithPHPKeys($input, $outError, $options);
+                return $this->insertAssociativeArray($input, $outError, $options);
             }
             catch (Exception $e)
             {
                 if (QueryExceptionManager::isUniqueConstraintException($e))
                 {
-                    // return $this->findByParameter("id", $input["id"]);
+                    if ($debug)
+                    {
+                        gtk_log("DICTIONARY -`insertIfNotExists` - IGNORING VIOLATION: uniqueConstraint for item: ".print_r($input, true));
+                    }
                 }
                 else
                 {
@@ -2571,7 +2573,7 @@ class DataAccess /* implements Serializable */
             {
                 try
                 {
-                    $value = $this->insertWithPHPKeys($item, $outError, $options);
+                    $value = $this->insertAssociativeArray($item, $outError, $options);
 
                     array_push($toReturn, $value);
                 }
@@ -2579,7 +2581,10 @@ class DataAccess /* implements Serializable */
                 {
                     if (QueryExceptionManager::isUniqueConstraintException($e))
                     {
-                        // return $this->findByParameter("id", $input["id"]);
+                        if ($debug)
+                        {
+                            gtk_log("ARRAY - `insertIfNotExists` - IGNORING VIOLATION: uniqueConstraint for item: ".print_r($item, true));
+                        }
                     }
                     else
                     {
@@ -2753,7 +2758,7 @@ class DataAccess /* implements Serializable */
         &$isInvalid = '',
         $options = null
     ){
-        $debug = false;
+        $debug = true;
 
         $user = arrayValueIfExists("user", $options);
 
@@ -2861,6 +2866,10 @@ class DataAccess /* implements Serializable */
         }
         catch (Exception $e)
         {
+            if ($debug)
+            {
+                gtk_log("Did execute statement: $sql. Exception: ".$e->getMessage());
+            }
 
             if (isset($options["exceptionsNotToHandle"]))
             {

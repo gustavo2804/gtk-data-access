@@ -19,8 +19,9 @@ class PermissionDataAccess extends DataAccess
                 "hideOnForms"     => true, 
             ]), 
 			new GTKColumnMapping($this, "name", [
-                "formLabel" => "Nombre",
-                "isUnique"  => true,
+                "formLabel"  => "Nombre",
+                "isUnique"   => true,
+                "isNullable" => false,
             ]),
 			new GTKColumnMapping($this, "comments", [
                 "formLabel" => "Comentarios",
