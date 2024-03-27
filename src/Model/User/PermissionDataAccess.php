@@ -64,4 +64,9 @@ class PermissionDataAccess extends DataAccess
         }
         return false;
     }
+
+    function permissionsForRole($role)
+    {
+        return DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+    }
 }

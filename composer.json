@@ -60,7 +60,8 @@
     "autoload": {
         "files": [
             "configure/databases.php",
-            "configure/lang.php"
+            "configure/lang.php",
+            "configure/permissions.php"
         ],
         "classmap": [
             "src/"

@@ -649,7 +649,7 @@ class DataAccessManager
 		// $this->getDataAccessor("persona")->logAction($user, $permissionURL);
 		// if ($dataSource->userHasPermissionTo($routeAsString, $user))
 
-		$hasPermission = $this->getDataAccessor("persona")->hasPermission($user, $permissionURL);
+		$hasPermission = $this->getDataAccessor("persona")->hasPermission($permissionURL, $user);
 
 		if ($hasPermission)
 		{

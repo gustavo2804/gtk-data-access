@@ -795,6 +795,8 @@ class PersonaDataAccess extends DataAccess
 
 	public function permissionsForUser($user)
 	{
+		$debug = true;
+
 		$roles = DataAccessManager::get("flat_roles")->rolesForUser($user);
 
 		$permissions = [];
@@ -802,6 +804,12 @@ class PersonaDataAccess extends DataAccess
 		foreach ($roles as $role)
 		{
 			$rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+
+			if ($debug)
+			{
+				gtk_log("`permissionsForUser`: - Role (".$role["name"].") - has permissions: ".print_r($rolePermissions, true));
+			}
+
 			$permissions = array_merge($permissions, $rolePermissions);
 		}
 

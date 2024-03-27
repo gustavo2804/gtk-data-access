@@ -555,4 +555,26 @@ class WhereGroup
         }
         return implode(" {$this->logicalOperator} ", $sqlParts);
     }
+
+    public function where($column, $operator = null, ...$values) 
+    {
+        $whereClause = null;
+
+        if ($column instanceof WhereClause)
+        {
+            $whereClause = $column;
+        }
+        else if ($column instanceof WhereGroup)
+        {
+            $whereClause = $column;
+        }
+        else
+        {
+            $whereClause = new WhereClause($column, $operator, ...$values);
+        }
+
+        $this->clauses[] = $whereClause;
+
+        return $this;
+    }
 }

@@ -589,7 +589,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function rolesForUser($user)
     {
-        $debug = false;
+        $debug = true;
 
         $roleRelations = $this->roleRelationsForUser($user);
 
@@ -736,6 +736,30 @@ class FlatRoleDataAccess extends DataAccess
 
     public function roleRelationsForUser($user = null)
     {
+
+        $debug = false;
+
+        if ($debug)
+        {
+            error_log("Role Relations for user: $user");
+        }
+
+        $userID = null;
+
+        if (is_array($user))
+        {
+            $userID = DataAccessManager::get("persona")->valueForKey("id", $user);
+        }
+        else if (is_numeric($user))
+        {
+            $userID = $user;
+        }
+        else
+        {
+            throw new Exception("Invalid argument for `roleRelationsForUser:user`: ".$user);
+        }
+
+
         $query = new SelectQuery($this, null, [
             new WhereClause("user_id", "=",  DataAccessManager::get("persona")->valueForKey("id", $user)),
         ]);

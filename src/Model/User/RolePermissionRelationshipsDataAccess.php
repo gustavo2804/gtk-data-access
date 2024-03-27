@@ -41,6 +41,8 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
 
     public function permissionsForRole($role)
     {
+        $debug = true;
+
         $roleID = null;
 
         if (is_string($role) || is_numeric($role))
@@ -51,9 +53,18 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
         {
             $roleID = DataAccessManager::get('roles')->identifierForItem($role);
         }
+        
+        if ($debug)
+        {
+            gtk_log("Role ID: $roleID");
+        }
 
         if (isset($this->cache[$roleID]))
         {
+            if ($debug)
+            {
+                gtk_log("Returning from cache: ".print_r($this->cache[$roleID], true));
+            }
             return $this->cache[$roleID];
         }
 
@@ -64,9 +75,18 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
         $query->where(new WhereClause(
             "role_id", "=", $roleID
         ));
-        $query->where(new WhereClause(
+
+        $isActiveClause = new WhereGroup("OR");
+
+        $isActiveClause->where(new WhereClause(
             "is_active", "=",  true
         ));
+
+        $isActiveClause->where(new WhereClause(
+            "is_active", "=",  "1"
+        ));
+
+        $query->where($isActiveClause);
 
         $result = $query->executeAndReturnAll();
 
@@ -75,13 +95,28 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
             $permissionIDS[] = $row["permission_id"];
         }
 
+
+        if ($debug)
+        {
+            gtk_log("Permission IDS: ".print_r($permissionIDS, true));
+        }
+
         $permissions = DataAccessManager::get('permissions')->getByIdentifier($permissionIDS);    
 
         $permissionsLib = [];
 
         foreach ($permissions as $permission)
         {
+            if ($debug)
+            {
+                gtk_log("Permission: ".print_r($permission, true));
+            }
             $permissionLib[] = $permission["name"];
+        }
+
+        if ($debug)
+        {
+            gtk_log("Permissions: ".print_r($permissionsLib, true));
         }
 
         $this->cache[$roleID] = $permissionsLib;

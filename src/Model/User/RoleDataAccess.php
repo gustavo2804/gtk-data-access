@@ -1,5 +1,7 @@
 <?php
 
+use Dflydev\DotAccessData\Data;
+
 class RoleDataAccess extends DataAccess
 {
 
@@ -186,18 +188,42 @@ class RoleDataAccess extends DataAccess
         return $permissions;
     }
 
-    public function addPermissionToRole(&$role, $permission)
+    public function addPermissionToRole(&$role, $maybePermissionIDArrayOrName)
     {
         $debug = true;
+
+        $permissionID = null;
+
+        if (is_numeric($maybePermissionIDArrayOrName))
+        {
+            $permissionID = $maybePermissionIDArrayOrName;
+        }
+        else if (is_string($maybePermissionIDArrayOrName))
+        {
+            $permission = DataAccessManager::get("permissions")->getOne("name", $maybePermissionIDArrayOrName);
+            $permissionID = $permission["id"];
+        }
+        else if (is_array($maybePermissionIDArrayOrName))
+        {
+            $permission = $maybePermissionIDArrayOrName;
+            $permissionID = $permission["id"];
+        }
+    
+        if (!$permissionID)
+        {
+            throw new Exception("Invalid Permission ID or Name: ".print_r($maybePermissionIDArrayOrName, true));
+        }
 
         $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
         
         $rolePermissions[] = [
             "role_id"       => $role["id"],
-            "permission_id" => $permission["id"],
+            "permission_id" => $permissionID,
+            "is_active"     => true,
+            "date_created"  => date("Y-m-d H:i:s"),
         ];
         
-        DataAccessManager::get("role_permission_relationships")->create($rolePermissions);
+        DataAccessManager::get("role_permission_relationships")->insert($rolePermissions);
     
     }
 
@@ -209,7 +235,7 @@ class RoleDataAccess extends DataAccess
         
         foreach ($rolePermissions as $rolePermission)
         {
-            if ($rolePermission["permission_id"] == $permission["id"])
+            if ($rolePermission["permission_id"] == $permissionToRemove["id"])
             {
                 DataAccessManager::get("role_permission_relationships")->delete($rolePermission);
             }
@@ -218,42 +244,84 @@ class RoleDataAccess extends DataAccess
 
     public function createRole(&$role)
     {
-        $debug = false;
+        $debug = true;
+
         $didInsert = $this->insertAssociativeArray($role);
 
-        if ($didInsert)
+        if (!$didInsert)
         {
-            if ($debug)
-            {
-                gtk_log("Role Created: ".serialize($role));
-            }
-
-            $role = $this->getOne("name", $role["name"]);
-        }
-        else
-        {
+            
             if ($debug)
             {
                 gtk_log("Role Not Created: ".serialize($role));
             }
+
+            throw new Exception("Role Not Created");
         }
+
+        $roleFromDB = $this->getOne("name", $role["name"]);
+        
+        if ($debug)
+        {
+            gtk_log("Role Created: ".serialize($role));
+        }
+        
+        return $roleFromDB;
     }
 
     public function manageRole(&$existingRole, &$roleInConfig)
     {
         $debug = true;
 
-        $permissions = $this->getPermissionsForRole($existingRole);
-
-        if (isset($role["permissions_to_remove"])) 
+        if ($debug)
         {
-            $permissionsToRemove = $roleInConfig["permissions_to_remove"];
+            gtk_log("Managing Role: ".serialize($roleInConfig["name"]));
+        }
+
+        return $existingRole;
+    }
+
+    public function createOrManageRole(&$roleToCreateOrManage)
+    {
+        $debug = true;
+
+        if ($debug)
+        {
+            gtk_log("Role to create or manage: ".serialize($roleToCreateOrManage));
+        }
+
+        $roleName = $roleToCreateOrManage["name"];
+
+        $roleFromDB = $this->getOne("name", $roleName);
+
+        if ($roleFromDB)
+        {
+            if ($debug)
+            {
+                gtk_log("Role Exists: ".serialize($roleToCreateOrManage));
+            }
+            $roleFromDB = $this->manageRole($roleFromDB, $roleToCreateOrManage);
+        }
+        else
+        {
+            if ($debug)
+            {
+                gtk_log("Role Does Not Exist: ($roleName) ".serialize($roleToCreateOrManage));
+            }
+            $roleFromDB = $this->createRole($roleToCreateOrManage);
+        }
+
+        $permissions = $this->getPermissionsForRole($roleFromDB);
+
+        if (isset($roleToCreateOrManage["permissions_to_remove"])) 
+        {
+            $permissionsToRemove = $roleToCreateOrManage["permissions_to_remove"];
 
             foreach ($permissionsToRemove as $permission)
             {
                 if ($debug)
                 {
-                    gtk_log("Removing Permission: ".serialize($permission));
+                    gtk_log("Removing Permission from $roleName: ".serialize($permission));
                 }
                 if (in_array($permission, $permissions))
                 {
@@ -261,53 +329,38 @@ class RoleDataAccess extends DataAccess
                 }
             }
         }
-
-        if (isset($role["permissions"])) 
+        else
         {
-            $permissionsToAdd = $roleInConfig["permissions"];
+            if ($debug)
+            {
+                gtk_log("No permissions to remove for: ".$roleName);
+            }
+        }
+
+        if (isset($roleToCreateOrManage["permissions"])) 
+        {
+            $permissionsToAdd = $roleToCreateOrManage["permissions"];
+
+            $permissions = DataAccessManager::get("permissions")->permissionsForRole($roleFromDB);
 
             foreach ($permissionsToAdd as $permission)
             {
                 if ($debug)
                 {
-                    gtk_log("Adding Permission: ".serialize($permission));
+                    gtk_log("Adding Permission to $roleName: ".serialize($permission));
                 }
                 if (!in_array($permission, $permissions))
                 {
-                    $this->addPermissionToRole($existingRole, $permission);
+                    $this->addPermissionToRole($roleFromDB, $permission);
                 }
             }
-        }
-    }
-
-    public function createOrManageRole(&$role)
-    {
-        $debug = false;
-
-        if ($debug)
-        {
-            gtk_log("Role: ".serialize($role));
-        }
-
-        $roleName = $role["name"];
-
-        $existingRole = $this->getOne("name", $roleName);
-
-        if ($existingRole)
-        {
-            if ($debug)
-            {
-                gtk_log("Role Exists: ".serialize($role));
-            }
-            $this->manageRole($existingRole, $role);
         }
         else
         {
             if ($debug)
             {
-                gtk_log("Role Does Not Exist: ($roleName) ".serialize($role));
+                gtk_log("No permissions to add for: ".$roleName);
             }
-            $this->createRole($role);
         }
     }
 
