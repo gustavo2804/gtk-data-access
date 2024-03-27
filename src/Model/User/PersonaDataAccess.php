@@ -506,11 +506,11 @@ class PersonaDataAccess extends DataAccess
 			return false;
 		}
 
-		$estado = $this->valueForKey("estado", $user);
+		$estado = $this->valueForKey("estado_usuaruo", $user);
 
 		if ($debug)
 		{
-			gtk_log("`isActive` - estadoDeUsuario`: ".$activeValue);
+			gtk_log("`isActive` - estadoDeUsuario`: ".$estado);
 		}
 
 		switch ($estado)
