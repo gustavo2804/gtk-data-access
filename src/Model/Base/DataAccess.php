@@ -251,6 +251,11 @@ class DataAccess /* implements Serializable */
         global $_GLOBALS;
         
         $runCreateTable = false;
+
+        if ($debug)
+        {
+            gtk_log("Will use options: ".print_r($options, true));
+        }
         
         if (isset($_GLOBALS["RUN_CREATE_TABLE"]))
         {
