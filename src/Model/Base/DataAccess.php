@@ -2752,6 +2752,31 @@ class DataAccess /* implements Serializable */
             $options
         );
     }
+
+    /*
+        $user = arrayValueIfExists("user", $options);
+
+        if (!$user)
+        {
+            $user = DataAccessManager::get("persona")->getCurrentUser();
+        }
+
+                        $processOnInsertForUser = $columnMapping->processOnInsertForUser($user);
+
+                    if ($processOnInsertForUser)
+                    {
+                        $value = $processOnInsertForUser($value);
+                    }
+
+                    $processOnAll = $columnMapping->processOnAllForUser($user);
+
+                    if ($processOnAll)
+                    {
+                        $value = $processOnAll($value);
+                    }
+
+
+    */
     
 	public function insertAssociativeArray(
         &$item, 
@@ -2760,12 +2785,6 @@ class DataAccess /* implements Serializable */
     ){
         $debug = true;
 
-        $user = arrayValueIfExists("user", $options);
-
-        if (!$user)
-        {
-            $user = DataAccessManager::get("persona")->getCurrentUser();
-        }
 
         $ignoreErrors = null;
 
@@ -2830,20 +2849,6 @@ class DataAccess /* implements Serializable */
                     if ($debug)
                     {
                         gtk_log("Binding value `insertWithPHPKeys`: ".$key);
-                    }
-
-                    $processOnInsertForUser = $columnMapping->processOnInsertForUser($user);
-
-                    if ($processOnInsertForUser)
-                    {
-                        $value = $processOnInsertForUser($value);
-                    }
-
-                    $processOnAll = $columnMapping->processOnAllForUser($user);
-
-                    if ($processOnAll)
-                    {
-                        $value = $processOnAll($value);
                     }
 
                     if (isTruthy($value) || ($value === false))
