@@ -506,7 +506,7 @@ class PersonaDataAccess extends DataAccess
 			return false;
 		}
 
-		$estado = $this->valueForKey("estado_usuaruo", $user);
+		$estado = $this->valueForKey("estado", $user);
 
 		if ($debug)
 		{
