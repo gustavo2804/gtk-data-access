@@ -296,7 +296,7 @@ class SelectQuery
 
     public function getPDOStatement(&$params)
     {
-        $debug = true;
+        $debug = false;
 
         $pdo = $this->dataSource->getPDO();
 

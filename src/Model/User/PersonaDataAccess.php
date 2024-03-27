@@ -495,7 +495,7 @@ class PersonaDataAccess extends DataAccess
 
 	public function isActive($user)
 	{
-		$debug = true;
+		$debug = false;
 		
 		if (!$user)
 		{

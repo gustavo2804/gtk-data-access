@@ -70,7 +70,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function queryObject()
 	{
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{
@@ -201,7 +201,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function renderBody()
 	{
-		$debug = true;
+		$debug = false;
 
         ob_start(); ?>
 

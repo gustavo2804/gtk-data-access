@@ -287,7 +287,7 @@ class RoleDataAccess extends DataAccess
 
     public function createOrManageRole(&$roleToCreateOrManage)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {

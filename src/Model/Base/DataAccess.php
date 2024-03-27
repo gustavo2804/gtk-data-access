@@ -197,21 +197,8 @@ class DataAccess /* implements Serializable */
 
         // $instance = new self($db, $config);
         $instance = new static($db, $config);
-        
-        
-		if (isset($config["tableName"]))
-		{
-			$instance->setTableName($config["tableName"]);
-		}
 
 
-		if (isset($config["permissions"]))
-		{
-			if (method_exists($instance, "setPermissions"))
-			{
-				$instance->setPermissions($config["permissions"]);
-			}
-		}
 
 
         return $instance;
@@ -220,7 +207,7 @@ class DataAccess /* implements Serializable */
     
 	public function __construct($p_db, $options)
     {
-        $debug = false;
+        $debug = true;
 
 		$this->db = $p_db;
 
@@ -313,6 +300,14 @@ class DataAccess /* implements Serializable */
                 gtk_log("Will NOT create table for: ".get_class($this));
             }
         }
+
+        if (isset($config["permissions"]))
+		{
+			if (method_exists($instance, "setPermissions"))
+			{
+				$instance->setPermissions($config["permissions"]);
+			}
+		}
 
         
 
@@ -491,7 +486,7 @@ class DataAccess /* implements Serializable */
 
     public function tableRowContentsForUserItemColumns($user, $item, $columnsToDisplay)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -1198,7 +1193,7 @@ class DataAccess /* implements Serializable */
 
     public function createUniqueIndexes()
     {
-        $debug = true;
+        $debug = false;
 
         $tableName = $this->tableName();
         $columns   = $this->dataMapping->ordered;
@@ -2529,7 +2524,7 @@ class DataAccess /* implements Serializable */
 
     public function insertIfNotExists($input, &$outError = null)
     {
-        $debug = true;
+        $debug = false;
 
         $options = [
             "exceptionsNotToHandle" => [
@@ -2783,7 +2778,7 @@ class DataAccess /* implements Serializable */
         &$isInvalid = '',
         $options = null
     ){
-        $debug = true;
+        $debug = false;
 
 
         $ignoreErrors = null;
