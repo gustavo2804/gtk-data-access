@@ -495,31 +495,39 @@ class PersonaDataAccess extends DataAccess
 
 	public function isActive($user)
 	{
-		$debug=1;
+		$debug = true;
+		
 		if (!$user)
 		{
+			if ($debug)
+			{
+				gtk_log("`isActive` - No user was provided");
+			}
 			return false;
 		}
 
-		$activeValue = $this->valueForKey("estado", $user);
+		$estado = $this->valueForKey("estado", $user);
+
 		if ($debug)
-			{
-				error_log("este usuario esta: ".$activeValue);
-			}
-		if ($activeValue !== "activo")
 		{
-			if($debug)
-			{
-				error_log("false");
-			}
-			return false;
+			gtk_log("`isActive` - estadoDeUsuario`: ".$activeValue);
 		}
-		if($debug)
-		{
-			error_log("true");
-		}
-		return true;
 
+		switch ($estado)
+		{
+			case 'activo':
+			case 'ACTIVO':
+			case 1:
+			case true:
+				return true;
+			case 'inactivo':
+			default:
+				if($debug)
+				{
+					gtk_log("No value was active");
+				}
+				return false;
+		}
 	}
 
 	public function updatePasswordHashForPersona($persona, $newPassword)
