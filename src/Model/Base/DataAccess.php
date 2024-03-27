@@ -204,6 +204,68 @@ class DataAccess /* implements Serializable */
         return $instance;
     }
 
+    public function createOrAnnounceTable()
+    {
+        $debug = true;
+
+        if ($debug)
+        {
+            gtk_log("Will create table for: ".get_class($this));
+            gtk_log("Will use `createTable()` for: ".get_class($this));
+        }
+
+
+
+        if ($this->isSqlite())
+        {
+            $this->createTable();
+            if ($debug)
+            {
+                error_log("Did create table");
+            }
+        }
+        else
+        {
+            if ($debug)
+            {
+                error_log("NOT SQLITE --- CANNOT create table for: ".get_class($this));
+            }
+            if (!$this->tableExists())
+            {
+                $sql = $this->createTableSQLString();
+                die("Table is not created. Consider: ".$sql);
+            }
+
+            $columns = $this->dataMapping->ordered;
+
+            $missingColumns = [];
+
+            foreach ($columns as $columnMapping)
+            {
+                if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName))
+                {
+                    $missingColumns[] = $columnMapping;
+                    // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                }
+            }
+
+            if (count($missingColumns))
+            {
+                gtk_log("On...`".get_class($this)."`: ".$this->tableName());
+                gtk_log("Missing columns: ");
+
+                foreach ($missingColumns as $columns)
+                {
+                    $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
+                    $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
+                    gtk_log($message);
+                }
+
+                die();
+            }
+        }
+    }
+
     
 	public function __construct($p_db, $options)
     {
@@ -276,27 +338,7 @@ class DataAccess /* implements Serializable */
 
         if ($runCreateTable)
         {
-            if ($debug)
-            {
-                gtk_log("Will create table for: ".get_class($this));
-                gtk_log("Will use `createTable()` for: ".get_class($this));
-            }
-
-            if ($this->isSqlite())
-            {
-                $this->createTable();
-                if ($debug)
-                {
-                    error_log("Did create table");
-                }
-            }
-            else
-            {
-                if ($debug)
-                {
-                    error_log("NOT SQLITE --- CANNOT create table for: ".get_class($this));
-                }
-            }
+            $this->createOrAnnounceTable();
         }
         else
         {

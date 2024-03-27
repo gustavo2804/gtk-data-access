@@ -1062,8 +1062,6 @@ class GTKColumnMapping extends GTKColumnBase
         $defaultValue = $this->defaultValue ?? null;
         $constraint   = null;
 
-
-
         // Check if the column should allow nulls
         $sqlAllowNulls = ($allowNulls) ? "NULL" : "NOT NULL";
         $sqlColumnType = '';
