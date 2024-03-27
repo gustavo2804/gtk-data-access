@@ -233,36 +233,40 @@ class DataAccess /* implements Serializable */
             if (!$this->tableExists())
             {
                 $sql = $this->createTableSQLString();
-                die("Table is not created. Consider: ".$sql);
+                gtk_log("Table is not created. Consider: ".$sql);
+                return;
             }
-
-            $columns = $this->dataMapping->ordered;
-
-            $missingColumns = [];
-
-            foreach ($columns as $columnMapping)
+            else
             {
-                if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName))
+                $columns = $this->dataMapping->ordered;
+
+                $missingColumns = [];
+    
+                foreach ($columns as $columnMapping)
                 {
-                    $missingColumns[] = $columnMapping;
-                    // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                    if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName))
+                    {
+                        $missingColumns[] = $columnMapping;
+                        // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                    }
+                }
+    
+                if (count($missingColumns))
+                {
+                    gtk_log("On...`".get_class($this)."`: ".$this->tableName());
+                    gtk_log("Missing columns: ");
+    
+                    foreach ($missingColumns as $columns)
+                    {
+                        $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
+                        $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
+                        gtk_log($message);
+                    }
+    
+                    return;
                 }
             }
 
-            if (count($missingColumns))
-            {
-                gtk_log("On...`".get_class($this)."`: ".$this->tableName());
-                gtk_log("Missing columns: ");
-
-                foreach ($missingColumns as $columns)
-                {
-                    $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
-                    $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
-                    gtk_log($message);
-                }
-
-                die();
-            }
         }
     }
 
