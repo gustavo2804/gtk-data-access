@@ -16,7 +16,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	public $offset;
 	public $queryOptions = [];
 	public $_count;
-	public $items;
+	public $_items;
 	public $itemsPerPage;
     public $echoSelectedIfTrue;
 
@@ -57,9 +57,9 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function getItems()
 	{
-		if ($this->items != null)
+		if ($this->_items)
 		{
-			return $this->items;
+			return $this->_items;
 		}
 		else
 		{
@@ -70,7 +70,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function queryObject()
 	{
-		$debug = false;
+		$debug = true;
 
 		if ($debug)
 		{
@@ -201,7 +201,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function renderBody()
 	{
-		$debug = false;
+		$debug = true;
 
         ob_start(); ?>
 
@@ -244,13 +244,35 @@ class AllDataSourceRenderer extends GTKHTMLPage
 		</form>
 
 
-		<?php echo generateTableForUser(
-			DataAccessManager::get("persona")->getCurrentUser(),
-			$this->columnsToDisplay,
-			$this->getItems(), 
-			$this->dataSource, 
-			$this->dataSource->dataAccessorName, 
-			$debug);
+		<?php 
+
+		if ($this->_items)
+		{
+			echo generateTableForUser(
+				DataAccessManager::get("persona")->getCurrentUser(),
+				$this->columnsToDisplay,
+				$this->_items, 
+				$this->dataSource, 
+				$this->dataSource->dataAccessorName, 
+				$debug);
+
+		}
+		else
+		{
+			if ($debug)
+			{
+				gtk_log("SQL: ".$this->queryObject()->getSQL());
+			}
+
+			echo generateTableForUser(
+				DataAccessManager::get("persona")->getCurrentUser(),
+				$this->columnsToDisplay,
+				$this->queryObject(), 
+				$this->dataSource, 
+				$this->dataSource->dataAccessorName, 
+				$debug);
+		}
+		
 
 
 		echo $this->pageSection();

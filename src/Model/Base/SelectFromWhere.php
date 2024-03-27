@@ -296,7 +296,7 @@ class SelectQuery
 
     public function getPDOStatement(&$params)
     {
-        $debug = false;
+        $debug = true;
 
         $pdo = $this->dataSource->getPDO();
 
@@ -341,6 +341,11 @@ class SelectQuery
         return $result['COUNT'];
     }
 
+    public function sql()
+    {
+        return $this->getSQL();
+    }
+
     public function getSQL()
     {
         $params = [];
@@ -359,7 +364,8 @@ class SelectQuery
     {
         $statement = $this->executeAndReturnStatement();
     
-        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) 
+        {
             yield $row;
         }
     }

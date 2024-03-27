@@ -13,10 +13,16 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
                 "isAutoIncrement" => true, 
                 "hideOnForms" => true,
             ]), 
-            new GTKColumnMapping($this, "permission_id"),
-            new GTKColumnMapping($this, "role_id"),
+            new GTKColumnMapping($this, "permission_id", [
+                "columnType" => "INTEGER",
+            ]),
+            new GTKColumnMapping($this, "role_id", [
+                "columnType" => "INTEGER",
+            ]),
 			new GTKColumnMapping($this, "comments"),
-			new GTKColumnMapping($this, "is_active"),
+			new GTKColumnMapping($this, "is_active", [
+                "columnType" => "BOOLEAN",
+            ]),
 			new GTKColumnMapping($this, "date_created"),
 			new GTKColumnMapping($this, "date_modified"),
 		];
@@ -39,11 +45,60 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
         UNIQUE(role_permission_relationship_id))");
     }
 
-    public function permissionsForRole($role)
+    public function permissionRelationsForRole($role)
     {
-        $debug = true;
+        $debug = false;
 
         $roleID = null;
+
+        if (is_string($role) || is_numeric($role))
+        {
+            $roleID = $role;
+        }
+        else
+        {
+            $roleID = DataAccessManager::get('roles')->identifierForItem($role);
+        }
+        
+        if ($debug)
+        {
+            gtk_log("Role ID: $roleID");
+        }
+
+        $query = new SelectQuery($this);
+
+        $query->where(new WhereClause(
+            "role_id", "=", $roleID
+        ));
+
+        /*
+        $isActiveClause = new WhereGroup("OR");
+
+        $isActiveClause->where(new WhereClause(
+            "is_active", "=",  true
+        ));
+
+        $isActiveClause->where(new WhereClause(
+            "is_active", "=",  "1"
+        ));
+
+        $query->where($isActiveClause);
+        */
+
+        if ($debug)
+        {
+            gtk_log("Query Count : ".$query->count());
+            gtk_log("Query SQL   : ".$query->sql());
+        }
+
+        $result = $query->executeAndReturnAll();
+
+        return $result;
+    }
+
+    public function permissionsForRole($role)
+    {
+        $debug = false;
 
         if (is_string($role) || is_numeric($role))
         {
@@ -68,42 +123,32 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
             return $this->cache[$roleID];
         }
 
+        $permissionRelationsForRole = $this->permissionRelationsForRole($role);
+
         $permissionIDS = [];
 
-        $query = new SelectQuery($this);
-
-        $query->where(new WhereClause(
-            "role_id", "=", $roleID
-        ));
-
-        $isActiveClause = new WhereGroup("OR");
-
-        $isActiveClause->where(new WhereClause(
-            "is_active", "=",  true
-        ));
-
-        $isActiveClause->where(new WhereClause(
-            "is_active", "=",  "1"
-        ));
-
-        $query->where($isActiveClause);
-
-        $result = $query->executeAndReturnAll();
-
-        foreach ($result as $row)
+        foreach ($permissionRelationsForRole as $permissionRelation)
         {
-            $permissionIDS[] = $row["permission_id"];
+            if ($debug)
+            {
+                gtk_log("Permission Relations: ".print_r($permissionRelation, true));
+            }
+            $permissionIDS[] = $permissionRelation["permission_id"];
         }
-
 
         if ($debug)
         {
-            gtk_log("Permission IDS: ".print_r($permissionIDS, true));
+            gtk_log("Permission IDs fpr Role (".serialize($role).") - : ".print_r($permissionIDS, true));
         }
 
         $permissions = DataAccessManager::get('permissions')->getByIdentifier($permissionIDS);    
 
-        $permissionsLib = [];
+        if ($debug)
+        {
+            gtk_log("Got Permissions: ".print_r($permissions, true));
+        }
+
+        $toReturn = [];
 
         foreach ($permissions as $permission)
         {
@@ -111,17 +156,17 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
             {
                 gtk_log("Permission: ".print_r($permission, true));
             }
-            $permissionLib[] = $permission["name"];
+            $toReturn[] = $permission["name"];
         }
 
         if ($debug)
         {
-            gtk_log("Permissions: ".print_r($permissionsLib, true));
+            gtk_log("Will return: Permissions: ".print_r($toReturn, true));
         }
 
-        $this->cache[$roleID] = $permissionsLib;
+        $this->cache[$roleID] = $toReturn;
 
-        return $permissionsLib;
+        return $toReturn;
     }
 
 

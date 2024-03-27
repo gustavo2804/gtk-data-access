@@ -164,7 +164,7 @@ class RoleDataAccess extends DataAccess
 
     public function getPermissionsForRole(&$role)
     {
-        $debug = true;
+        $debug = false;
 
         if (isset($role["permissions"]))
         {
@@ -173,7 +173,7 @@ class RoleDataAccess extends DataAccess
 
         $permissions = [];
     
-        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionRelationsForRole($role);
         
         $permissions = [];
 
@@ -190,7 +190,7 @@ class RoleDataAccess extends DataAccess
 
     public function addPermissionToRole(&$role, $maybePermissionIDArrayOrName)
     {
-        $debug = true;
+        $debug = false;
 
         $permissionID = null;
 
@@ -229,7 +229,7 @@ class RoleDataAccess extends DataAccess
 
     public function removePermissionFromRole(&$role, $permissionToRemove)
     {
-        $debug = true;
+        $debug = false;
 
         $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
         
@@ -244,7 +244,7 @@ class RoleDataAccess extends DataAccess
 
     public function createRole(&$role)
     {
-        $debug = true;
+        $debug = false;
 
         $didInsert = $this->insertAssociativeArray($role);
 
@@ -271,7 +271,7 @@ class RoleDataAccess extends DataAccess
 
     public function manageRole(&$existingRole, &$roleInConfig)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {
@@ -309,6 +309,11 @@ class RoleDataAccess extends DataAccess
                 gtk_log("Role Does Not Exist: ($roleName) ".serialize($roleToCreateOrManage));
             }
             $roleFromDB = $this->createRole($roleToCreateOrManage);
+        }
+
+        if ($debug)
+        {
+            gtk_log("Role from DB: ".serialize($roleFromDB));
         }
 
         $permissions = $this->getPermissionsForRole($roleFromDB);

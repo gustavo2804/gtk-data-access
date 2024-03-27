@@ -594,7 +594,7 @@ class DataAccessManager
    
 	public function toRenderForPath($requestPath, $user)
 	{
-		$debug = true;
+		$debug = false;
 
 		$pathParts                = explode('/', trim($requestPath, '/'));
 		$potentialDataAccessorKey = $pathParts[0];

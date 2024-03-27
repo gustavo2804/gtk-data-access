@@ -1,5 +1,25 @@
 <?php
 
+/*
+Why is this not selecting in SQLite SELECT * FROM role_permission_relationships WHERE 
+role_id = 10  and this is: SELECT * FROM role_permission_relationships WHERE 
+role_id = "10"? 
+
+//-------------------------------------------------------------
+
+In SQLite, the behavior you're observing is due to the dynamic typing system SQLite uses, which is quite different from the static typing system in many other database management systems. SQLite uses a dynamic type system where the type of a value is associated with the value itself, not with its container. This is part of what makes SQLite flexible, but it can also lead to some confusion when dealing with numeric and text data types.
+
+When you perform a query like `SELECT * FROM role_permission_relationships WHERE role_id = 10`, SQLite looks for a numeric match for `role_id`. If `role_id` has been stored in the database as an integer, this query will work as expected.
+
+However, if `role_id` was stored as text (even if it's a number like "10"), you need to query it using a string to match the type, like so: `SELECT * FROM role_permission_relationships WHERE role_id = "10"`. This tells SQLite to treat the comparison as a string comparison, not a numeric comparison.
+
+This discrepancy typically arises because of how the data was inserted or defined in the database schema. If the `role_id` column was defined without a strict type, or if data was inserted into the table using different types (SQLite's flexibility allows this), you might end up with a mixture of types in the same column, or with the column being treated differently than you expect.
+
+To avoid such issues, it's a good practice to ensure that data is consistently typed both when you create the table and when you insert or update its data. For example, if `role_id` is intended to be an integer, you might want to make sure it's always handled as an integer in your database operations. Additionally, using SQLite's type affinity system wisely can help in ensuring data types are handled consistently. SQLite does try to convert types where it makes sense, but explicitly managing your data types can prevent these kinds of surprises.
+
+
+*/
+
 class GTKColumnMapping extends GTKColumnBase
 {
     public $isUpdateKey;
@@ -703,7 +723,65 @@ class GTKColumnMapping extends GTKColumnBase
 
 
     // Mark: - Create Columns
+    public static function columnTypeForSqlite($columnType)
+    {
 
+        $sqlColumnTypes = [
+            'NUMERIC'           => 'NUMERIC',
+            // Integer Types
+            'TINYINT'           => 'INTEGER',        // A very small integer
+            'SMALLINT'          => 'INTEGER',        // A small integer
+            'MEDIUMINT'         => 'INTEGER',        // A medium-sized integer
+            'INT'               => 'INTEGER',        // A standard integer
+            'INTEGER'           => 'INTEGER',        // A synonym for INT
+            'BIGINT'            => 'INTEGER',        // A large integer
+            // Decimal Types
+            'DECIMAL'            => 'REAL',    // A fixed-point number
+            'NUMERIC'            => 'REAL',    // An exact numeric value with a fixed precision and scale
+            'FLOAT'              => 'REAL',      // A floating-point number
+            'DOUBLE'             => 'REAL',     // A double precision floating-point number
+            'REAL'               => 'REAL',       // A synonym for DOUBLE (except in SQL Server where it's a synonym for FLOAT)
+            // Boolean Type
+            'BOOLEAN'            => 'REAL',    // A boolean value (true or false)
+            // Date and Time Types
+            'DATE'               => 'REAL',    // A date value
+            'DATETIME'           => 'REAL',    // A date and time combination
+            'TIMESTAMP'          => 'TEXT',    // A timestamp value
+            'TIME'               => 'REAL',    // A time value
+            'YEAR'               => 'REAL',    // A year value
+            // String Types
+            'CHAR'               => 'TEXT',       // A fixed-length non-binary string (up to 255 characters)
+            'VARCHAR'            => 'TEXT',    // A variable-length non-binary string
+            'TINYTEXT'           => 'TEXT',   // A very small non-binary string
+            'TEXT'               => 'TEXT',       // A standard non-binary string
+            'MEDIUMTEXT'         => 'TEXT', // A medium-length non-binary string
+            'LONGTEXT'           => 'TEXT',   // A large non-binary string
+            // Binary String Types
+            'BINARY'               => 'BLOB',     // A fixed-length binary string
+            'VARBINARY'            => 'BLOB',  // A variable-length binary string
+            'TINYBLOB'             => 'BLOB',   // A very small binary string
+            'BLOB'                 => 'BLOB',       // A binary string
+            'MEDIUMBLOB'           => 'BLOB', // A medium-length binary string
+            'LONGBLOB'             => 'BLOB',   // A large binary string
+            // Enumerated Types
+            'ENUM',       // An enumeration
+            'SET',        // A set of enumeration values
+            // JSON Type
+            'JSON',       // A JSON-formatted string
+            // UUID Type
+            'UUID'        // A universally unique identifier
+        ];
+
+
+        if (array_key_exists($columnType, $sqlColumnTypes))
+        {
+            return $sqlColumnTypes[$columnType];
+        }
+        else
+        {
+            throw new Exception("Invalid column type for SQLite: ".$columnType);
+        }
+    }
     
     public function getColumnTypeForPDO($pdoObject)
     {
@@ -751,6 +829,7 @@ class GTKColumnMapping extends GTKColumnBase
             'SMALLINT',   // A small integer
             'MEDIUMINT',  // A medium-sized integer
             'INT',        // A standard integer
+            'INTEGER',    // A synonym for INT
             'BIGINT',     // A large integer
         
             // Decimal Types
@@ -797,9 +876,18 @@ class GTKColumnMapping extends GTKColumnBase
             'UUID'        // A universally unique identifier
         ];
 
-        if (in_array(strtoupper($this->columnType), $sqlColumnTypes))
+
+        switch ($driver)
         {
-            return $this->columnType;
+            case "sqlite":
+                return static::columnTypeForSqlite($this->columnType);
+                // return '';
+            default:
+                if (in_array(strtoupper($this->columnType), $sqlColumnTypes))
+                {
+                    return $this->columnType;
+                }
+                break;
         }
 
         throw new Exception("INVALID COLUMN TYPE for $this->phpKey");

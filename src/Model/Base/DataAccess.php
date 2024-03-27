@@ -150,7 +150,7 @@ class DataAccess /* implements Serializable */
     public  $dataSetViews = [];
     public  $dataAccessorName;
 	private $db;
-	public  $tableName;
+	public  $_tableName;
 	public  $dataMapping;
 	public  $defaultOrderByColumn; 
 	public  $defaultOrderByOrder = 'ASC';
@@ -238,7 +238,7 @@ class DataAccess /* implements Serializable */
         
         if(isset($options["tableName"]))
         {
-            $this->tableName=$options["tableName"];
+            $this->setTableName($options["tableName"]);
         }
         
         $this->register();//no hace nada en DataAccess
@@ -250,9 +250,9 @@ class DataAccess /* implements Serializable */
         
         $this->dataMapping->setDataAccessor($this);
 
-        if ($this->tableName)
+        if ($this->_tableName)
         {
-            $this->dataMapping->tableName = $this->tableName;
+            $this->dataMapping->tableName = $this->_tableName;
             
             if($debug)
             {
@@ -420,7 +420,16 @@ class DataAccess /* implements Serializable */
         }
         
         // Convert class name from CamelCase to spaced format and add 's' for pluralization
-        return $this->convertCamelCaseToSpace(get_class($this));
+        $className = get_class($this);
+        $nameToUse = $className;
+
+        if (substr($className, -strlen("DataAccess")) === "DataAccess") 
+        {
+            $nameToUse = substr($className, 0, strlen($className) - strlen("DataAccess"));
+            error_log("No Glang for plural name of: ".$className);
+        }
+
+        return $this->convertCamelCaseToSpace($nameToUse);
     }
 
     private function convertCamelCaseToSpace($str) {
@@ -473,11 +482,11 @@ class DataAccess /* implements Serializable */
 
     public function tableRowContentsForUserItemColumns($user, $item, $columnsToDisplay)
     {
-        $debug = false;
+        $debug = true;
 
         if ($debug)
         {
-            error_log("tableRowContents --- item --- ".print_r($item, true));
+            gtk_log("tableRowContents --- item --- ".print_r($item, true));
         }
 
         $isFirstColumn = true;
@@ -1059,17 +1068,29 @@ class DataAccess /* implements Serializable */
 
     public function setTableName($name)
     {
-        $this->tableName = $name;
+        $this->_tableName = $name;
     }
 
 	
-	public function tableName() {
-		if ($this->tableName)
+	public function tableName() 
+    {
+        $debug = false;
+
+
+		if ($this->_tableName)
 		{
-			return $this->tableName;
+            if ($debug)
+            {
+                error_log("Table name is set: ".$this->_tableName);
+            }
+			return $this->_tableName;
 		}
 		else
 		{
+            if ($debug)
+            {
+                error_log("Table name is NOT set.");
+            }
             $class = new ReflectionClass($this);
             while ($parent = $class->getParentClass()) {
                 if ($parent->getName() === 'DataAccess') {
@@ -1698,6 +1719,8 @@ class DataAccess /* implements Serializable */
 
 	function getMany($columnName, $input, $debug = false)
     {
+        $debug = false;
+
         $columnName = $this->dbColumnNameForKey($columnName);
 
 		if ($debug)
@@ -3850,7 +3873,7 @@ class DataAccess /* implements Serializable */
 
     public function userHasPermissionTo($maybePermission, $user, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {

@@ -589,7 +589,7 @@ class FlatRoleDataAccess extends DataAccess
 
     public function rolesForUser($user)
     {
-        $debug = true;
+        $debug = false;
 
         $roleRelations = $this->roleRelationsForUser($user);
 
