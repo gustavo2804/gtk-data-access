@@ -398,7 +398,16 @@ class DataAccess /* implements Serializable */
             return $this->singleItemName;
         } 
         
-        return $this->convertCamelCaseToSpace(__CLASS__);
+        $className = get_class($this);
+        $nameToUse = $className;
+
+        if (substr($className, -strlen("DataAccess")) === "DataAccess") 
+        {
+            $nameToUse = substr($className, 0, strlen($className) - strlen("DataAccess"));
+            error_log("No Glang for plural name of: ".$className);
+        }
+
+        return $this->convertCamelCaseToSpace($nameToUse);
     }
 
 

@@ -214,16 +214,16 @@ class RoleDataAccess extends DataAccess
             throw new Exception("Invalid Permission ID or Name: ".print_r($maybePermissionIDArrayOrName, true));
         }
 
-        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+        // $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
         
-        $rolePermissions[] = [
+        $toInsert = [
             "role_id"       => $role["id"],
             "permission_id" => $permissionID,
             "is_active"     => true,
             "date_created"  => date("Y-m-d H:i:s"),
         ];
         
-        DataAccessManager::get("role_permission_relationships")->insert($rolePermissions);
+        DataAccessManager::get("role_permission_relationships")->insert($toInsert);
     
     }
 
