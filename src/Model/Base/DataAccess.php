@@ -223,7 +223,7 @@ class DataAccess /* implements Serializable */
 
     public function createOrAnnounceTable()
     {
-        $debug = true;
+        $debug = false;
 
         if ($debug)
         {

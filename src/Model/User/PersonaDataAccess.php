@@ -835,7 +835,7 @@ class PersonaDataAccess extends DataAccess
 	
 	public function hasPermission($permission, &$user, $item = null)
 	{
-		$debug = false;
+		$debug = true;
 
 		$permissions = $this->permissionsForUser($user);
 
@@ -860,17 +860,17 @@ class PersonaDataAccess extends DataAccess
 
 			switch ($permissionName)
 			{
-				case "create":
-					$permissionName = "new";
+				case "new":
+					$permissionName = "create";
 					break;
-				case "read":
-					$permissionName = "show";
+				case "show":
+					$permissionName = "read";
 					break;
-				case "update":
-					$permissionName = "edit";
+				case "edit":
+					$permissionName = "update";
 					break;
-				case "delete":
-					$permissionName = "destroy";
+				case "destroy":
+					$permissionName = "delete";
 					break;
 				//------------------------------
 				case "list":
