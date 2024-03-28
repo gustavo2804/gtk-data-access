@@ -889,6 +889,8 @@ class DataAccess /* implements Serializable */
 
             switch ($location)
             {
+                case "all":
+                case "list":
                 case "lists":
                     if (!$action->hideOnListsForUserItem($user, $item))
                     {
@@ -2653,7 +2655,7 @@ class DataAccess /* implements Serializable */
             {
                 gtk_log("`insert` - isDictionary - saving with PHP Keys :) ");
             }
-            return $this->insertWithPHPKeys($input, $outError);
+            return $this->insertAssociativeArray($input, $outError);
             
         }
         else
@@ -2664,7 +2666,7 @@ class DataAccess /* implements Serializable */
 
             foreach ($input as $item)
             {
-                $value = $this->insertWithPHPKeys($item, $outError, [
+                $value = $this->insertAssociativeArray($item, $outError, [
                     'debug' => $debug,
                 ]);
 
@@ -2967,7 +2969,7 @@ class DataAccess /* implements Serializable */
             }
 
             $item[$this->primaryKeyMapping()->phpKey] = $id;
-            $item["ROWID"] = $id;
+            $item["ROWID"] = $id ?? "SuccessButNoId";
         }
 
         return $id;

@@ -42,28 +42,9 @@ class PermissionDataAccess extends DataAccess
 		$this->defaultOrderByOrder  = "DESC";
     }
 
-    function hasPermission($permission, $user, $options = [])
+    function hasPermission(&$permission, &$user, $item)
     {
-        $debug = 0;
-
-        if ($debug)
-        {
-            error_log("Checking for permission: $permission");
-        }
-        if ($permission === 'view_data_errors')
-        {
-            $cedula = presentCedula($user["cedula"]);
-
-            error_log("Checking for cedula: $cedula");
-
-            $allowedCedulas = 
-            [
-                '001-1859419-1', // Gustavo Tavares
-            ];
-
-            return in_array($cedula, $allowedCedulas);
-        }
-        return false;
+        return DataAccessManager::get("persona")->hasPermission($permission, $user, $options);
     }
 
     function permissionsForRole($role)

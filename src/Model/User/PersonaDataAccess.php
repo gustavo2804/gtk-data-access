@@ -728,6 +728,10 @@ class PersonaDataAccess extends DataAccess
 
 	public function isDeveloper($user = null) 
 	{
+		if (!$user)
+		{
+			$user = $this->getCurrentUser();
+		}
 		return $this->isInGroup($user, "DEV");
 	}
 	public function isAdmin($user = null) 
@@ -845,6 +849,43 @@ class PersonaDataAccess extends DataAccess
 		if ($hasPermission)
 		{
 			return true;
+		}
+
+		$exploded = explode(".", $permission);
+
+		if (count($exploded) == 2)
+		{
+			$dataSourceName = $exploded[0];
+			$permissionName = $exploded[1];
+
+			switch ($permissionName)
+			{
+				case "create":
+					$permissionName = "new";
+					break;
+				case "read":
+					$permissionName = "show";
+					break;
+				case "update":
+					$permissionName = "edit";
+					break;
+				case "delete":
+					$permissionName = "destroy";
+					break;
+				//------------------------------
+				case "list":
+					$permissionName = "all";
+					break;
+			}
+
+			$permission = $dataSourceName.".".$permissionName;
+
+			if ($debug)
+			{
+				gtk_log("Checking for modified permission: ".$permission);
+			}
+
+			$hasPermission = in_array($permission, $permissions);
 		}
 
 		return $hasPermission;
