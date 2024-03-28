@@ -204,26 +204,15 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 			<?php endif; ?>
 		</h2>
         <?php
-        	$file = dirname($_SERVER["DOCUMENT_ROOT"])."/templates/".get_class($this->dataSource)."/edit/preTitleHeader.php";
-        	if ($debug)
-        	{
-        		error_log("Looking for: $file");
-        	}
-        	if (file_exists($file))
-        	{
-        		if ($debug)
-        		{
-        			error_log("Found: $file. Require-ing...");
-        		}
-        		require_once($file);
-        	}
-        	else
-        	{
-        		if ($debug)
-        		{
-        			error_log("File not found: $file");
-        		}
-        	}
+			if (is_string($this->header))
+			{
+				echo $this->header;
+			}
+			else if (is_callable($this->header))
+			{
+				$header = $this->header;
+				echo $header($this);
+			}
         ?>
         
         <?php $inputOptions = [
@@ -277,27 +266,15 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
         	<input type="hidden" name="isNew" value="<?php echo $this->isNew; ?>">
         
         <?php
-            $file = dirname($_SERVER["DOCUMENT_ROOT"])."/templates/".get_class($this->dataSource)."/edit/footer.php";
-        	
-        	if ($debug)
-        	{
-        		error_log("Looking for: $file");
-        	}
-        	if (file_exists($file))
-        	{
-        		if ($debug)
-        		{
-        			error_log("Found: $file. Require-ing...");
-        		}
-        		require_once($file);
-        	}
-        	else
-        	{
-        		if ($debug)
-        		{
-        			error_log("File not found: $file");
-        		}
-        	}
+			if (is_string($this->footer))
+			{
+				echo $this->footer;
+			}
+			else if (is_callable($this->footer))
+			{
+				$footer = $this->footer;
+				echo $footer($this);
+			}
         
 			$submitButtonValue = null;
 

@@ -4,6 +4,10 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 {
     public $dataSource;
     public $user;
+
+	public $header;
+	public $footer;
+
 	public $dataMapping;
 	public $columnMappings;
 	public $primaryKeyMapping;
@@ -13,10 +17,12 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 	public $isNew;
 
 	
-    public function renderForDataSource($dataSource, $user)
+    public function renderForDataSource($dataSource, $user, $options)
     {
         $this->dataSource = $dataSource;
         $this->user = $user;
+		$this->header = $options["header"] ?? null;
+		$this->footer = $options["footer"] ?? null;
         return $this;
     }
 	
@@ -129,26 +135,15 @@ class ShowDataSourceRenderer extends GTKHTMLPage
         ob_start(); ?>
         <h2 class="ml-4 mt-4 text-2xl font-bold"><?php echo $this->dataSource->singleItemName(); ?></h2>
         <?php
-        	$file = dirname($_SERVER["DOCUMENT_ROOT"])."/templates/".get_class($this->dataSource)."/edit/showHeader.php";
-        	if ($debug)
-        	{
-        		error_log("Looking for: $file");
-        	}
-        	if (file_exists($file))
-        	{
-        		if ($debug)
-        		{
-        			error_log("Found: $file. Require-ing...");
-        		}
-        		require_once($file);
-        	}
-        	else
-        	{
-        		if ($debug)
-        		{
-        			error_log("File not found: $file");
-        		}
-        	}
+			if (is_string($this->header))
+			{
+				echo $this->header;
+			}
+			else if (is_callable($this->header))
+			{
+				$header = $this->header;
+				echo $header($this);
+			}
         ?>
         <table>
         	<?php foreach ($this->columnMappings as $columnMapping): ?>
@@ -190,27 +185,15 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 		</div>
 
         <?php
-            $file = dirname($_SERVER["DOCUMENT_ROOT"])."/templates/".get_class($this->dataSource)."/edit/footer.php";
-        	
-        	if ($debug)
-        	{
-        		error_log("Looking for: $file");
-        	}
-        	if (file_exists($file))
-        	{
-        		if ($debug)
-        		{
-        			error_log("Found: $file. Require-ing...");
-        		}
-        		require_once($file);
-        	}
-        	else
-        	{
-        		if ($debug)
-        		{
-        			error_log("File not found: $file");
-        		}
-        	}
+			if (is_string($this->footer))
+			{
+				echo $this->footer;
+			}
+			else if (is_callable($this->footer))
+			{
+				$footer = $this->footer;
+				echo $footer($this);
+			}
         ?>
         <?php return ob_get_clean();
     }

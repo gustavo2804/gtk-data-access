@@ -7,6 +7,10 @@ class AllDataSourceRenderer extends GTKHTMLPage
     public $dataSource;
     public $user;
 
+
+	public $header;
+	public $footer;
+
     public $primaryKeyMapping;
 	public $columnsToDisplay;
 	public $filters;
@@ -20,10 +24,12 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	public $itemsPerPage;
     public $echoSelectedIfTrue;
 
-    public function renderForDataSource($dataSource, $user)
+    public function renderForDataSource($dataSource, $user, $options)
     {
         $this->dataSource = $dataSource;
-        $this->user = $user;
+        $this->user 	  = $user;
+		$this->header = $options["header"] ?? null;
+		$this->footer = $options["footer"] ?? null;
         return $this;
     }
 
@@ -205,6 +211,18 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
         ob_start(); ?>
 
+		<?php
+			if (is_string($this->header))
+			{
+				echo $this->header;
+			}
+			else if (is_callable($this->header))
+			{
+				$header = $this->header;
+				$header($this);
+			}
+		?>
+
 	    <h2 class="ml-4 text-2xl font-bold">
 			<?php echo $this->dataSource->getPluralItemName(); ?>
 		</h2>
@@ -272,8 +290,16 @@ class AllDataSourceRenderer extends GTKHTMLPage
 				$this->dataSource->dataAccessorName, 
 				$debug);
 		}
-		
 
+		if (is_string($this->footer))
+		{
+			echo $this->footer;
+		}
+		else if (is_callable($this->footer))
+		{
+			$footer = $this->footer;
+			$footer($this);
+		}
 
 		echo $this->pageSection();
 

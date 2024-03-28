@@ -322,7 +322,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function callCustomInputFunctionForUserItemOptions($user, $item, $options = null)
     {
-        $debug = false;
+        $debug = true;
         $value = ''; // $this->defaultValue;
 
         if ($item)
@@ -334,13 +334,23 @@ class GTKColumnMapping extends GTKColumnBase
         
         if ($debug)
         {
-            error_log("Got `customInputFunction`"); // ".$this->customInputFunction);
+            error_log("Got `customInputFunction` - "); // ".$this->customInputFunction);
+            error_log("GTKColumnMapping Key: ".$this->phpKey);
+            error_log("GTKColumnMapping Data Source: ".get_class($this->dataSource));
         }
 
         $customInputFunction        = $this->customInputFunction;
         $customInputFunctionObject  = $this->customInputFunctionObject;
         $customInputFunctionClass   = $this->customInputFunctionClass;
         $customInputFunctionOptions = $this->customInputFunctionOptions; // $this->customInputFunctionOptions;
+
+        if ($debug)
+        {
+            error_log("Custom Input Function: ".$customInputFunction);
+            error_log("Custom Input Function Object: ");
+            error_log("Custom Input Function Class: ".$customInputFunctionClass);
+            error_log("Custom Input Function Options: ".serialize($customInputFunctionOptions));
+        }
 
         if ($customInputFunctionObject)
         {
@@ -365,9 +375,17 @@ class GTKColumnMapping extends GTKColumnBase
 
             $reflectionData = new ReflectionMethod($customInputFunctionObject, $customInputFunction);
 
-            switch ($reflectionData->getNumberOfParameters())
+            $nParamsForCustomFunction = $reflectionData->getNumberOfParameters();
+            
+            if ($debug)
+            {
+                error_log("Will call with $nParamsForCustomFunction - parameters");
+            }
+
+            switch ($nParamsForCustomFunction)
             {
                 case 5:
+
                     return $customInputFunctionObject->$customInputFunction(
                         $this,
                         $user,
@@ -392,7 +410,7 @@ class GTKColumnMapping extends GTKColumnBase
                         $objectID,
                         $foreignColumnName,
                         $foreignColumnValue,
-                        $options);
+                        $customInputFunctionOptions);
                 default:
                     throw new Exception("Invalid function for `customInputFunction` protocol");
             }
@@ -513,8 +531,10 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function htmlInputForUserItem($user, $item, array $options = null)
     {  
-        $debug = false;
+        $debug = true;
         $value = ''; // $this->defaultValue;
+
+        if ($debug)
 
         if ($item)
         {
@@ -532,6 +552,10 @@ class GTKColumnMapping extends GTKColumnBase
             if (array_key_exists('type', $options))
             {
                 $inputType = $options['type'];
+            }
+            if ($debug)
+            {
+                error_log("Options: ".print_r($options, true));
             }
         }
 

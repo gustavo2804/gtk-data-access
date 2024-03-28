@@ -3703,12 +3703,21 @@ class DataAccess /* implements Serializable */
 		$foreignColumnValue,
 		$options = []
 	){
-        $debug = false;
+        $debug = true;
 
         if ($debug)
         {
             gtk_log("Start `DataAccess->generateSelectForUserColumnValueName` - ".get_class($this));
+            gtk_log("Data Accessor: ".get_class($dataAccessor));
+            gtk_log("Object ID: ".$objectID);
+            gtk_log("Foreign column name: ".$foreignColumnName);
+            gtk_log("Foreign column value: ".$foreignColumnValue);
+            gtk_log("Options: ".print_r($options, true));
         }
+
+        $item = $dataAccessor->getByIdentifier($objectID);
+
+        $currentValue = $dataAccessor->valueForKey($foreignColumnName, $item);
         
 
         $defaultColumnForDataAccessor = [
@@ -3754,7 +3763,7 @@ class DataAccess /* implements Serializable */
 
     	$language = isset($options['language']) ? $options['language'] : 'spanish';
 
-    	$select = '<select name="' . $foreignColumnMapping->phpKey . '">';
+    	$select = '<select name="' . $foreignColumnName . '">';
 
 		$addNullCase = true;
 
@@ -3967,6 +3976,21 @@ class DataAccess /* implements Serializable */
     } 
     */
 
+    public function optionsForEditPage()
+    {
+        return [];
+    }
+
+    public function optionsForShowPage()
+    {
+        return [];
+    } 
+
+    public function optionsForAllPage()
+    {
+        return [];
+    }
+
     public function userHasPermissionTo($maybePermission, $user, $options = null)
     {
         $debug = false;
@@ -4086,16 +4110,16 @@ class DataAccess /* implements Serializable */
 		{
 			case "create":
             case "new":
-				return DataAccessManager::get("EditDataSourceRenderer", false)->renderForDataSource($this, $user);
+				return DataAccessManager::get("EditDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForEditPage());
             case "show":
 			case "read":
-				return DataAccessManager::get("ShowDataSourceRenderer", false)->renderForDataSource($this, $user);
+				return DataAccessManager::get("ShowDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForShowPage());
 			case "update":
 			case "edit":
-				return DataAccessManager::get("EditDataSourceRenderer", false)->renderForDataSource($this, $user);
+				return DataAccessManager::get("EditDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForEditPage());
 			case "all":
 			case "list":
-				return DataAccessManager::get("AllDataSourceRenderer", false)->renderForDataSource($this, $user);
+				return DataAccessManager::get("AllDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForAllPage());
 			case "delete":
 				die("NEED TO CREATE RENDER `Delete`");
 		}
