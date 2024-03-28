@@ -129,9 +129,7 @@ class SelectQuery
 
     public function getSQLAndUpdateParams(&$params, $pdo = null) 
     {
-        
-
-        $debug = false;
+        $debug = true;
 
         $sql = "";
         $sql .= "SELECT ";

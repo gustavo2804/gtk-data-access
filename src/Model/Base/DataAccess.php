@@ -147,6 +147,23 @@ interface DataAccessInterface
 
 class DataAccess /* implements Serializable */
 {
+
+    public function getOrderBySpec()
+    {   
+        /*
+        $orderBy = new OrderByClause(
+            $this->defaultOrderByColumn, 
+            $this->defaultOrderByOrder);
+        return $orderBy;
+        */
+
+        return [
+            [
+                $this->defaultOrderByColumn(),
+                $this->defaultOrderByOrder,
+            ]
+        ];
+    }
     public  $dataSetViews = [];
     public  $dataAccessorName;
 	private $db;
@@ -2190,7 +2207,7 @@ class DataAccess /* implements Serializable */
         }
         else
         {
-            $selectQuery->orderBy = $this->defaultOrderBy;
+            $selectQuery->orderBy = $this->getOrderBySpec();
         }
 
         if ($limit)
