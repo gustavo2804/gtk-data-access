@@ -1,5 +1,7 @@
 <?php
 
+use function Deployer\error;
+
 function startsWith($lookFor, $string)
 {
 	return strpos($string, $lookFor) === 0;
@@ -169,14 +171,14 @@ class DataAccessManager
 			$dataSourceName = $maybeDataSourceName;
 		}
 		
-		$isValidDataSource = self::getSingleton()->keyForDataAccessorConstructions($dataSourceName);
+		$theValidName = self::getSingleton()->keyForDataAccessorConstructions($dataSourceName);
 
-		if (!$isValidDataSource)
+		if (!$theValidName)
 		{
 			throw new Exception("Providing invalid key for data source. Invalid key: $dataSourceName");
 		}
 
-		return $dataSourceName;
+		return $theValidName;
 	}
 
 	public static function editURLTo($maybeDataSourceName, $identifier, $options = null)
@@ -200,11 +202,21 @@ class DataAccessManager
 	public static function allURLTo($maybeDataSourceName, $options = null)
 	{
 		$debug = false;
-		$dataSourceName = self::validateDataSourceName($maybeDataSourceName);
+
 		if ($debug)
 		{
-			error_log("Got data source name: ".$dataSourceName);
+			$toPrint = is_string($maybeDataSourceName) ? $maybeDataSourceName : get_class($maybeDataSourceName);
+			error_log("`allURLTo`::Got maybe data source name: ".$toPrint);
+			error_log("`allURLTo`::Got options: ".print_r($options, true));
 		}
+
+		$dataSourceName = self::validateDataSourceName($maybeDataSourceName);
+
+		if ($debug)
+		{
+			error_log("`allURLTo`::Got data source name: ".$dataSourceName);
+		}
+
 		return "/$dataSourceName/all";
 	}
 
@@ -564,12 +576,21 @@ class DataAccessManager
         
         if (array_key_exists($name, $this->dataAccessorConstructions)) 
         {
+			if ($debug)
+			{
+				error_log("Found key for data accessor name: ".$name);
+			}
             return $name;
         }
 
         foreach ($this->dataAccessorConstructions as $key => $details) 
         {
-            if (isset($details["class"]) && $name === $details["class"]) {
+            if (isset($details["class"]) && $name === $details["class"])
+			{
+				if ($debug)
+				{
+					error_log("Matching on classs returning ".$key." for ".$name);
+				}
                 return $key;
             }
 			if (isset($details["synonyms"]))
@@ -578,11 +599,20 @@ class DataAccessManager
 				{
 					if ($synonym == $name)
 					{
+						if ($debug)
+						{
+							error_log("Matching on synonym returning ".$key." for ".$name);
+						}
 						return $key;
 					}					
 				}
 			}
         }
+
+		if ($debug)
+		{
+			error_log("No key found for data accessor name: ".$name);
+		}
 
         return null;
     }

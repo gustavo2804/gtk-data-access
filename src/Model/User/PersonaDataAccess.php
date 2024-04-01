@@ -835,7 +835,7 @@ class PersonaDataAccess extends DataAccess
 	
 	public function hasPermission($permission, &$user, $item = null)
 	{
-		$debug = true;
+		$debug = false;
 
 		$permissions = $this->permissionsForUser($user);
 

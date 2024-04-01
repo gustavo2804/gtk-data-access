@@ -347,7 +347,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function callCustomInputFunctionForUserItemOptions($user, $item, $options = null)
     {
-        $debug = true;
+        $debug = false;
         $value = ''; // $this->defaultValue;
 
         if ($item)
@@ -490,8 +490,8 @@ class GTKColumnMapping extends GTKColumnBase
                         $options["identifier"],
                         $this->phpKey,
                         $value,
-                        $customInputFunctionOptions
-                    );
+                        $customInputFunctionOptions);
+            
             }
 
         }
@@ -556,7 +556,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function htmlInputForUserItem($user, $item, array $options = null)
     {  
-        $debug = true;
+        $debug = false;
         $value = ''; // $this->defaultValue;
 
         if ($debug)
