@@ -49,6 +49,11 @@ class GTKColumnBase
     public $transformValueOnLists;
     public $hideOnListsForUserFunction;
 
+    public function isInsertable()
+    {
+        return false;
+    }
+
     public function getLabel($dataAccess = null)
     {
         if ($this->formLabel)

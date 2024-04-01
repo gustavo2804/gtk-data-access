@@ -73,12 +73,12 @@ function generateSelectOptionsDataLabelColumn($rows, $currentValue, $dataSourceN
 }
 
 
-enum DataAccessInsertResult: int 
+enum DataAccessInsertResult: string 
 {
-    case Success            = 1001;
-    case Failure            = 1;
-    case SyntaxFailure      = 2;
-    case ConnectionFailure  = 3;
+    case Success            = "Success";
+    case Failure            = "Failure";
+    case SyntaxFailure      = "SyntaxFailure";
+    case ConnectionFailure  = "ConnectionFailure";
 }
 
 class ArrayGeneratorWithClosure
@@ -290,7 +290,7 @@ class DataAccess /* implements Serializable */
     
 	public function __construct($p_db, $options)
     {
-        $debug = true;
+        $debug = false;
 
 		$this->db = $p_db;
 
@@ -1510,6 +1510,36 @@ class DataAccess /* implements Serializable */
         $this->transferRecords($newTableName, $whereConditions);
     }
 
+    public function beginTransaction()
+    {
+        $this->getDB()->beginTransaction();
+    }
+
+    public function commit()
+    {
+        $this->getDB()->commit();
+    }
+
+    public function rollback()
+    {
+        $this->getDB()->rollBack();
+    }
+
+    public function endTransaction()
+    {
+        $this->getDB()->commit();
+    }
+
+    public function endTransactionWithCommit()
+    {
+        $this->getDB()->commit();
+    }
+
+    public function endTransactionAndRollback()
+    {
+        $this->getDB()->rollBack();
+    }
+
     function transferRecords($newTable, $whereConditions) 
     {
         $debug = false;
@@ -2381,29 +2411,6 @@ class DataAccess /* implements Serializable */
 
     // MARK: - INSERT
 
-    public function isInsertableColumnMapping($columnMapping)
-    {
-        if (!$columnMapping)
-        {
-            return false;
-        } 
-
-        if ($columnMapping->isVirtual())
-        {
-            return false;
-        }
-
-        if ($columnMapping->isAutoIncrement())
-        {
-            return false;
-        }
-        
-        if ($columnMapping instanceof GTKColumnMapping)
-        {
-            return true;
-        }
-    }
-
     public function insertSqlWithPHPKeys($item, $debug = false)
     {
         $debug = false;
@@ -2444,13 +2451,14 @@ class DataAccess /* implements Serializable */
         {
             $columnMapping = $this->dataMapping->columnMappingForKey($key);
 
-            if (!$this->isInsertableColumnMapping($columnMapping))
+            $canInsert = $columnMapping && $columnMapping->isInsertable();
+
+            if (!$canInsert)
             {
                 if (!$columnMapping)
                 {
                     $className = get_class($this);
                     gtk_log("$className:: `insertSqlWithPHPKeys` No column mapping for key: {$key} - continuing...");
-                    // die();
                 }
                 continue;
             }
@@ -2480,15 +2488,14 @@ class DataAccess /* implements Serializable */
         {
             $columnMapping = $this->dataMapping->columnMappingForKey($key);
 
-            if (!$this->isInsertableColumnMapping($columnMapping))
+            $canInsert = $columnMapping && $columnMapping->isInsertable();
+
+            if (!$canInsert)
             {
                 if (!$columnMapping)
                 {
-
-                
                     $className = get_class($this);
                     gtk_log("$className:: `insertSqlWithPHPKeys` No column mapping for key: {$key} - continuing...");
-                    // die();
                 }
                 continue;
             }
@@ -2900,13 +2907,16 @@ class DataAccess /* implements Serializable */
             }
             else
             {
-                if (!$this->isInsertableColumnMapping($columnMapping))
+
+                $canInsert = $columnMapping && $columnMapping->isInsertable();
+
+                if (!$canInsert)
                 {
-                    if (!$columnMapping->isAutoIncrement() || $columnMapping->isVirtual())
+                    if ($columnMapping)
                     {
-                        die("NOTE TRYING TO INSERT VALUE FOR AUTO INCREMENT OR VIRTUAL COLUMN!!! - {$this->tableName()} / {$columnMapping->phpKey}");
+                        $className = get_class($this);
+                        die("Trying to insert for un-insertable column: ".$columnMapping->phpKey); 
                     }
-                    gtk_log("Should continue...");
                     continue;
                 }
                 else

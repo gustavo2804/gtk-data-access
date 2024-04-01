@@ -34,6 +34,31 @@ class GTKColumnMapping extends GTKColumnBase
     public $defaultValue;
     public $isAutoIncrement;
 
+    public function isUpdatable()
+    {
+        if ($this->isAutoIncrement())
+        {
+            return false;
+        }
+
+        if ($this->isPrimaryKey())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function isInsertable()
+    {
+        if ($this->isAutoIncrement())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public function listDisplay($dataSource, $item, $itemIdentifier, $options = null)
     {
         $debug = false; 
