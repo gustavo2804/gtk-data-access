@@ -921,17 +921,9 @@ class GTKColumnMapping extends GTKColumnBase
         }
     }
     
-    public function getColumnTypeForPDO($pdoObject)
+    public function getColumnTypeForDriverName($driver = null)
     {
         $debug = $this->debug ?? false;
-
-        $driver = $pdoObject->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-        if ($debug)
-        {
-            error_log("Column type for ".$this->phpKey);
-            error_log("Got driver: ".$driver);
-        }
 
         if ($this->isAutoIncrement())
         {
@@ -943,10 +935,10 @@ class GTKColumnMapping extends GTKColumnBase
             switch ($driver)
             {
                 case "sqlite":
-                    return "integer";
+                    return "INTEGER";
                 case "sqlsrv":
                 default:
-                    return "int";
+                    return "INT";
             }
         }
 
@@ -1031,30 +1023,28 @@ class GTKColumnMapping extends GTKColumnBase
         throw new Exception("INVALID COLUMN TYPE for $this->phpKey");
     }
 
-    public function autoIncrementSyntaxForPDO($pdo)
+    public function autoIncrementSyntaxForDriverName($driver)
     {
-        if (!$this->isPrimaryKey() && !$this->isAutoIncrement)
+        if (!$this->isAutoIncrement)
         {
             return '';
         }
-
-        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
         $columnDef = null;
 
         switch ($driver)
         {
             case 'mysql':
-                $columnDef .= " AUTO_INCREMENT ";
+                $columnDef .= "AUTO_INCREMENT ";
                 break;
             case 'pgsql':
                 throw new Exception("MUST ADAPT TO `SERIAL` TYPE FOR PostgresSQL");
                 break;
             case 'sqlsrv':
-                $columnDef .= " IDENTITY(1,1) ";
+                $columnDef .= "IDENTITY(1,1) ";
                 break;
             case 'sqlite':
-                $columnDef .= " AUTOINCREMENT ";
+                $columnDef .= "AUTOINCREMENT ";
                 break;
         }
 
@@ -1068,15 +1058,15 @@ class GTKColumnMapping extends GTKColumnBase
         
     }
 
-    public function getPrimaryKeySyntaxForPDO($pdo)
+    public function getPrimaryKeySyntaxForDriverName($driverName)
     {
         if ($this->isPrimaryKey())
         {
-            return " PRIMARY KEY ";
+            return "PRIMARY KEY";
         }
         else
         {
-            return ' ';
+            return '';
         }
     }
 
@@ -1151,9 +1141,9 @@ class GTKColumnMapping extends GTKColumnBase
     }
 
 
-    public function getColumnSizeStatementForPDO($pdo)
+    public function getColumnSizeStatementForDriverName($driverName)
     {
-        $columnType = $this->getColumnTypeForPDO($pdo);
+        $columnType = $this->getColumnTypeForDriverName($driverName);
 
         $shouldUseColumnSize = in_array(strtoupper($columnType), ['NVARCHAR', 'VARCHAR', 'CHAR']);
         
@@ -1170,54 +1160,66 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function getCreateSQLForPDO($pdo = null)
     {
-        return $this->getSqlColumnName()." ".$this->getColumnTypeForPDO($pdo).$this->getColumnSizeStatementForPDO($pdo)." ".$this->getPrimaryKeySyntaxForPDO($pdo)." ".$this->autoIncrementSyntaxForPDO($pdo);
+        $driverName = null;
+
+        if ($pdo)
+        {
+            $driverName = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        }
+
+        return $this->getCreateSQLForDriverName($driverName);
     }
 
-    public function getCreateSQL($driverName = null)
+    public function getCreateSQLForDriverName($driverName)
     {
-        $columnName   = $this->getSqlColumnName();
-        $allowNulls   = $this->allowNulls   ?? true;
-        $defaultValue = $this->defaultValue ?? null;
-        $constraint   = null;
+        $columnName = $this->getSqlColumnName();
 
-        // Check if the column should allow nulls
-        $sqlAllowNulls = ($allowNulls) ? "NULL" : "NOT NULL";
-        $sqlColumnType = '';
+        // ." ".$this->getColumnTypeForDriverName($driverName).$this->getColumnSizeStatementForDriverName($driverName)." ".$this->getPrimaryKeySyntaxForDriverName($driverName)." ".$this->autoIncrementSyntaxForDriverName($driverName);
+    
+        $toReturn = $columnName;
 
-        switch ($driverName)
+        $columnType = $this->getColumnTypeForDriverName($driverName);
+
+        if ($columnType != '')
         {
-            case 'sqlite':
-                // Can ignore—SQL does not require types
-                break;
-            case 'sqlsrv':
-            default:
-                if ($this->columnType)
-                {
-                    $sqlColumnType = $this->columnType;
-                }
-                else
-                {
-                    $sqlColumnType = "nvarchar";
-                }
-                // Construct the main ALTER TABLE statement
-                break;
+            $toReturn .= ' '.$columnType;
         }
-        
-        $sql = "{$columnName} {$sqlColumnType} {$sqlAllowNulls}";
 
-        if ($constraint)
+        $columnSizeStatement = $this->getColumnSizeStatementForDriverName($driverName);
+
+        if ($columnSizeStatement != '')
         {
-            // 
+            $toReturn .= ' '.$columnSizeStatement;
         }
 
-        // If there's a default value, append it to the SQL statement
-        if ($defaultValue) {
-            $sql .= " DEFAULT '{$defaultValue}'";
+        $primaryKeySyntax = $this->getPrimaryKeySyntaxForDriverName($driverName);
+
+        if ($primaryKeySyntax != '')
+        {
+            $toReturn .= ' '.$primaryKeySyntax;
         }
 
-        return $sql;
+        $autoIncrementSyntax = $this->autoIncrementSyntaxForDriverName($driverName);
+
+        if ($autoIncrementSyntax != '')
+        {
+            $toReturn .= ' '.$autoIncrementSyntax;
+        }
+
+        $isNullable = $this->isNullable();
+
+        if ($isNullable)
+        {
+            $toReturn .= ' NULL';
+        }
+        else
+        {
+            $toReturn .= ' NOT NULL';
+        }
+
+        return $toReturn;
+    
     }
-
 
     // Mark: - Add
 

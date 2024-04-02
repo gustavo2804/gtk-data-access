@@ -3271,7 +3271,8 @@ class DataAccess /* implements Serializable */
 
     public function updateQueryStringForPHPKeys($item, $options = null)
     {
-        $debug = false;
+        $debug = true;
+
 
         $sql = "UPDATE ".$this->tableName()." SET ";
 
