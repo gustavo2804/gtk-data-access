@@ -20,8 +20,36 @@ To avoid such issues, it's a good practice to ensure that data is consistently t
 
 */
 
+class CustomInputFunctionArgument
+{
+    public $dataAccessor;
+    public $objectID;
+    public $columnMapping;
+    public $options;
+    public $item;
+    public $user;
+
+    public function __construct()
+    {
+    }
+
+    public function getColumnName()
+    {
+        return $this->columnMapping->phpKey;
+    }
+    public function getColumnValue()
+    {
+        return $this->columnMapping->valueFromDatabase($this->item);
+    }
+    public function getOptions()
+    {
+        return $this->options;
+    }
+}
+
 class GTKColumnMapping extends GTKColumnBase
 {
+    
     public $isUpdateKey;
     public $sqlServerKey;
     public $type;
@@ -61,7 +89,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function listDisplay($dataSource, $item, $itemIdentifier, $options = null)
     {
-        $debug = false; 
+        $debug = $this->debug ?? false; 
 
         if ($debug)
         {
@@ -248,6 +276,8 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function getValueFromArray($array, $tableName = null)
     {
+        $debug = $this->debug ?? false;
+
         $toReturn = null;
 
         if ($this->sqlServerKey)
@@ -273,15 +303,25 @@ class GTKColumnMapping extends GTKColumnBase
             return $toReturn;
         }
 
+
+
         if (!$tableName)
         {
             $tableName = $this->dataAccessor->tableName();
         }
 
+
+
         if ($tableName)
         {
             $key = $tableName."_".$this->phpKey;
             $keyExists = array_key_exists($key, $array);
+            
+            if ($debug)
+            {
+                error_log("Getting value from array for ".$this->phpKey." - ".$tableName);
+            }
+            
             if ($keyExists)
             {
                 $toReturn = $array[$key];
@@ -309,7 +349,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function valueFromSqlServerData($data) 
     {
-        $debug = false;
+        $debug = $this->debug ?? false;
 
         $value = null;
         $key   = $this->sqlServerKey;
@@ -347,7 +387,8 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function callCustomInputFunctionForUserItemOptions($user, $item, $options = null)
     {
-        $debug = false;
+        $debug = $this->debug ?? false;
+
         $value = ''; // $this->defaultValue;
 
         if ($item)
@@ -409,6 +450,14 @@ class GTKColumnMapping extends GTKColumnBase
 
             switch ($nParamsForCustomFunction)
             {
+                case 1:
+                    $arg = new CustomInputFunctionArgument();
+                    $arg->columnMapping = $this;
+                    $arg->user          = $user;
+                    $arg->item          = $item;
+                    $arg->options       = $customInputFunctionOptions;
+
+                    return $customInputFunctionObject->$customInputFunction($arg);
                 case 5:
 
                     return $customInputFunctionObject->$customInputFunction(
@@ -455,19 +504,40 @@ class GTKColumnMapping extends GTKColumnBase
             switch ($customInputFunctionScope)
             {
                 case "class":
+                    $reflectionData = new ReflectionMethod($customInputFunctionClass, $customInputFunction);
+
+                    $nParamsForCustomFunction = $reflectionData->getNumberOfParameters();
+            
                     if ($debug)
                     {
-                        error_log("Will call static function on class...`");
+                        error_log("Will call with $nParamsForCustomFunction - parameters");
                     }
-
-                    return $customInputFunctionClass::$customInputFunction(
-                        $user,
-                        $this->dataAccessor,
-                        $options["identifier"],
-                        $this->phpKey,
-                        $value,
-                        $customInputFunctionOptions
-                    );
+        
+                    switch ($nParamsForCustomFunction)
+                    {
+                        case 1:
+                            $arg = new CustomInputFunctionArgument();
+                            $arg->columnMapping = $this;
+                            $arg->user          = $user;
+                            $arg->item          = $item;
+                            $arg->options       = $customInputFunctionOptions;
+        
+                            return $customInputFunctionClass::$customInputFunction($arg);
+                        default:
+                            if ($debug)
+                            {
+                                error_log("Will call static function on class...`");
+                            }
+                        
+                            return $customInputFunctionClass::$customInputFunction(
+                                $user,
+                                $this->dataAccessor,
+                                $options["identifier"],
+                                $this->phpKey,
+                                $value,
+                                $customInputFunctionOptions
+                            );
+                    }
                 case "object":
                 case "instance":
                 case null:
@@ -556,17 +626,23 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function htmlInputForUserItem($user, $item, array $options = null)
     {  
-        $debug = false;
+        $debug = $this->debug ?? false;
         $value = ''; // $this->defaultValue;
 
         if ($debug)
+        {
+            error_log("HTML Input for User Item - ".$this->phpKey);
+
+        }
 
         if ($item)
         {
             if ($debug)
             {
-                error_log("Got item...will getSQLServerData - ".$this->phpKey);
+                error_log("`htmlInputForUserItem` - Got item...will getSQLServerData - ".$this->phpKey." - Item: ".print_r($item, true));
             }
+
+
             $value = $this->valueFromDatabase($item);
         }
 
@@ -574,13 +650,18 @@ class GTKColumnMapping extends GTKColumnBase
 
         if ($options)
         {
+            
+
+
             if (array_key_exists('type', $options))
             {
                 $inputType = $options['type'];
             }
+
             if ($debug)
             {
-                error_log("Options: ".print_r($options, true));
+                error_log("`htmlInputForUserItem` - Options: ".print_r($options, true));
+                error_log("`htmlInputForUserItem` - Got input type: ".$inputType);
             }
         }
 
@@ -592,10 +673,18 @@ class GTKColumnMapping extends GTKColumnBase
         if ((isset($options["identifier"])) && isset($options["dataSourceName"]))
         {
             $inputIdentifier = $options["dataSourceName"].'-'.$options["identifier"].'-'.$this->phpKey;
+            if ($debug)
+            {
+                error_log("`htmlInputForUserItem` - Got identifier: ".$inputIdentifier);
+            }
         }
 
         if ($this->customInputFunction)
         {
+            if ($debug)
+            {
+                error_log("`htmlInputForUserItem` - Custom Input Function: ".$this->customInputFunction);
+            }
             return $this->callCustomInputFunctionForUserItemOptions($user, $item, $options);
         }
         else
@@ -620,7 +709,7 @@ class GTKColumnMapping extends GTKColumnBase
         $phpKey, 
         $value
     ){
-        $debug = false;
+        $debug = $this->debug ?? false;
 
         if ($debug)
         {
@@ -731,7 +820,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     function doesColumnExistSQLite($db, $tableName)
     {
-        $debug = false;
+        $debug = $this->debug ?? false;
 
 
         $sql = "PRAGMA table_info(".$tableName.")";
@@ -834,7 +923,7 @@ class GTKColumnMapping extends GTKColumnBase
     
     public function getColumnTypeForPDO($pdoObject)
     {
-        $debug = false;
+        $debug = $this->debug ?? false;
 
         $driver = $pdoObject->getAttribute(PDO::ATTR_DRIVER_NAME);
 
@@ -1271,13 +1360,13 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function bindValueToStatementForItem($statement, $item)
     {
-        $debug = false;
+        $debug = $this->debug ?? false;
 
         if ($this->isAutoIncrement())
         {
             if ($debug)
             {
-                gtk_log("`assignValueToStatementForColumnMapping`:".$this->phpKey." isAutoIncrement — skipping.");
+                gtk_log("`bindValueToStatementForItem`:".$this->phpKey." isAutoIncrement — skipping.");
             }
             return;
         }
@@ -1286,14 +1375,14 @@ class GTKColumnMapping extends GTKColumnBase
         {
             if ($debug)
             {
-                gtk_log("`assignValueToStatementForColumnMapping`:".$this->phpKey." isPrimaryKey — skipping.");
+                gtk_log("`bindValueToStatementForItem`:".$this->phpKey." isPrimaryKey — skipping.");
             }
             return;
         }
 
         if ($debug)
         {
-            gtk_log("`assignValueToStatementForColumnMapping`:".$this->phpKey." binding value: ".$this->valueFromDatabase($item));
+            gtk_log("`bindValueToStatementForItem`:".$this->phpKey." binding value: ".$this->valueFromDatabase($item));
         }
 
         $statement->bindValue(":".$this->phpKey, $this->valueFromDatabase($item));

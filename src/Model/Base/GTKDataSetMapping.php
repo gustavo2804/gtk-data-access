@@ -349,6 +349,16 @@ class GTKDataSetMapping {
     }
 
     public function columnMappingForPHPKey($phpKey) {
+        $crash = true;
+
+        if ($crash)
+        {
+            if (!isset($this->phpMapping[$phpKey]))
+            {
+                throw new Exception("`columnMappingForPHPKey` - $this->tableName - :::No column mapping for PHP key: " . $phpKey);
+            }
+        }
+
         return $this->phpMapping[$phpKey];
     }
 

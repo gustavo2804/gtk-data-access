@@ -3057,10 +3057,12 @@ class DataAccess /* implements Serializable */
 
     public function updateFromFormForUser(&$formItem, &$user, &$isInvalid, $options = null)
     {
-        $debug = false;
+        $mainDebug = false;
 
         foreach ($this->dataMapping->ordered as $columnMapping)
         {
+            $debug = $mainDebug ?? $columnMapping->debug;
+
             $processFunction = $columnMapping->formEditProcessFunction;
 
             if ($debug)
@@ -3206,9 +3208,9 @@ class DataAccess /* implements Serializable */
 
         if ($debug)
         {
-            gtk_log("Primary key mapping. : ".$primaryKeyMapping->phpKey);
-            gtk_log("Identifer value.     : ".$identifierValue);
-        }
+            gtk_log("`updateWithPHPKeys`: Primary key mapping. : ".$primaryKeyMapping->phpKey);
+            gtk_log("`updateWithPHPKeys`: Identifer value.     : ".$identifierValue);
+        } 
 
         $sql = $this->updateQueryStringForPHPKeys($item, $options);
 
@@ -3226,6 +3228,13 @@ class DataAccess /* implements Serializable */
             {
                 foreach ($this->dataMapping->ordered as $columnMapping)
                 {
+                    $debugLoop = $debug ?? $columnMapping->debug;
+
+                    if ($debugLoop)
+                    {
+                        gtk_log("`updateWithPHPKeys`: Will bind value for column mapping: ".$columnMapping->phpKey);
+                    }
+
                     $columnMapping->bindValueToStatementForItem($stmt, $item);
                 }
             }
@@ -3253,7 +3262,7 @@ class DataAccess /* implements Serializable */
 
         if ($debug)
         {
-            gtk_log("Update result: ".$result);
+            gtk_log("`updateWithPHPKeys` - Update result: ".$result);
         }
 
         return $result;
@@ -3262,7 +3271,7 @@ class DataAccess /* implements Serializable */
 
     public function updateQueryStringForPHPKeys($item, $options = null)
     {
-        $debug = 0;
+        $debug = false;
 
         $sql = "UPDATE ".$this->tableName()." SET ";
 
@@ -3270,6 +3279,11 @@ class DataAccess /* implements Serializable */
 
         if (isset($options["updateAllKeys"]) && $options["updateAllKeys"])
         {
+            if ($debug)
+            {
+                gtk_log("Will update all keys in item: ".print_r($item, true));
+            }
+
             foreach ($this->dataMapping->ordered as $columnMapping)
             {
                 $text = $this->updateColumnTextForColumnMapping($columnMapping, $isFirst);
@@ -3290,8 +3304,19 @@ class DataAccess /* implements Serializable */
         }
         else
         {
+            if ($debug)
+            {
+                gtk_log("Will update only keys in item: ".print_r($item, true));
+            }
+
             foreach ($item as $key => $value)
             {
+
+                if ($debug)
+                {
+                    gtk_log("Looking for column mapping: ".$key." - value: ".$value);
+                }
+
                 $columnMapping = $this->dataMapping->columnMappingForPHPKey($key);
 
                 if ($columnMapping)

@@ -2,6 +2,7 @@
 
 class GTKColumnBase 
 {
+    public $debug;
     public $dataSource;
     public $phpKey;
     public $formLabel;
@@ -135,6 +136,7 @@ class GTKColumnBase
             $this->transformValueOnLists      = arrayValueIfExists('transformValueOnLists',        $options);
             $this->hideOnListsForUserFunction = arrayValueIfExists('hideOnListsForUserFunction',   $options);
             $this->linkTo                     = arrayValueIfExists('linkTo',                       $options);
+            $this->debug                      = arrayValueIfExists('debug',                        $options);
 
 
             $this->_groups = arrayValueIfExists("groups", $options);   
