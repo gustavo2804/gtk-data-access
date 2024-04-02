@@ -1031,31 +1031,6 @@ class GTKColumnMapping extends GTKColumnBase
         throw new Exception("INVALID COLUMN TYPE for $this->phpKey");
     }
 
-    public function isAutoIncrement()
-    {
-        $isAutoIncrement = parent::isAutoIncrement();
-        
-        if ($isAutoIncrement)
-        {
-            return true;
-        }
-
-        if ($this->isPrimaryKey())
-        {
-            switch (strtoupper($this->columnType))
-            {
-                case 'INT':
-                case 'INTEGER':
-                    return true;
-                case 'null': // Code needs to specify the type for primary key to be auto-increment
-                default:
-                    return false;
-            }
-        }
-
-        return $isAutoIncrement;
-    }
-
     public function autoIncrementSyntaxForPDO($pdo)
     {
         if (!$this->isPrimaryKey() && !$this->isAutoIncrement)
@@ -1163,6 +1138,11 @@ class GTKColumnMapping extends GTKColumnBase
                     break;
                 case 'sqlite':
                     $columnDef .= " AUTOINCREMENT";
+
+                    if ($columnType != 'INTEGER')
+                    {
+                        throw new Exception("SQLite does not support auto-increment for non-integer typesL Visit: ".$this->phpKey." for ".get_class($this->dataAccessor));
+                    }
                     break;
             }
         }

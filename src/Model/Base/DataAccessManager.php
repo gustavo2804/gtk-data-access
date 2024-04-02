@@ -340,39 +340,12 @@ class DataAccessManager
 		$envPath = null;
 		global $_GLOBALS;
 
-		if (isset($_SERVER["DOCUMENT_ROOT"]))
+		if (isset($_GLOBALS["ENV_FILE_PATH"]))
 		{
-			$secretEnvDir = dirname($_SERVER["DOCUMENT_ROOT"]);
-			$secretEnvPath = $secretEnvDir."/.secret/env.php";
-
-			if (file_exists($secretEnvPath))
-			{
-				$envPath = $secretEnvPath;
-			}
-		}
-
-		if (isset($_SERVER["GTK_ROOT_DIR"]))
-		{
-			$secretEnvDir = dirname($_SERVER["GTK_ROOT_DIR"]);
-			$secretEnvPath = $secretEnvDir."/.secret/env.php";
-
-			if (file_exists($secretEnvPath))
-			{
-				$envPath = $secretEnvPath;
-			}
+			$envPath = $_GLOBALS["ENV_FILE_PATH"];
 		}
 		
-		if (!$envPath && file_exists($_GLOBALS["SECRET_ENV_PATH"]))
-		{
-			$envPath = $_GLOBALS["SECRET_ENV_PATH"];
-		}
-
-		if (!$envPath && file_exists($_GLOBALS["PRODUCTION_ENV_PATH"]))
-		{
-			$envPath = $_GLOBALS["PRODUCTION_ENV_PATH"];
-		}
-		
-		if (!$envPath)
+		if (!$envPath || !file_exists($envPath))
 		{
 			die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
 		}
@@ -380,8 +353,8 @@ class DataAccessManager
 		if ($debug)
 		{
 			error_log("Reading `env.php` at: $envPath");
-	
 		}
+		
 		require_once($envPath);	
 		
 		if (class_exists('PHPUnit\Framework\TestCase')) 
