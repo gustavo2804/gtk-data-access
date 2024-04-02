@@ -70,7 +70,7 @@ class GTKColumnBase
         return isset($item[$this->phpKey]);
     }
 
-    public function __construct($dataSource, $phpKey, $options = null)
+    public function __construct($dataSource, $phpKey, $options = []])
     {
         $this->dataSource = $dataSource;
         $this->phpKey     = trim($phpKey);
@@ -100,57 +100,44 @@ class GTKColumnBase
 
             $this->formLabel = implode(" ", $new);
         }
-        
-        if ($options)
-        {
-            $this->_isNullable                = $options["isNullable"] ?? true;
 
-            $this->type                       = arrayValueIfExists("type",                         $options);
-            $this->_hideOnLists               = arrayValueIfExists("hideOnLists",                  $options);
-            $this->_hideOnShow                = arrayValueIfExists("hideOnShow",                   $options);
-            $this->_hideOnSearch              = arrayValueIfExists("hideOnSearch",                 $options);
-            $this->_hideOnForms               = arrayValueIfExists("hideOnForms",                  $options);
-            $this->_hideOnInsert              = arrayValueIfExists("hideOnInsert",                 $options);
-            $this->_hideOnUpdate              = arrayValueIfExists("hideOnUpdate",                 $options);
-            $this->type                       = arrayValueIfExists("type",                         $options);
-            $this->process                    = arrayValueIfExists("process",                      $options);
-            $this->assignTo                   = arrayValueIfExists("assignTo",                     $options);
-            $this->required                   = arrayValueIfExists("required",                     $options);
-            $this->display                    = arrayValueIfExists("display",                      $options); 
-            $this->_isPrimaryKey              = arrayValueIfExists("isPrimaryKey",                 $options);
-            $this->_isUnique                  = arrayValueIfExists("isUnique",                     $options);
-            $this->_isAutoIncrement           = arrayValueIfExists("isAutoIncrement",              $options);
-            $this->_isInvalid                 = arrayValueIfExists("isInvalid",                    $options);
-            $this->customInputFunction        = arrayValueIfExists('customInputFunction',          $options);
-            $this->customInputFunctionClass   = arrayValueIfExists('customInputFunctionClass',     $options);
-            $this->customInputFunctionScope   = arrayValueIfExists('customInputFunctionScope',     $options);
-            $this->customInputFunctionObject  = arrayValueIfExists('customInputFunctionObject',    $options);
-            $this->customInputFunctionOptions = arrayValueIfExists('customInputFunctionOptions',   $options);
-            $this->formNewProcessFunction     = arrayValueIfExists('formNewProcessFunction',       $options);
-            $this->formEditProcessFunction    = arrayValueIfExists('formEditProcessFunction',      $options);
-            $this->_processOnInsert           = arrayValueIfExists('processOnInsert',              $options);
-            $this->_processOnAll              = arrayValueIfExists('processOnAll',                 $options);
-            $this->_onlyDisplayOnForms        = arrayValueIfExists('onlyDisplayOnForms',           $options);
-            $this->_removeOnForms             = arrayValueIfExists('removeOnForms',                $options);
-            $this->_possibleValues            = arrayValueIfExists('possibleValues',               $options);
-            $this->_formInputType             = arrayValueIfExists('formInputType',                $options);
-            $this->transformValueOnLists      = arrayValueIfExists('transformValueOnLists',        $options);
-            $this->hideOnListsForUserFunction = arrayValueIfExists('hideOnListsForUserFunction',   $options);
-            $this->linkTo                     = arrayValueIfExists('linkTo',                       $options);
-            $this->debug                      = arrayValueIfExists('debug',                        $options);
-
-
-            $this->_groups = arrayValueIfExists("groups", $options);   
-        }
-
-        if ($options && isset($options["isSearchable"]))
-        {
-            $this->isSearchable = $options["isSearchable"];
-        }
-        else 
-        {
-            $this->isSearchable = true;
-        }
+        $this->_isNullable  = $options["isNullable"] ?? true;
+        $this->isSearchable = $options["isSearchable"] ?? true;
+    
+        $this->type                       = $options["type"]                          ?? false;
+        $this->_hideOnLists               = $options["hideOnLists"]                   ?? false;
+        $this->_hideOnShow                = $options["hideOnShow"]                    ?? false;
+        $this->_hideOnSearch              = $options["hideOnSearch"]                  ?? false;
+        $this->_hideOnForms               = $options["hideOnForms"]                   ?? false;
+        $this->_hideOnInsert              = $options["hideOnInsert"]                  ?? false;
+        $this->_hideOnUpdate              = $options["hideOnUpdate"]                  ?? false;
+        $this->type                       = $options["type"]                          ?? false;
+        $this->process                    = $options["process"]                       ?? false;
+        $this->assignTo                   = $options["assignTo"]                      ?? false;
+        $this->required                   = $options["required"]                      ?? false;
+        $this->display                    = $options["display"]                       ?? false; 
+        $this->_isPrimaryKey              = $options["isPrimaryKey"]                  ?? false;
+        $this->_isUnique                  = $options["isUnique"]                      ?? false;
+        $this->_isAutoIncrement           = $options["isAutoIncrement"]               ?? false;
+        $this->_isInvalid                 = $options["isInvalid"]                     ?? false;
+        $this->customInputFunction        = $options['customInputFunction']           ?? false;
+        $this->customInputFunctionClass   = $options['customInputFunctionClass']      ?? false;
+        $this->customInputFunctionScope   = $options['customInputFunctionScope']      ?? false;
+        $this->customInputFunctionObject  = $options['customInputFunctionObject']     ?? false;
+        $this->customInputFunctionOptions = $options['customInputFunctionOptions']    ?? false;
+        $this->formNewProcessFunction     = $options['formNewProcessFunction']        ?? false;
+        $this->formEditProcessFunction    = $options['formEditProcessFunction']       ?? false;
+        $this->_processOnInsert           = $options['processOnInsert']               ?? false;
+        $this->_processOnAll              = $options['processOnAll']                  ?? false;
+        $this->_onlyDisplayOnForms        = $options['onlyDisplayOnForms']            ?? false;
+        $this->_removeOnForms             = $options['removeOnForms']                 ?? false;
+        $this->_possibleValues            = $options['possibleValues']                ?? false;
+        $this->_formInputType             = $options['formInputType']                 ?? false;
+        $this->transformValueOnLists      = $options['transformValueOnLists']         ?? false;
+        $this->hideOnListsForUserFunction = $options['hideOnListsForUserFunction']    ?? false;
+        $this->linkTo                     = $options['linkTo']                        ?? false;
+        $this->debug                      = $options['debug']                         ?? false;
+        $this->_groups                    = $options['groups']                        ?? false;   
     }
 
     public function isPartOfGroupAndUser($groupName, $user)
