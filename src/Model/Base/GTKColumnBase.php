@@ -103,6 +103,8 @@ class GTKColumnBase
         
         if ($options)
         {
+            $this->_isNullable                = $options["isNullable"] ?? true;
+
             $this->type                       = arrayValueIfExists("type",                         $options);
             $this->_hideOnLists               = arrayValueIfExists("hideOnLists",                  $options);
             $this->_hideOnShow                = arrayValueIfExists("hideOnShow",                   $options);
@@ -114,8 +116,7 @@ class GTKColumnBase
             $this->process                    = arrayValueIfExists("process",                      $options);
             $this->assignTo                   = arrayValueIfExists("assignTo",                     $options);
             $this->required                   = arrayValueIfExists("required",                     $options);
-            $this->display                    = arrayValueIfExists("display",                      $options);
-            $this->_isNullable                = arrayValueIfExists("isNullable",                   $options);
+            $this->display                    = arrayValueIfExists("display",                      $options); 
             $this->_isPrimaryKey              = arrayValueIfExists("isPrimaryKey",                 $options);
             $this->_isUnique                  = arrayValueIfExists("isUnique",                     $options);
             $this->_isAutoIncrement           = arrayValueIfExists("isAutoIncrement",              $options);
