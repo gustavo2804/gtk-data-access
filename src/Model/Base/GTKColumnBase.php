@@ -70,7 +70,7 @@ class GTKColumnBase
         return isset($item[$this->phpKey]);
     }
 
-    public function __construct($dataSource, $phpKey, $options = []])
+    public function __construct($dataSource, $phpKey, $options = [])
     {
         $this->dataSource = $dataSource;
         $this->phpKey     = trim($phpKey);
