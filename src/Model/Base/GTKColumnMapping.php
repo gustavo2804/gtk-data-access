@@ -650,9 +650,6 @@ class GTKColumnMapping extends GTKColumnBase
 
         if ($options)
         {
-            
-
-
             if (array_key_exists('type', $options))
             {
                 $inputType = $options['type'];
@@ -1069,77 +1066,6 @@ class GTKColumnMapping extends GTKColumnBase
             return '';
         }
     }
-
-
-
-    public function getColumnDef($pdoObject)
-    {
-        $columnDef = "";
-
-        $columnName = $this->getSqlColumnName();
-        $columnType = $this->columnType   ?? 'nvarchar';
-        $columnSize = $this->columnSize   ?? 255;
-        $columnDef  = "";
-
-        $driver = $pdoObject->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-        switch ($driver) 
-        {
-            case 'mysql':
-                $columnDef .= "`$columnName` $columnType";
-                if ($columnSize) {
-                    $columnDef .= "($columnSize)";
-                }
-                break;
-            case 'pgsql':
-            case 'sqlite':
-                $columnDef .= "$columnName $columnType";
-                if ($columnSize) {
-                    $columnDef .= "($columnSize)";
-                }
-                break;
-            case 'sqlsrv':
-                $columnDef .= "[$columnName] $columnType";
-                if ($columnSize) {
-                    $columnDef .= "($columnSize)";
-                }
-                break;
-            default:
-                throw new Exception("Driver not supported");
-        }
-    
-        if ($this->isPrimaryKey())
-        {
-            $columnDef .= " PRIMARY KEY";
-        } 
-
-        if ($this->isAutoIncrement)
-        {
-            switch ($driver)
-            {
-                case 'mysql':
-                    $columnDef .= " AUTO_INCREMENT";
-                    break;
-                case 'pgsql':
-                    $columnDef = str_replace("$columnType", "SERIAL", $columnDef);
-                    break;
-                case 'sqlsrv':
-                    $columnDef .= " IDENTITY(1,1)";
-                    break;
-                case 'sqlite':
-                    $columnDef .= " AUTOINCREMENT";
-
-                    if ($columnType != 'INTEGER')
-                    {
-                        throw new Exception("SQLite does not support auto-increment for non-integer typesL Visit: ".$this->phpKey." for ".get_class($this->dataAccessor));
-                    }
-                    break;
-            }
-        }
-    
-        return $columnDef;
-    }
-
 
     public function getColumnSizeStatementForDriverName($driverName)
     {
