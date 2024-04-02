@@ -219,20 +219,17 @@ class GTKColumnMapping extends GTKColumnBase
     ){
         parent::__construct($dataSource, $phpKey, $options);
         
-        if ($options)
-        {
-            $this->sqlServerKey        = arrayValueIfExists('dbKey',            $options);
-            $this->type                = arrayValueIfExists('type',             $options);
-            $this->formInputType       = arrayValueIfExists('formInputType',    $options);
-            $this->linkTo              = arrayValueIfExists('linkTo',           $options);
-            $this->nonPrimaryLookup    = arrayValueIfExists('nonPrimaryLookup', $options);
-            
-            $this->columnType          = arrayValueIfExists('columnType',       $options);   
-            $this->columnSize          = arrayValueIfExists('columnSize',       $options);   
-            $this->allowNulls          = arrayValueIfExists('allowNulls',       $options);   
-            $this->defaultValue        = arrayValueIfExists('defaultValue',     $options); 
-            $this->isAutoIncrement     = arrayValueIfExists('isAutoIncrement',  $options); 
-        }
+        $this->sqlServerKey        = $options['dbKey']            ?? null;
+        $this->type                = $options['type']             ?? null;
+        $this->formInputType       = $options['formInputType']    ?? null;
+        $this->linkTo              = $options['linkTo']           ?? null;
+        $this->nonPrimaryLookup    = $options['nonPrimaryLookup'] ?? null;
+        
+        $this->columnType          = $options['columnType']       ?? null;   
+        $this->columnSize          = $options['columnSize']       ?? null;   
+        $this->allowNulls          = $options['allowNulls']       ?? null;   
+        $this->defaultValue        = $options['defaultValue']     ?? null; 
+        $this->isAutoIncrement     = $options['isAutoIncrement']  ?? null; 
     }
 
     ////////////////////////////////////////////////////////////////////
