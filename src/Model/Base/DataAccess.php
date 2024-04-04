@@ -221,6 +221,49 @@ class DataAccess /* implements Serializable */
         return $instance;
     }
 
+    function getUserIPAndAllowLocal($allowLocal = false) {
+		$ipKeys = [
+			'HTTP_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'REMOTE_ADDR'
+		];
+
+        if (isset($_SERVER))
+        {
+
+	    	foreach ($ipKeys as $key) {
+	    		if (array_key_exists($key, $_SERVER) === true) {
+	    			foreach (explode(',', $_SERVER[$key]) as $ip) {
+	    				$ip = trim($ip); // just to be safe
+                    
+	    				if ($allowLocal) {
+	    					// If allowing local, just check for valid IP
+	    					if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+	    						return $ip;
+	    					}
+	    				} else {
+	    					// If not allowing local, exclude private and reserved ranges
+	    					if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+	    						return $ip;
+	    					}
+	    				}
+	    			}
+	    		}
+	    	}
+	    	return 'UNKNOWN';
+            
+        }
+        else
+        {
+            return "N/A - Not on server";
+        
+        }
+	}
+
     public function createOrAnnounceTable()
     {
         $debug = false;
@@ -3503,6 +3546,10 @@ class DataAccess /* implements Serializable */
         $fileKeyOptions)
     {
         $debug = false;
+
+
+        
+
 
         if ($debug)
         {
