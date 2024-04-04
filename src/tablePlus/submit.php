@@ -15,7 +15,7 @@ class TablePlusResultsFromSubmitPage extends TablePlusPage
     public $columns = [];
     public $dataAccessor;
 
-    public function render()
+    public function render($get, $post, $server, $cookie, $session, $files, $env)
     {
         if ($_SERVER['REQUEST_METHOD'] != 'POST') 
         {

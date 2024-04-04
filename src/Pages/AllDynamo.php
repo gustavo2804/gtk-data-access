@@ -21,7 +21,7 @@ class GTKAllDynamo extends AllDataSourceRenderer
         parent::processGet();
     }
 
-    public function render()
+    public function render($get, $post, $server, $cookie, $session, $files, $env)
     {
         ob_start();
 

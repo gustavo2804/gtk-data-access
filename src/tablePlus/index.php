@@ -29,7 +29,7 @@ class TablePlusIndex extends TablePlusPage
         });
     }
 
-    public function render()
+    public function render($get, $post, $server, $cookie, $session, $files, $env)
     {
         ob_start(); ?>
         <html>

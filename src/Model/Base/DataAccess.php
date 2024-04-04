@@ -255,7 +255,7 @@ class DataAccess /* implements Serializable */
 	    		}
 	    	}
 	    	return 'UNKNOWN';
-            
+
         }
         else
         {
@@ -3240,6 +3240,16 @@ class DataAccess /* implements Serializable */
     public function update(&$item, $options = null)
     {
         return $this->updateWithPHPKeys($item, $options);
+    }
+
+    public function updateOrError($item, &$outError = null)
+    {
+        return $this->updateWithPHPKeys($item, null, $outError);
+    }
+
+    public function updateWithOptionsOrError($item, $options, &$outError = null)
+    {
+        return $this->updateWithPHPKeys($item, $options, $outError);
     }
     
     public function updateWithPHPKeys(&$item, $options = null, &$outError = null)

@@ -52,7 +52,7 @@ class CreateUserForWeb
 		$this->message .= $e->getMessage();
 		error_log("Finished inside anonymous - exceptionCreatingUser");
 	}
-	public function render()
+	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		error_log("Inside anonymous render");
 		return $this->message;

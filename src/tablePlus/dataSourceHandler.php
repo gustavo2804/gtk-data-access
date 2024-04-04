@@ -26,7 +26,7 @@ class TablePlusDataSourceHandlerPageSection extends TablePlusPage
         $searchableColumns = $dataSource->getSearchableColumns();
     }
 
-    public function render()
+    public function render($get, $post, $server, $cookie, $session, $files, $env)
     {
         if ($debug)
         {

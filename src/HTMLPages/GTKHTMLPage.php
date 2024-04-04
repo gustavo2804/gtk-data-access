@@ -141,7 +141,7 @@ class GTKHTMLPage
 		return true;
 	}
 
-	public function render()
+	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$debug = false;
 
@@ -197,7 +197,7 @@ class GTKHTMLPage
 			}
 		}
 
-		switch ($_SERVER["REQUEST_METHOD"])
+		switch ($server["REQUEST_METHOD"])
 		{
 			case "GET":
 				$this->processGet($_GET);

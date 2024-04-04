@@ -3,7 +3,7 @@
 // class GTKPHPInfoDataAccess implements DataAccessInterface
 class GTKPHPInfoDataAccess
 {
-    public function render()
+    public function render($get, $post, $server, $cookie, $session, $files, $env)
     {
         return phpinfo();
     }
