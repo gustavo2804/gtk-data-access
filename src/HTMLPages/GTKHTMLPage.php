@@ -56,12 +56,19 @@ class GTKHTMLPage
 	}
 
 
-	public function renderBody()
+	public function gtk_renderBody($get, $post, $server, $cookie, $session, $files, $env)
 	{
-		return $this->renderMessages();
+		$toReturn = $this->renderMessages($get, $post, $server, $cookie, $session, $files, $env);
+
+		if (method_exists($this, "renderBody"))
+		{
+			$toReturn .= $this->renderBody($get, $post, $server, $cookie, $session, $files, $env);
+		}
+		
+		return $toReturn;
 	}
 	
-	public function renderMessages()
+	public function renderMessages($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$toReturn = "";
 
@@ -98,7 +105,7 @@ class GTKHTMLPage
 	//---------------------------------------------------------
 	//---------------------------------------------------------
 	
-	public function renderHeader()
+	public function gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$headerPath = $this->headerPath;
 
@@ -111,7 +118,7 @@ class GTKHTMLPage
 		require_once($headerPath);
 	}
 
-	public function renderFooter()
+	public function gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$footerPath = $this->footerPath;
 
@@ -200,23 +207,23 @@ class GTKHTMLPage
 		switch ($server["REQUEST_METHOD"])
 		{
 			case "GET":
-				$this->processGet($_GET);
+				$this->processGet($get);
 				break;
 			case "POST":
-				$this->processPost($_POST);
+				$this->processPost($post);
 				break;
 			case "PATCH":
-				$this->processPatch($_POST);
+				$this->processPatch($post);
 				break;
 			case "PUT":
-				$this->processPut($_POST);
+				$this->processPut($post);
 				break;
 		}
 
 		$text = "";
-		$text .= $this->renderHeader();
-		$text .= $this->renderBody();
-		$text .= $this->renderFooter();
+		$text .= $this->gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env);
+		$text .= $this->gtk_renderBody($get, $post, $server, $cookie, $session, $files, $env);
+		$text .= $this->gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env);
 		return $text;
 	}
 
