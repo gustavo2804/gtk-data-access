@@ -756,7 +756,7 @@ class FlatRoleDataAccess extends DataAccess
         }
         else
         {
-            throw new Exception("Invalid argument for `roleRelationsForUser:user`: ".$user);
+            return [];
         }
 
 
