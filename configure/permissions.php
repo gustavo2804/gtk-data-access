@@ -7,6 +7,8 @@ if (!isset($_GTK_DATA_ACCESS)) {
 }
 
 $_GTK_DATA_ACCESS["PERMISSIONS"] = [
+    "persona.createAndDisplayNewPassword",
+    //
     "reset_password",
     "solicitud_usuario.approve",
     "solicitud_usuario.deny",

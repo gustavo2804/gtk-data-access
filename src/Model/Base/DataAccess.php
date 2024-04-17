@@ -3334,7 +3334,7 @@ class DataAccess /* implements Serializable */
 
     public function updateQueryStringForPHPKeys($item, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
 
         $sql = "UPDATE ".$this->tableName()." SET ";
@@ -4096,7 +4096,7 @@ class DataAccess /* implements Serializable */
 
     public function userHasPermissionTo($maybePermission, $user, $item = null, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         $permissionName = $this->dataAccessorName.".".$maybePermission;
 

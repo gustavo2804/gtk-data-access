@@ -335,6 +335,15 @@ class PersonaDataAccess extends DataAccess
 		///
 		///
 		///
+
+		$createAndDisplayNewPassword = new GTKAction($this, "persona.createAndDisplayNewPassword", "actionCreateAndDisplayNewPassword", [ 
+            "label"         => "Crearle nueva contraseña",
+            "canEchoResult" => true,
+        ]);
+
+		$this->addAction($createAndDisplayNewPassword);
+
+
 		
 		$resetPasswordAction = new DataAccessAction($this, "resetPassword", "Send Reset Password Link");
 		$resetPasswordAction->allowedFor = [
@@ -443,6 +452,58 @@ class PersonaDataAccess extends DataAccess
 		$activateDeactivateUser->doFunctionForUserItemDelegateOptions = "toggleUserActiveByUserAndUserItemDelegateOptions";
 
 		$this->addAction($activateDeactivateUser);
+	}
+
+	function generateReadableRandomString($length = 10) {
+		$vowels = 'aeiou';
+		$consonants = 'bcdfghjklmnpqrstvwxyz';
+		$symbols = '!@#$%^&*()';
+		$allChars = $vowels . $consonants . $symbols . strtoupper($vowels) . strtoupper($consonants);
+		$charactersLength = strlen($allChars);
+		$randomString = '';
+		$isVowel = rand(0, 1); // Randomly start with a vowel or a consonant
+	
+		for ($i = 0; $i < $length; $i++) {
+			if ($i % 2 == $isVowel) {
+				// Choose a vowel
+				$randomString .= $vowels[rand(0, strlen($vowels) - 1)];
+			} else {
+				// Choose a consonant or symbol
+				if (rand(0, 10) > 8) { // 20% chance to pick a symbol
+					$randomString .= $symbols[rand(0, strlen($symbols) - 1)];
+				} else { // 80% chance to pick a consonant
+					$randomString .= $consonants[rand(0, strlen($consonants) - 1)];
+				}
+			}
+		}
+		return $randomString;
+	}
+	
+
+	public function actionCreateAndDisplayNewPassword($user, $userToUpdate)
+	{
+		$debug = false;
+
+		$newPassword = $this->generateReadableRandomString(12);
+
+		if ($debug)
+		{
+			error_log("New password: ".$newPassword);
+		}
+
+		$this->updatePasswordHashForPersona($userToUpdate, $newPassword);
+
+		$toPublish = "Nueva contraseña: ".$newPassword;
+		$toPublish .= "<br/>";
+
+		$toPublish .= "Apuntar! Esto solo se va a mostrar una vez."."<br/>";
+
+
+		$toPublish .=  AllLinkTo("persona", ["label" => "Volver a lista", ]);
+		$toPublish .= "<br/>";
+		$toPublish .= '<a href="/">Ir a inicio</a>';
+
+		die($toPublish);
 	}
 
 	public function toggleUserActiveByUserAndUserItemDelegateOptions($user, $item, $delegate, $options)
