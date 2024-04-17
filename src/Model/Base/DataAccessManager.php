@@ -482,6 +482,8 @@ class DataAccessManager
 			$instance = null;
 
 			$initFromDataAccessManager = "initFromDataAccessManager";
+
+			$config["dataAccessorName"] = $name;
 			
 			if (method_exists($className, $initFromDataAccessManager))
 			{

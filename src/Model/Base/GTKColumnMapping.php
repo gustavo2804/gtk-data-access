@@ -87,7 +87,7 @@ class GTKColumnMapping extends GTKColumnBase
         return true;
     }
 
-    public function listDisplay($dataSource, $item, $itemIdentifier, $options = null)
+    public function listDisplayForDataSourceUserItem($dataSource, $user, $item, $itemIdentifier, $options = null)
     {
         $debug = $this->debug ?? false; 
 
@@ -115,9 +115,31 @@ class GTKColumnMapping extends GTKColumnBase
 
         if ($this->isPrimaryKey())
         {
-            return '<td>'.$dataSource->editLinkForItem($item, [
-                'label' => $value,
-            ]).'</td>';
+            $updatePermission = $dataSource->userHasPermissionTo("update", $user, $item);
+
+            if ($debug)
+            {
+                error_log("Is Primary Key - ".$this->phpKey." - Has update permission? ".$updatePermission);
+            }
+
+            if ($updatePermission)
+            {
+                return '<td>'.$dataSource->editLinkForItem($item, [
+                    'label' => $value,
+                ]).'</td>';
+            }
+
+
+            $readPermission = $dataSource->userHasPermissionTo("show", $user, $item);
+
+            if ($readPermission)
+            {
+                return '<td>'.$dataSource->showLinkForItem($item, [
+                    'label' => $value,
+                ]).'</td>';
+            }
+            
+            return '<td>'.$value.'</td>';
         }      
         
         $htmlForValue = "";

@@ -337,7 +337,7 @@ class DataAccess /* implements Serializable */
 
 		$this->db = $p_db;
 
-        $this->dataAccessorName = get_class($this);
+        $this->dataAccessorName = $options["dataAccessorName"] ?? get_class($this);
         
         if($debug)
         {
@@ -567,16 +567,21 @@ class DataAccess /* implements Serializable */
 
         $toReturn = "";
 
-        if ($this->userHasPermissionTo("edit", $user))
+        if ($this->userHasPermissionTo("edit", $user, $item))
         {
-            $toReturn .= $this->linkForKeyItemOptions("edit", $item);
+            $toReturn .= $this->linkForKeyItemOptions("edit", $item, [
+                "label" => "Editar"
+            ]);
             $toReturn .= "<br/>";
         }
 
         
-        if ($this->userHasPermissionTo("show", $user))
+        if ($this->userHasPermissionTo("show", $user, $item))
         {
-            $toReturn .= $this->linkForKeyItemOptions("show", $item);
+            $toReturn .= $this->linkForKeyItemOptions("show", $item, [
+                "label" => "Ver"
+            
+            ]);
             $toReturn .= "<br/>";
         }
 
@@ -621,7 +626,7 @@ class DataAccess /* implements Serializable */
     
         foreach ($columnsToDisplay as $columnMapping) 
         {
-            $toReturn .= $columnMapping->listDisplay($this, $item, $primaryKeyValue);
+            $toReturn .= $columnMapping->listDisplayForDataSourceUserItem($this, $user, $item, $primaryKeyValue);
         }
 
         if ($debug)
@@ -4089,8 +4094,20 @@ class DataAccess /* implements Serializable */
         return [];
     }
 
-    public function userHasPermissionTo($maybePermission, $user, $options = null)
+    public function userHasPermissionTo($maybePermission, $user, $item = null, $options = null)
     {
+        $debug = true;
+
+        $permissionName = $this->dataAccessorName.".".$maybePermission;
+
+        if ($debug)
+        {
+            error_log("`userHasPermissionTo` on ".get_class($this)." - ".$permissionName);
+        }
+        
+        return DataAccessManager::get("persona")->hasPermission($permissionName, $user, $item, $options);
+        /*
+
         $debug = false;
 
         if ($debug)
@@ -4199,6 +4216,7 @@ class DataAccess /* implements Serializable */
 		}
 		
         return $isAllowed;
+        */
     }
 
     public function renderObjectForRoute($routeAsString, $user)
