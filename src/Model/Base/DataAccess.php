@@ -632,23 +632,8 @@ class DataAccess /* implements Serializable */
         return $toReturn;
     }
 
-    public function linkForKeyItemOptions($key, $item, $options = null)
+    public function urlForKeyItemOptions($key, $item, $options = null)
     {
-        $debug = false;
-
-        /*
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $uriWithoutQueryString = parse_url($requestUri, PHP_URL_PATH);
-    
-        $uriKey = $key; 
-
-        if (stringEndsWith(".php", $uriWithoutQueryString))
-        {
-            $uriKey = $key.".php";
-        }
-        $toHref = $uriWithoutQueryString."/".$uriKey;
-        */
-
         $primaryKeyMapping = $this->primaryKeyMapping();
         $primaryKeyValue   = $primaryKeyMapping->valueFromDatabase($item);
 
@@ -658,22 +643,42 @@ class DataAccess /* implements Serializable */
         $queryParameters["data_source"] = get_class($this);
         $queryParameters["data_source"] = $this->dataAccessorName;
 
+        $toReturn  = "";
+        $toReturn .= $key."?".http_build_query($queryParameters);
+
+        return $toReturn;
+    }
+
+    public function linkForKeyItemOptions($key, $item, $options = null)
+    {
+        $debug = false;
+
+
         $label = ucfirst($key);
 
-        if (isset($options["label"]))
-        {
-            $label = $options["label"];
-        }
+        $label = $options["label"] ?? "Item";
 
         $toReturn  = "";
         $toReturn .= '<a ';
-        $toReturn .= ' href="'.$key.'?'.http_build_query($queryParameters).'"';
+        $toReturn .= ' href="'.$this->urlForKeyItemOptions($key, $item, $options).'"';
         $toReturn .= '>';
         $toReturn .= $label;
         $toReturn .= '</a>';
 
         return $toReturn;
     }
+
+    public function showURLForItem($item, $options = null)
+    {
+        return $this->urlForKeyItemOptions("show", $item, $options);
+    }
+
+    public function editURLForItem($item, $options = null)
+    {
+        return $this->urlForKeyItemOptions("edit", $item, $options);
+    }
+
+    //-----------
 
     public function showLinkForItem($item, $options = null)
     {

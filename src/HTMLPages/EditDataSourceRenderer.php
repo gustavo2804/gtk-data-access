@@ -1,5 +1,6 @@
 <?php
 
+
 class EditDataSourceRenderer extends ShowDataSourceRenderer
 {
     public $isNew;
@@ -76,7 +77,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 
 					if (method_exists($this->dataSource, "didCreateNewOnFormWith"))
 					{
-						$this->dataSource->didCreateNewOnFormWith($_POST, $this->item, $user);
+						$this->dataSource->didCreateNewOnFormWith($postObject, $this->item, $user);
 					}
 
 				}
@@ -102,56 +103,84 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 				$this->itemIdentifier = $_GET[$this->primaryKeyMapping()->phpKey];
 				$this->item = $this->dataSource->getOne($this->primaryKeyMapping()->phpKey, $this->itemIdentifier);
 				
-				if (method_exists($this->dataSource, "didUpdateOnFormWith"))
-				{
-					$this->dataSource->didUpdateOnFormWith($_POST, $this->item, $user);
-				}
+
 			}
 
 			if ($didSucceed)
 			{
-				
-				$redirectTo = AllURLTo($this->dataSource);
-				$EOL = "<br/>";
-
-				if ($debug)
+				if (method_exists($this->dataSource, "didUpdateOnFormWith"))
 				{
-					error_log("Will redirect to: ".$redirectTo);
+					$this->dataSource->didUpdateOnFormWith($postObject, $this->item, $user);
 				}
 
-				header("Refresh:3; url=".$redirectTo);
-
-				$redirectText = "";
+				$methodToCheckFor = "renderEditSuccess";
 
 				if ($this->isNew)
 				{
-					$redirectText .= "Ha actualizado el registro existosamente.".$EOL.$EOL;
+					$methodToCheckFor = "renderNewSuccess";
+				}
 
-					if (DataAccessManager::get("persona")->getCurrentUser())
-					{
-						$redirectText .= "En breve lo volvemos a la lista".$EOL;
-						$redirectText .= "<a href='".$redirectTo."'>Ir a lista</a>".$EOL.$EOL;
-					}
-					else
-					{
-						$redirectTo .= "/";
-					}
-
-
-					$redirectText .= "<a href='/'>Ir a inicio</a>".$EOL;
+				if (method_exists($this->dataSource, $methodToCheckFor))
+				{
+					$this->dataSource->$methodToCheckFor($this);
 				}
 				else
 				{
-					$redirectText .= "Ha actualizado el registro existosamente.".$EOL.$EOL;
-					$redirectText .= "En breve lo volvemos a la lista".$EOL;
-					$redirectText .= "<a href='".$redirectTo."'>Ir a lista</a>".$EOL.$EOL;
-					$redirectText .= "<br/>";
-					$redirectText .= "<a href='/'>Ir a inicio</a>".$EOL;
+					$redirectTo = null;
+					
+					
+					$linkToAll = AllURLTo($this->dataSource);
 
+					$linkToItem = $this->dataSource->editURLForItem($this->item);
+
+					$EOL = "<br/>";
+					$redirectText = "";
+
+					if ($this->isNew)
+					{
+						$redirectText .= "Ha creado un registro nuevo exitosamente.".$EOL.$EOL;
+					}
+					else
+					{
+						$redirectText .= "Ha actualizado el registro existosamente.".$EOL.$EOL;
+					}
+					
+					if (DataAccessManager::get("persona")->getCurrentUser())
+					{
+						if (false)
+						{
+							$redirectText .= "En breve lo volvemos a la lista".$EOL;
+							$redirectTo = $linkToAll;
+						}
+						else
+						{
+							$redirectTo = $linkToItem;		
+							$redirectText .= "Lo vamos a redigir al registo automaticamente.".$EOL;
+						}
+					}
+					else
+					{
+						$redirectTo = "/";
+						$redirectText .= "Lo vamos a redirigir a inicio automaticamente".$EOL;
+					}
+
+					
+					$redirectText .= "<a href='".$redirectTo."'>Ir a registro</a>".$EOL.$EOL;
+
+					$redirectText .= "<a href='".$linkToAll."'>Ir a lista</a>".$EOL.$EOL;
+
+					$redirectText .= "<a href='".$redirectTo."'>Ir a inicio</a>".$EOL.$EOL;
+			
+
+					if ($debug)
+					{
+						error_log("Will redirect to: ".$redirectTo);
+					}
+
+					header("Refresh:3; url=".$redirectTo);
+					echo $redirectText;
+					die();
 				}
-
-				echo $redirectText;
-				die();
 			}
 
 			
@@ -295,6 +324,16 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
         	<div class="button-group">
         	</div>
         </form>
+
+	
+		<?php 
+	
+		if (!$this->isNew)
+		{
+			echo $this->dataSource->displayActionsForUserItem($user, $this->item);
+		}
+		
+		?>
 
         <?php return ob_get_clean();
     }
