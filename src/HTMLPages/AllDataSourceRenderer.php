@@ -239,7 +239,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			Count: <?php echo $this->count(); ?>
 	    </h3>
 
-		<form action="search" method="get">
+		<form action="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>" method="get">
 			<input type="text" name="search" id="search" value="<?php echo isset($_GET['search']) ? $_GET['search'] : ''; ?>">
 			<button type="submit">Search</button>
 			<select name="columnToSearch" id="columnToSearch_select">
