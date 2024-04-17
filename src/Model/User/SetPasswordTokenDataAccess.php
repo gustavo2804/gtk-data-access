@@ -160,7 +160,7 @@ class SetPasswordTokenDataAccess extends DataAccess
 
         try
         {
-            $this->getPDO()->beginTransaction();
+            $this->beginTransaction();
 
             DataAccessManager::get('persona')->updatePasswordHashForPersona($persona, $newPassword);
             $this->invalidateToken($fullToken);
@@ -171,7 +171,7 @@ class SetPasswordTokenDataAccess extends DataAccess
                 error_log("Will commit transaction!");
             }
     
-            $this->getPDO()->commit();
+            $this->commit();
 
             if ($debug)
             {
@@ -182,7 +182,7 @@ class SetPasswordTokenDataAccess extends DataAccess
         }
         catch (Exception $e)
         {
-            $this->getPDO()->rollBack();
+            $this->rollback();
             error_log("Exception: ".$e->getMessage());
             return null;
         }

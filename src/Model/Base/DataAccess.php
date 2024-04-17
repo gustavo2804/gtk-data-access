@@ -1563,9 +1563,33 @@ class DataAccess /* implements Serializable */
         $this->transferRecords($newTableName, $whereConditions);
     }
 
-    public function beginTransaction()
+    public function beginTransaction($timeout = 5000)
     {
+        $dbDriver = $this->getDB()->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        switch ($dbDriver)
+        {
+            case 'mysql':
+                $this->getDB()->exec("SET SESSION wait_timeout = $timeout");
+                break;
+            case 'sqlite':
+                $this->getDB()->exec("PRAGMA busy_timeout = $timeout");
+                break;
+            default:
+                break;
+        }
+        
         $this->getDB()->beginTransaction();
+
+
+        switch ($dbDriver)
+        {
+            case 'sqlite':
+                $this->getDB()->exec("PRAGMA read_uncommitted = true");
+                break;
+            default:
+                break;
+        }
     }
 
     public function commit()
