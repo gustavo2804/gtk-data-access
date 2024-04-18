@@ -76,7 +76,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function queryObject()
 	{
-		$debug = false;
+		$debug = true;
 
 		if ($debug)
 		{
@@ -98,11 +98,36 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			$options['offset'] = $this->offset;
 		}	
 
-		return $this->dataSource->selectQueryObjectFromOffsetForUser(
+		$queryObject = $this->dataSource->selectQueryObjectFromOffsetForUser(
 			$this->user,
 			$this->offset, 
 			$this->itemsPerPage, 
 			$this->queryOptions);
+
+		$sqlQueryParamsSource = $this->get;
+
+		if (isset($sqlQueryParamsSource["search"]) && isset($sqlQueryParamsSource["columnToSearch"]))
+		{
+			$search 		= $sqlQueryParamsSource["search"];
+			$columnToSearch = $sqlQueryParamsSource["columnToSearch"];
+
+			if ($debug)
+			{
+				gtk_log("`queryObject` - Search parameters: $columnToSearch :: $search");
+			}
+
+			$queryObject->where($columnToSearch, "LIKE", "%$search%");
+		}
+		else
+		{
+			if ($debug)
+			{
+				gtk_log("`queryObject` - No search parameters. Post is: ".print_r($this->post, true));
+			}
+		}
+
+
+		return $queryObject;
 	}
 	
 	
@@ -150,7 +175,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 				if ($debug)
 				{
-					error_log("Not hiding column {$columnMapping->phpKey}");
+					gtk_log("Not hiding column {$columnMapping->phpKey}");
 				}
 
 				$this->columnsToDisplay[] = $columnMapping;
@@ -178,6 +203,8 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function pageSection()
 	{
+		$debug = false;
+
 		$toReturn = "";
 
 	    $totalPages = ceil($this->count() / $this->itemsPerPage);
@@ -186,7 +213,12 @@ class AllDataSourceRenderer extends GTKHTMLPage
     
 	    unset($query_parameters_for_page_link['page']);
     
-	    $baseURL = $_SERVER['PHP_SELF'];
+	    $baseURL = $_SERVER['REQUEST_URI'];
+
+		if ($debug)
+		{
+			gtk_log("`pageSection` - Base URL: $baseURL");
+		}
     
 	    if (strpos($baseURL, "/all/") === 0)
 	    {

@@ -2276,7 +2276,7 @@ class DataAccess /* implements Serializable */
         $limit,
         $options = []
     ){
-        $debug = false;
+        $debug = true;
 
         /*
         if (isset($options["offset"]))

@@ -2,6 +2,16 @@
 
 class GTKHTMLPage
 {
+	public $get; 
+	public $post; 
+	public $server;
+	public $cookie;
+	public $phpSession;
+	public $files;
+	public $env;
+	
+
+	//----------------------------------------------------------
 	public $messages        = [];
 	public $user;
 	public $session;
@@ -151,6 +161,15 @@ class GTKHTMLPage
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$debug = false;
+
+		$this->get 		  = $get;
+		$this->post 	  = $post;
+		$this->server 	  = $server;
+		$this->cookie 	  = $cookie;
+		$this->phpSession = $session;
+		$this->files      = $files;
+		$this->env 		  = $env;
+
 
 		$maybeCurrentUser    = DataAccessManager::get("session")->getCurrentUser();
 		$maybeCurrentSession = DataAccessManager::get("session")->getCurrentApacheSession([
