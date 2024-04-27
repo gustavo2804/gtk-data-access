@@ -323,12 +323,15 @@ class SelectQuery
         return $this->count();
     }
 
-    public function count()
+    public function count($debug = false)
     {
-        $debug = false;
         $this->isCountQuery = true;
         $params = [];
         $pdoStatement = $this->getPDOStatement($params);
+        if ($debug)
+        {
+            error_log("COUNT Query: ".$pdoStatement->queryString);
+        }
         $pdoStatement->execute($params);
         $result = $pdoStatement->fetch(PDO::FETCH_ASSOC);
         if ($debug)
