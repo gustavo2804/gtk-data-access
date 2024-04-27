@@ -412,7 +412,7 @@ class EmailQueueManager extends DataAccess
 
             $infoString .= $toAppend;
 
-            $mailer->isHTML(false);
+            $mailer->isHTML(true);
             $mailer->clearAddresses();
             $mailer->clearCCs();
             $mailer->clearBCCs();
