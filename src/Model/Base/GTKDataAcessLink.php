@@ -139,7 +139,7 @@ class GTKDataAccessLink
 
 	public function isInvalidForUserOnItem(&$user, &$item, &$delegate = null, &$options = null)
     {
-		$debug = true;
+		$debug = false;
 
 		$hasPermission = DataAccessManager::get('persona')->hasPermission($this->permission, $user);
     

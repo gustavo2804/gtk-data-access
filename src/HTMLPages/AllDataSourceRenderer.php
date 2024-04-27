@@ -76,7 +76,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function queryObject()
 	{
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{

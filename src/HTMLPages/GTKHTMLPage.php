@@ -163,7 +163,7 @@ class GTKHTMLPage
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
-		$debug = true;
+		$debug = false;
 
 		$this->get 		  = $get;
 		$this->post 	  = $post;

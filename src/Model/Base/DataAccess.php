@@ -942,7 +942,7 @@ class DataAccess /* implements Serializable */
 
     public function actionsForLocationUserItem($location, $user, $item) 
     { 
-        $debug = true;
+        $debug = false;
 
         $actionsForLocation = [];
 
@@ -2277,7 +2277,7 @@ class DataAccess /* implements Serializable */
         $limit,
         $options = []
     ){
-        $debug = true;
+        $debug = false;
 
         /*
         if (isset($options["offset"]))
