@@ -139,6 +139,7 @@ class QueryExceptionManager
             }
 
         }
+
         else
         {
             $errorMessage = $this->genericDebugabbleErrorMessage($item, $sql);
@@ -182,7 +183,7 @@ class QueryExceptionManager
 
         $toReturn = "";
 
-        $sqlForTesting = $this->genericDebugSQLForItem($item, $accumulator, $toAccumulate);
+        $sqlForTesting = $this->genericDebugSQLForItem($sql, $item, $accumulator, $toAccumulate);
 
         $toReturn .= "Column Lengths\n\n\n";
         $toReturn .= $accumulator;
@@ -195,9 +196,8 @@ class QueryExceptionManager
         return $toReturn;
     }
 
-    public function genericDebugSQLForItem($item, &$accumulator, $closureOnKeyValueColumnMapping = null)
+    public function insertDebugSQLForItem($sql, $item, &$accumulator, $closureOnKeyValueColumnMapping = null)
     {
-
         $sqlColumnsString = "INSERT INTO ".$this->dataSource->tableName()." (";
         $sqlValuesString  = ") VALUES  (";
         $isFirst = true;
@@ -244,6 +244,37 @@ class QueryExceptionManager
         }
 
         return $sqlColumnsString.$sqlValuesString.")";
+    }
+
+    public function countDebugSQLForItem($sql, $item, &$accumulator, $closureOnKeyValueColumnMapping = null)
+    {
+        return "GOT truncation when trying to run a COUNT query: ".$sql;
+    }
+
+    public function selectDebugSQLForItem($sql, $item, &$accumulator, $closureOnKeyValueColumnMapping = null)
+    {
+        return "GOT truncation when trying to run a SELECT query: ".$sql;
+    }
+
+    public function genericDebugSQLForItem($sql, $item, &$accumulator, $closureOnKeyValueColumnMapping = null)
+    {
+        $containsInsert = strpos($sql, "INSERT INTO") !== false;
+        $containsCount  = strpos($sql, "COUNT") !== false;
+        $containsSelect = strpos($sql, "SELECT") !== false;
+
+        switch (true)
+        {
+            case $containsInsert:
+                return $this->insertDebugSQLForItem($sql, $item, $accumulator, $closureOnKeyValueColumnMapping);
+            case $containsCount:
+                return $this->countDebugSQLForItem($sql, $item, $accumulator, $closureOnKeyValueColumnMapping);
+            case $containsSelect:
+                return $this->selectDebugSQLForItem($sql, $item, $accumulator, $closureOnKeyValueColumnMapping);
+            default:
+                return "GOT truncation when trying to run query: ".$sql;
+        }
+
+
     }
 
     public function getMaxLengthForColumnMapping($columnMapping)
@@ -317,7 +348,7 @@ class QueryExceptionManager
 
         $toReturn = "";
 
-        $sqlForTesting = $this->genericDebugSQLForItem($item, $accumulator, $toAccumulate);
+        $sqlForTesting = $this->genericDebugSQLForItem($sql, $item, $accumulator, $toAccumulate);
 
         $toReturn .= "Column Lengths\n\n\n";
         $toReturn .= $accumulator;

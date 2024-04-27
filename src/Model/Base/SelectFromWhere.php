@@ -311,7 +311,14 @@ class SelectQuery
         }
         catch (Exception $e)
         {
-            return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $sql, $params, $outError);
+            if ($this->isCountQuery)
+            {
+                throw $e;
+            }
+            else
+            {
+                return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $sql, $params, $outError);
+            }
         }
 
         return $pdoStatement;

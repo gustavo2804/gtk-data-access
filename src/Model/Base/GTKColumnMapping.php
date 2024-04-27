@@ -89,7 +89,7 @@ class GTKColumnMapping extends GTKColumnBase
 
     public function listDisplayForDataSourceUserItem($dataSource, $user, $item, $itemIdentifier, $options = null)
     {
-        $debug = $this->debug ?? false; 
+        $debug = false; // $this->debug ?? false; 
 
         if ($debug)
         {

@@ -2,7 +2,7 @@
 
 class GTKColumnBase 
 {
-    public $debug;
+    public $debug = false;
     public $dataSource;
     public $phpKey;
     public $formLabel;
