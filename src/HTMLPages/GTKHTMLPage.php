@@ -1,5 +1,7 @@
 <?php
 
+use Dflydev\DotAccessData\Data;
+
 class GTKHTMLPage
 {
 	public $get; 
@@ -15,11 +17,12 @@ class GTKHTMLPage
 	public $messages        = [];
 	public $user;
 	public $session;
-	public $authenticate = false;
-	public $authorize    = false;
-	public $authorizationDelegate; 
+
 	public $headerPath;
 	public $footerPath;
+
+	public bool    $authenticationRequired = false; // ovveride in construct
+	public ?string $permissionRequired 	   = null;  // override in construct
 
 	public function __construct($options = [])
 	{
@@ -54,7 +57,7 @@ class GTKHTMLPage
 		
 	}
 
-	public function processPost($postObject)
+	public function processPost($postObject, $files)
 	{
 		$debug = false;
 
@@ -160,7 +163,7 @@ class GTKHTMLPage
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
-		$debug = false;
+		$debug = true;
 
 		$this->get 		  = $get;
 		$this->post 	  = $post;
@@ -186,40 +189,36 @@ class GTKHTMLPage
 		}
 
 
-		if ($this->authenticate)
+		if ($this->authenticationRequired && !$maybeCurrentSession)
 		{
-
-			/*
-			$isAuthenticated = DataAccessManager::get("authentication_provider")->isAuthenticated();
-
-			if (!$isAuthenticated)
+			if ($debug)
 			{
-				return DataAccessManager::get("authentication_provider")->handleNegativeSituation();
+				gtk_log("Authentication required, No user, no session, will redirect...");
 			}
+			return $this->handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession);
+		}
 
-			if ($this->authorize)
+		if ($this->permissionRequired)
+		{
+			if (!$maybeCurrentUser)
 			{
-				$isAuthorized = DataAccessManager::get("authorization_provider")->isAuthorized($this);
-
-				if (!$isAuthorized)
+				if ($debug)
 				{
-					return DataAccessManager::get("authorization_provider")->handleNegativeSituation();
+					gtk_log("No current user, will redirect...");
 				}
-			}
-			*/
-			if (!$maybeCurrentSession)
-			{
 				return $this->handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession);
 			}
 
-			if ($this->authorize)
-			{
-				$isAuthorized = $this->isAuthorized($maybeCurrentUser, $maybeCurrentSession);
+			$isAuthorized = DataAccessManager::get("user")->hasPermission($this->permissionRequired, $this->user);
 
-				if (!$isAuthorized)
-				{
-					return $this->handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession);
-				}
+			if ($debug)
+			{
+				error_log("`render` : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired);
+			}
+
+			if (!$isAuthorized)
+			{
+				return $this->handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession);
 			}
 		}
 
@@ -229,7 +228,7 @@ class GTKHTMLPage
 				$this->processGet($get);
 				break;
 			case "POST":
-				$this->processPost($post);
+				$this->processPost($post, $files);
 				break;
 			case "PATCH":
 				$this->processPatch($post);

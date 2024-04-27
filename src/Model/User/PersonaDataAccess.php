@@ -270,12 +270,12 @@ class PersonaDataAccess extends DataAccess
 
 				if (strlen($value) < 12)
 				{
-					return new FormResult(0, Glang::get("password_too_short"));
+					return new FailureResult(0, Glang::get("password_too_short"));
 				}
 
 				    // Check for symbol and number
 				if (!preg_match('/[!@#$%^&*(),.?":{}|<>0-9]/', $value)) {
-					return new FormResult(0, Glang::get("password_needs_character_and_symbols"));
+					return new FailureResult(0, Glang::get("password_needs_character_and_symbols"));
 				}
 			},
 		]);
@@ -284,7 +284,7 @@ class PersonaDataAccess extends DataAccess
 		$checkCedulaForProblems = function($value) { 
 			if (!verifyCedula($value)) 
 			{ 
-				return new FormResult(0, Glang::get("invalid_goverment_id")); 
+				return new FailureResult(0, Glang::get("invalid_goverment_id")); 
 			}
 		};
 	
@@ -893,8 +893,30 @@ class PersonaDataAccess extends DataAccess
 		
 	}
 
-	
-	public function hasPermission($permission, &$user, $item = null)
+	public function hasOneOfPermissions($permissions, &$user, $closure = null)
+	{
+		$permissions = $this->permissionsForUser($user);
+
+		foreach ($permissions as $permission)
+		{
+			if (in_array($permission, $permissions))
+			{
+				if ($closure && is_callable($closure))
+				{
+					return $closure($permission);
+				}
+				else
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/*
+	public function hasPermissionOnItem()
 	{
 		$debug = false;
 
@@ -950,6 +972,80 @@ class PersonaDataAccess extends DataAccess
 		}
 
 		return $hasPermission;
+	}
+	*/
+
+	
+	public function hasPermission($permission, &$user, $closure = null)
+	{
+		$debug = true;
+
+		$permissions = $this->permissionsForUser($user);
+
+		if ($debug)
+		{
+			gtk_log("User has permissions: ".print_r($permissions, true));
+		}
+
+		$hasPermission = in_array($permission, $permissions);
+
+		if ($hasPermission)
+		{
+			return true;
+		}
+
+		$exploded = explode(".", $permission);
+
+		if (count($exploded) == 2)
+		{
+			$dataSourceName = $exploded[0];
+			$permissionName = $exploded[1];
+
+			switch ($permissionName)
+			{
+				case "new":
+					$permissionName = "create";
+					break;
+				case "show":
+					$permissionName = "read";
+					break;
+				case "edit":
+					$permissionName = "update";
+					break;
+				case "destroy":
+					$permissionName = "delete";
+					break;
+				//------------------------------
+				case "list":
+					$permissionName = "all";
+					break;
+			}
+
+			$permission = $dataSourceName.".".$permissionName;
+
+			if ($debug)
+			{
+				gtk_log("Checking for modified permission: ".$permission);
+			}
+
+			$hasPermission = in_array($permission, $permissions);
+		}
+
+		if ($hasPermission)
+		{
+			if ($closure && is_callable($closure))
+			{
+				return $closure($permission);
+			}
+			else
+			{
+				return true;
+			}
+		}
+		else
+		{
+			return false;
+		}
 	}
 }
 

@@ -26,7 +26,7 @@ class RequestPasswordResetController
  
         if (!$user)
         {
-            return new FormResult(0, Glang::get("RequestPasswordReset/Form/user_not_found"));
+            return new FailureResult(0, Glang::get("RequestPasswordReset/Form/user_not_found"));
         }
 
 		$hasRequestedLinkInTheLast5Minutes = DataAccessManager::get("SetPasswordTokenDataAccess")->hasUserRequestedALinkInTheLast5Minutes($user);
@@ -42,13 +42,13 @@ class RequestPasswordResetController
 				"origin" => "USER_REQUEST",
 			]);
 
-            return new FormResult(1, Glang::get("RequestPasswordReset/Form/submitted"));
+            return new FailureResult(1, Glang::get("RequestPasswordReset/Form/submitted"));
 		
 		}
         catch (Exception $e)
         {
             gtk_log("handleUserRequestPasswordResetLinkForUserID Excepetion".$e->getMessage());
-            return new FormResult(0, "RequestPasswordReset/Form/error_sending_reset_password_token");
+            return new FailureResult(0, "RequestPasswordReset/Form/error_sending_reset_password_token");
         }
     }
 
@@ -109,7 +109,7 @@ class RequestPasswordResetController
 			$message = Glang::get("RequestPasswordReset/Form/no_email_for_user");
 
             throw new Exception($message);
-            return new FormResult(0, $message);
+            return new FailureResult(0, $message);
         }
 
         if ($debug)

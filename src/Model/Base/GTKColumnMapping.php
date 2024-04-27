@@ -1125,6 +1125,30 @@ class GTKColumnMapping extends GTKColumnBase
 
         $columnType = $this->getColumnTypeForDriverName($driverName);
 
+        if ($driverName == 'pgsql' && $this->isAutoIncrement()) 
+        {
+            // SERIAL:    Uses 4-byte integer, values from 1 to ------------2,147,483,647
+            // BIGSERIAL: Uses 8-byte integer, values from 1 to 9,223,372,036,854,775,807
+            // # of records to fill up DB in 10 years: 588,352 records per day
+            // Consider BIG SERIAL FOR...
+            // - IoT: device statuses, telemetry data
+            // - Social Media: posts, likes, comments
+            // - Financial: transactions, audit logs
+            // - E-commerce: orders, customer activity
+            // - Telecom: call data, usage records
+            // - Streaming: viewer interactions, logs
+            // - Healthcare: patient records, monitoring
+            if ($columnType == "BIGSERIAL")
+            {
+                return $columnName.' '.'BIGSERIAL';
+            }
+            else
+            {
+                return $columnName.' '.'SERIAL';
+            }
+
+        } 
+
         if ($columnType != '')
         {
             $toReturn .= ' '.$columnType;

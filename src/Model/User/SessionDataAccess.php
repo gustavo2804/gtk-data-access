@@ -1,7 +1,21 @@
 <?php
 
 
-class SessionDataAccess extends DataAccess {
+class SessionDataAccess extends DataAccess 
+{
+	public function currentUserHasPermission($permission)
+	{
+		$currentUser = $this->getCurrentUser();
+		
+		return DataAccessManager::get("persona")->hasPermission($permission, $currentUser);
+	}
+	public function currentUserHasOneOfPermissions($permissions)
+	{
+		$currentUser = $this->getCurrentUser();
+		
+		return DataAccessManager::get("persona")->hasOneOfPermissions(
+			$permissions, $currentUser);
+	}
 
 	public function currentUserIsInGroups($groups)
 	{

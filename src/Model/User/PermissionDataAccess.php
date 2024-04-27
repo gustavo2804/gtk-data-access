@@ -42,9 +42,14 @@ class PermissionDataAccess extends DataAccess
 		$this->defaultOrderByOrder  = "DESC";
     }
 
-    function hasPermission(&$permission, &$user, $item)
+    function hasPermission(&$permission, &$user)
     {
-        return DataAccessManager::get("persona")->hasPermission($permission, $user, $options);
+        return DataAccessManager::get("persona")->hasPermission($permission, $user);
+    }
+
+    function hasPermissionOnItem(&$permission, &$user, $item)
+    {
+        return DataAccessManager::get("persona")->hasPermission($permission, $user);
     }
 
     function permissionsForRole($role)

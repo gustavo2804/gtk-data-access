@@ -278,7 +278,7 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 			$message = Glang::get("login_form/no_email_for_user");
 
             throw new Exception($message);
-            return new FormResult(0, $message);
+            return new FailureResult(0, $message);
         }
 
 		$passwordSetLink = DataAccessManager::get("RequestPasswordResetController")->passwordSetLinkForUser($user, "USER_LOGIN");

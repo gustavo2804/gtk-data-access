@@ -31,7 +31,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 		}
 	}
 
-    public function processPost($postObject)
+    public function processPost($postObject, $files)
     {
 		$debug = false;
 

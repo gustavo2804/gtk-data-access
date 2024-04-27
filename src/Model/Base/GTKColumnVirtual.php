@@ -7,6 +7,11 @@ class GTKColumnVirtual extends GTKColumnBase
         return true;
     }
 
+    public function doesColumnExist()
+    {
+        return true;
+    }
+
     public function addColumnIfNotExists()
     {
     }

@@ -18,6 +18,35 @@ function snakeToSpaceCase($string) {
     return $spaceCaseString;
 }
 
+function LinkToAllPermissionIfExists($permission, $options = null)
+{
+	$currentUser = DataAccessManager::get("session")->getCurrentUser();
+
+	if (DataAccessManager::get("persona")->hasPermission($permission, $currentUser))
+	{
+		$dataSourceName = explode(".", $permission)[0];
+		return AllLinkTo($dataSourceName, $options);
+	}
+	else
+	{
+		return "";
+	}  
+}
+
+function LinkToEditItemPermissionIfExists($permission, $item, $options = null)
+{
+	$currentUser = DataAccessManager::get("session")->getCurrentUser();
+
+	if (DataAccessManager::get("persona")->hasPermission($permission, $currentUser))
+	{
+		return editLinkTo($permission, $item, $options);
+	}
+	else
+	{
+		return "";
+	}  
+}
+
 function linkTo($maybeHref, $options)
 {
 	$href = null;

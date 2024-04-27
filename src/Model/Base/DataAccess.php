@@ -274,59 +274,55 @@ class DataAccess /* implements Serializable */
             gtk_log("Will use `createTable()` for: ".get_class($this));
         }
 
+        $driverName = $this->getDB()->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-
-        if ($this->isSqlite())
+        if (!$this->tableExists())
         {
-            $this->createTable();
-            if ($debug)
+            switch ($driverName)
             {
-                error_log("Did create table");
+                case "sqlite":
+                    $this->createTable();
+                    break;
+                default:
+                    gtk_log("CANNOT create table for: ".get_class($this));
+                    $sql = $this->createTableSQLString();
+                    gtk_log("Table is not created. Consider: ".$sql);
+                    return;
+
+                if ($debug)
+                {
+                    error_log("Did create table");
+                }
             }
         }
         else
         {
-            if ($debug)
+            $columns = $this->dataMapping->ordered;
+            $missingColumns = [];
+
+            foreach ($columns as $columnMapping)
             {
-                error_log("NOT SQLITE --- CANNOT create table for: ".get_class($this));
+                if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName()))
+                {
+                    $missingColumns[] = $columnMapping;
+                    // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                }
             }
-            if (!$this->tableExists())
+
+            if (count($missingColumns))
             {
-                $sql = $this->createTableSQLString();
-                gtk_log("Table is not created. Consider: ".$sql);
+                gtk_log("On...`".get_class($this)."`: ".$this->tableName());
+                gtk_log("Missing columns: ");
+
+                foreach ($missingColumns as $columns)
+                {
+                    $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
+                    $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
+                    gtk_log($message);
+                }
+
                 return;
             }
-            else
-            {
-                $columns = $this->dataMapping->ordered;
-
-                $missingColumns = [];
-    
-                foreach ($columns as $columnMapping)
-                {
-                    if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName))
-                    {
-                        $missingColumns[] = $columnMapping;
-                        // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
-                    }
-                }
-    
-                if (count($missingColumns))
-                {
-                    gtk_log("On...`".get_class($this)."`: ".$this->tableName());
-                    gtk_log("Missing columns: ");
-    
-                    foreach ($missingColumns as $columns)
-                    {
-                        $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
-                        $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
-                        gtk_log($message);
-                    }
-    
-                    return;
-                }
-            }
-
         }
     }
 
@@ -561,7 +557,7 @@ class DataAccess /* implements Serializable */
 
     public function rowStyleForItem($item, $index) {}
 
-    public function displayActionsForUserItem($user, $item)
+    public function displayActionsForUserItem($user, $item, $location = "list")
     {
         $debug = false;
 
@@ -585,7 +581,12 @@ class DataAccess /* implements Serializable */
             $toReturn .= "<br/>";
         }
 
-        $actions = $this->actionsForLocationUserItem("list", $user, $item);
+        $actions = $this->actionsForLocationUserItem($location, $user, $item);
+
+        if ($debug)
+        {
+            error_log("Display actions for items: ".count($actions));
+        }
 
         foreach ($actions as $action)
         {
@@ -941,7 +942,7 @@ class DataAccess /* implements Serializable */
 
     public function actionsForLocationUserItem($location, $user, $item) 
     { 
-        $debug = false;
+        $debug = true;
 
         $actionsForLocation = [];
 
@@ -3493,6 +3494,14 @@ class DataAccess /* implements Serializable */
                 $sql = "SHOW TABLES LIKE ?";
                 $param = [$tableName];
                 break;
+                
+            case 'pgsql':
+                $sql = "SELECT * FROM information_schema.tables";
+                $sql .= " WHERE table_schema = 'public'"; // Assuming your tables are in the default 'public' schema
+                $sql .= " AND table_name = ?";
+                $param = [$tableName];
+                break;
+                
     
             case 'sqlite':
                 $sql .= "SELECT name";
@@ -3670,7 +3679,7 @@ class DataAccess /* implements Serializable */
             {
                 gtk_log("Error: El archivo es demasiado grande. Maximo: ".$maxMegaBytes." MB.");
             }
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "El archivo es demasiado grande. Maximo: ".$maxMegaBytes." MB.",
@@ -3684,7 +3693,7 @@ class DataAccess /* implements Serializable */
             {
                 gtk_log("Error: El archivo no es una imagen valida. Tipos aceptados: ".implode(", ", $acceptedExtensions));
             }
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "El archivo no es una imagen valida. Usted nos envio: $fileType. Tipos aceptados: ".implode(", ", $acceptedExtensions),
@@ -3695,7 +3704,7 @@ class DataAccess /* implements Serializable */
         if (!ini_get('file_uploads')) // Check if file uploads are enabled
         {
             gtk_log('File uploads are not enabled on the server.');
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "File uploads are not enabled on the server.",
@@ -3715,7 +3724,7 @@ class DataAccess /* implements Serializable */
         {
             gtk_log('The temporary upload directory is not writable: '.$uploadDir);
             gtk_log('INI_GET: '.ini_get('upload_tmp_dir'));
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "The temporary upload directory is not writable: ".$uploadDir,
@@ -3736,7 +3745,7 @@ class DataAccess /* implements Serializable */
             if (!mkdir($basePath, 0777, true))
             {
                 gtk_log("No se pudo crear el directorio de carga: ".$basePath);
-                return new FormResult(
+                return new FailureResult(
                     FormResultOutcomes::Failure,
                     [
                         "message" => "Error grave en el servidor.",
@@ -3755,7 +3764,7 @@ class DataAccess /* implements Serializable */
             if (!mkdir($basePath, 0777, true))
             {
                 gtk_log("No se pudo crear el directorio de carga: ".$basePath);
-                return new FormResult(
+                return new FailureResult(
                     FormResultOutcomes::Failure,
                     [
                         "message" => "Error grave en el servidor.",
@@ -3766,7 +3775,7 @@ class DataAccess /* implements Serializable */
         if (!is_writable($basePath)) 
         {
             gtk_log('The target upload directory is not writable.');
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "The target upload directory is not writable: ".$basePath,
@@ -3792,14 +3801,14 @@ class DataAccess /* implements Serializable */
                     echo '</pre>';
                 }
             }
-            return new FormResult(
+            return new FailureResult(
                 FormResultOutcomes::Failure,
                 [
                     "message" => "No se pudo mover el archivo al directorio de imagenes. ".$fileValue['error']." Su solicitud fue grabada con $fileIdentifier",
                 ]);
         }
 
-        return new FormResult(FormResultOutcomes::Successful, []);
+        return new SuccessResult(FormResultOutcomes::Successful, []);
         // Perform server-side checks: 
         //     Even after validating the file type during the upload, 
         //     perform additional server-side checks when reading the image file. 
@@ -4128,118 +4137,28 @@ class DataAccess /* implements Serializable */
         {
             error_log("`userHasPermissionTo` on ".get_class($this)." - ".$permissionName);
         }
+
+        return DataAccessManager::get("persona")->hasPermission($permissionName, $user);
         
-        return DataAccessManager::get("persona")->hasPermission($permissionName, $user, $item, $options);
         /*
-
-        $debug = false;
-
-        if ($debug)
-        {
-            error_log("`userHasPermissionTo` on ".get_class($this)." - ".$maybePermission);
-        }
-
-		$permissionKey = $maybePermission;
-
-		switch ($maybePermission)
-		{
-			case "all":
-			case "list":
-			case "show";
-            case "read":
-				$permissionKey = "read";
-				break;
-            case "update":
-			case "edit":
-				$permissionKey = "update";
-                break;
-            case "create":
-            case "new":
-                $permissionKey = "create";
-                if (!$this->allowsCreationOnDefaultFormForUser($user))
-                {
-                    return false; 
-                }
-			default:
-			    $permissionKey = $permissionKey;
-			
-		}
-
-		$allowedRoles = $this->permissions[$permissionKey] ?? [];
-
-		$permissionType = "inherited";
-
-		if (isset($this->permissions["type"]))
-		{
-			$permissionType = $this->permissions["type"];
-            if ($debug)
-            {
-                error_log("Permission type is set. Got: $permissionType");
-            }
-		}
-
-		if ($permissionType == "inherited")
-		{
-			if ($debug)
-			{
-				error_log("Constructing merged array from permission ($permissionKey): ".print_r($this->permissions, true));
-			}
-
-			switch ($permissionKey)
-			{
-				case "read":
-					$allowedRoles = array_merge(
-						$allowedRoles, 
-						$this->permissions["read"] ?? [], 
-						$this->permissions["update"] ?? [], 
-						$this->permissions["create"] ?? [], 
-						$this->permissions["delete"] ?? []);
-					break;
-				case "create":
-					$allowedRoles = array_merge(
-						$allowedRoles, 
-						$this->permissions["update"] ?? [], 
-						$this->permissions["create"] ?? [], 
-						$this->permissions["delete"] ?? []);
-				case "update":
-					$allowedRoles = array_merge(
-						$allowedRoles,
-						$this->permissions["update"] ?? [], 
-						$this->permissions["delete"] ?? []);
-					break;
-				case "delete":
-					$allowedRoles = array_merge(
-						$allowedRoles,
-						$this->permissions["delete"] ?? []);
-					break;
-			}
-		}
-
-
-        $allowedRoles = array_unique($allowedRoles);
-
-        if (count($allowedRoles) < 1)
+        $hasPermission = DataAccessManager::get("persona")->hasPermission($permissionName, $user, $item, $options);
+        
+        if (!$hasPermission)
         {
             return false;
         }
 
-		if ($debug)
-		{
-			error_log("Allowed roles: ".print_r($allowedRoles, true));
-		}
 
-		$isAllowed = false;
+        $permission = DataAccessManager::get("permission")->getByName($permissionName);
 
-		if (!$user && in_array("ANONYMOUS_USER", $allowedRoles))
-		{
-            $isAllowed = true;
-		}
-		else if ($user)
-		{
-			$isAllowed = DataAccessManager::get('flat_roles')->isUserInAnyOfTheseRoles($allowedRoles, $user);
-		}
-		
-        return $isAllowed;
+        if (DataAccessManager::get("permission")->isQualifiedPermission($permission))
+        {
+
+        }
+        else
+        {
+            return true;
+        }
         */
     }
 
