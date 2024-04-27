@@ -59,54 +59,16 @@ class QueryExceptionManager
         $item, 
         $outError
     ){
-        $debug = false;
-        $currentUser = DataAccessManager::get("persona")->getCurrentUser();
-        $isDeveloper = DataAccessManager::get("persona")->isInGroups($currentUser, [
-            "DEV",
-        ]) ?? $debug;
-
-        if ($debug)
-        {
-            return $this->handleForDeveloper(
-                $exception, 
-                $sql, 
-                $item, 
-                $outError);
-        }
-        else
-        {
-            return $this->handleForMereMortals(
-                $exception, 
-                $sql, 
-                $item, 
-                $outError);
-        }
+        return $this->handleForDeveloper(
+            $exception, 
+            $sql, 
+            $item, 
+            $outError);
     }
 
-    public function handleForMereMortals(
-        $exception, 
-        $sql, 
-        $item, 
-        $outError = ''
-    ){
-        $exCode      = $exception->getCode();
-        $exMessage   = $exception->getMessage();
 
-        $toReturn = [];
-        $errorMessage = null;
-        if (($exCode == '42000') || (strpos($exMessage, 'Incorrect syntax') !== false))
-        {
-            $errorMessage = "Incorrect syntax: ".$sql;
-        }
-        else if ((strpos($exMessage, 'String or binary data would be truncated') !== false)) // 22001
-        {
-            $errorMessage = $this->errorMessageForTruncationOnItem($item, $sql);
-        }
-        else if ((strpos($exMessage, 'Invalid object name') !== false)) // ????
-        {
-            $errorMessage = "Error grave";
-        }
-        else if (static::isUniqueConstraintException($exception))        
+        /*
+        if (static::isUniqueConstraintException($exception))        
         {
             $dataSourceTableName = $this->dataSource->tableName();
             $errorTable = extractTableNameFromUniqueConstraintError($exMessage);
@@ -114,9 +76,7 @@ class QueryExceptionManager
             $columnMapping = $this->dataSource->columnMappingForKey($errorColumn);
             $errorMessage = "Esta intentando duplicar un dato que no se puede duplicar: $columnMapping->formLabel()";
         }
-        throw new Exception($errorMessage);
-        return $errorMessage;
-    }
+        */
 
     // ($exCode == "23000") || strpos($exMessage, "UNIQUE constraint failed"))
     public static function isUniqueConstraintException($exception) {
