@@ -137,11 +137,16 @@ class RoleDataAccess extends DataAccess
     }
 
 
-    public function rolesForUser($user = null)
+    public function rolesForUser(&$user = null)
     {
         if (!$user)
         {
             return [];
+        }
+
+        if (isset($user["gtk_cache"]["roles"]))
+        {
+            return $user["gtk_cache"]["roles"];
         }
 
         $roleRelatiosnForUser = DataAccessManager::get("flat_roles")->roleRelationsForUser($user);
@@ -159,7 +164,16 @@ class RoleDataAccess extends DataAccess
             "id", "IN", $roleIDS
         ));
 
-        return $query->executeAndReturnAll();
+        $roles = $query->executeAndReturnAll();
+
+        if (!isset($user["gtk_cache"]))
+        {
+            $user["gtk_cache"] = [];
+        }
+
+        $user["gtk_cache"]["roles"] = $roles;
+
+        return $roles;
     }
 
     public function getPermissionsForRole(&$role)
