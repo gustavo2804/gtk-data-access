@@ -364,7 +364,15 @@ class SelectQuery
     {
         $params = [];
         $statement = $this->getPDOStatement($params);
-        $statement->execute($params);
+        try
+        {
+            $statement->execute($params);
+        }
+        catch (Exception $e)
+        {
+            return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $statement->queryString, $params, $outError);
+        }
+        // $statement->execute($params);
         return $statement;
     }
 

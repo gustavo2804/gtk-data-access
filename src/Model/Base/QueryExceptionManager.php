@@ -130,7 +130,11 @@ class QueryExceptionManager
             */
             $errorMessage = $exMessage;
             $errorMessage .= "\nConsider running a create table statement...";
-            $errorMessage .= "\n".$this->dataSource->createTableSQLString();
+            
+            if ($this->dataSource instanceof DataAccess)
+            {
+                $errorMessage .= "\n".$this->dataSource->createTableSQLString();
+            }
 
             gtk_log($errorMessage);
             if ($outError)
@@ -139,7 +143,6 @@ class QueryExceptionManager
             }
 
         }
-
         else
         {
             $errorMessage = $this->genericDebugabbleErrorMessage($item, $sql);
@@ -204,6 +207,18 @@ class QueryExceptionManager
 
         foreach ($item as $key => $value)
         {
+            if ($key == "objects")
+            {
+                if (is_array($value))
+                {
+                    continue;
+                }
+                else
+                {
+                    $sqlColumnsString .= '/* objects key is not array */';
+                }
+                
+            }
             
             $columnMapping = $this->dataSource->dataMapping->columnMappingForPHPKey($key);
 
