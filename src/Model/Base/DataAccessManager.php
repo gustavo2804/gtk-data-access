@@ -473,9 +473,17 @@ class DataAccessManager
 
 			if (strpos($connection_string, "sqlite") !== false)
 			{
-				$journalMode = $config["journal_mode"] ?? "WAL";
-
-				$this->databases[$dbName]->exec("PRAGMA journal_mode = $journalMode");
+				try
+				{
+					$journalMode = $config["journal_mode"] ?? "WAL";
+					$this->databases[$dbName]->exec("PRAGMA journal_mode = $journalMode");					
+				}
+				catch (Exception $e)
+				{
+					echo "Connection string: ".$connection_string;
+					echo "Error setting journal mode: ".$e->getMessage();
+					die();
+				}
 			}
         }
         return $this->databases[$dbName];
