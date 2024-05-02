@@ -470,6 +470,13 @@ class DataAccessManager
                 $username, 
                 $password
             );  
+
+			if (strpos($connection_string, "sqlite") !== false)
+			{
+				$journalMode = $config["journal_mode"] ?? "WAL";
+
+				$this->databases[$dbName]->exec("PRAGMA journal_mode = $journalMode");
+			}
         }
         return $this->databases[$dbName];
     }
