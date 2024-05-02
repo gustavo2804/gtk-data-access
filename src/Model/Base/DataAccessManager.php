@@ -480,6 +480,12 @@ class DataAccessManager
 				}
 				catch (Exception $e)
 				{
+					/*
+					So...I needed to give the database and the containing folder write permissions.
+					That's why I was getting the error.
+					Need to make it 777 or 774 - because form some god-forsaken reason...nothing else worked
+
+					*/
 					if (false)
 					{
 						echo "Connection string: ".$connection_string;
