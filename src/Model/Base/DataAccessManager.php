@@ -480,9 +480,16 @@ class DataAccessManager
 				}
 				catch (Exception $e)
 				{
-					echo "Connection string: ".$connection_string;
-					echo "Error setting journal mode: ".$e->getMessage();
-					die();
+					if (false)
+					{
+						echo "Connection string: ".$connection_string;
+						echo "Error setting journal mode: ".$e->getMessage();
+						die();
+					}
+					else
+					{
+						throw $e;
+					}
 				}
 			}
         }
