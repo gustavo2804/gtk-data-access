@@ -300,6 +300,10 @@ class FlatRoleDataAccess extends DataAccess
             "user_id", "=", DataAccessManager::get("persona")->valueForIdentifier($user)
         ));
 
+        $query->addWhereClause(new WhereClause(
+            "can_grant", "=", DataAccessManager::get("persona")->valueForIdentifier($user)
+        ));
+
         $whereGroup = new WhereGroup("OR");
         $whereGroup->addWhereClause(new WhereClause(
             "is_admin_for_role", "=", 1

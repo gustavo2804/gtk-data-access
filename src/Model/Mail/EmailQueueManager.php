@@ -141,6 +141,18 @@ class EmailQueueManager extends DataAccess
         $this->addAlertToQueue($sendTo, $subject, $messageText, $options);
     }
 
+    public function addDictionaryToQueue($dictionary) 
+    {
+        $sendTo = $dictionary["to"] ?? $dictionary['sendTo'];
+        $subject = $dictionary['subject'];
+        $messageText = $dictionary['body'];
+
+        return $this->addToQueue(
+            $sendTo, 
+            $subject, 
+            $messageText, 
+            $dictionary);
+    }
 
     public function addToQueue(
         $sendTo, 
