@@ -46,7 +46,7 @@ class GTKAllDynamo extends AllDataSourceRenderer
             
         <?php
             
-        echo parent::renderBody();
+        echo parent::renderBody($get, $post, $server, $cookie, $session, $files, $env);
 
         return ob_get_clean();
     }

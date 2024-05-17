@@ -204,7 +204,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 		}
     }
 
-    public function renderBody()
+    public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
     {
         $debug = false;
 

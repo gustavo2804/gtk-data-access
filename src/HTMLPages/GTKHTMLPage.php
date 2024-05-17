@@ -1,6 +1,7 @@
 <?php
 
 use Dflydev\DotAccessData\Data;
+use Symfony\Component\Uid\NilUlid;
 
 class GTKHTMLPage
 {
@@ -209,7 +210,9 @@ class GTKHTMLPage
 				return $this->handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession);
 			}
 
-			$isAuthorized = DataAccessManager::get("user")->hasPermission($this->permissionRequired, $this->user);
+			$userDataAccess = DataAccessManager::get("persona");
+
+			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->user);
 
 			if ($debug)
 			{

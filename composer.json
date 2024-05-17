@@ -60,6 +60,7 @@
     "autoload": {
         "files": [
             "configure/databases.php",
+            "configure/functions/HasPermission.php",
             "configure/lang.php",
             "configure/permissions.php"
         ],
