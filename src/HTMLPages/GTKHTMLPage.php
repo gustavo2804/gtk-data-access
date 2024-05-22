@@ -78,6 +78,12 @@ class GTKHTMLPage
 		{
 			$toReturn .= $this->renderBody($get, $post, $server, $cookie, $session, $files, $env);
 		}
+		else
+		{
+			$toReturn .= "<h1 class='font-bold'>";
+			$toReturn .= "No `renderBody` method found";
+			$toReturn .= "</h1>";
+		}
 		
 		return $toReturn;
 	}
