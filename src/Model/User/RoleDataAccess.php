@@ -206,13 +206,33 @@ class RoleDataAccess extends DataAccess
     {
         $debug = false;
 
-        $permissionID = null;
+        $permissionID         = null;
+        $permissionName       = null;
+        $permissionQualifiers = null;
 
         if (is_numeric($maybePermissionIDArrayOrName))
         {
             $permissionID = $maybePermissionIDArrayOrName;
         }
         else if (is_string($maybePermissionIDArrayOrName))
+        {
+            $permissionName = $maybePermissionIDArrayOrName;
+        }
+        else if (is_array($maybePermissionIDArrayOrName))
+        {
+            if (array_key_exists("id", $maybePermissionIDArrayOrName))
+            {
+                $permission = $maybePermissionIDArrayOrName;
+                $permissionID = $permission["id"];
+            }
+            else
+            {
+                $permissionName       = is_string($maybePermissionIDArrayOrName[0]) ? $maybePermissionIDArrayOrName[0] : null;
+                $permissionQualifiers = is_array($maybePermissionIDArrayOrName[1]) ? $maybePermissionIDArrayOrName[1] : null;
+            }
+        }
+
+        if ($permissionName)
         {
             $permission = DataAccessManager::get("permissions")->getOne("name", $maybePermissionIDArrayOrName);
             if (!$permission)
@@ -221,28 +241,25 @@ class RoleDataAccess extends DataAccess
             }
             $permissionID = $permission["id"];
         }
-        else if (is_array($maybePermissionIDArrayOrName))
-        {
-            $permission = $maybePermissionIDArrayOrName;
-            $permissionID = $permission["id"];
-        }
     
         if (!$permissionID)
         {
             throw new Exception("Invalid Permission ID or Name: ".print_r($maybePermissionIDArrayOrName, true));
         }
 
-        // $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
-        
         $toInsert = [
             "role_id"       => $role["id"],
             "permission_id" => $permissionID,
             "is_active"     => true,
             "date_created"  => date("Y-m-d H:i:s"),
         ];
+
+        if ($permissionQualifiers)
+        {
+            $toInsert["qualifiers"] = $permissionQualifiers;
+        }
         
         DataAccessManager::get("role_permission_relationships")->insert($toInsert);
-    
     }
 
     public function removePermissionFromRole(&$role, $permissionToRemove)
@@ -376,14 +393,38 @@ class RoleDataAccess extends DataAccess
 
             foreach ($permissionsToAdd as $permission)
             {
-  
-                if (!in_array($permission, $permissions))
+
+                $permissionName       = $permission;
+                $permissionQualifiers = null;
+
+                if (is_array($permission))
+                {
+                    $permissionName       = $permission[0];
+                    $permissionQualifiers = $permission[1];
+                }
+
+
+                if (!in_array($permissionName, $permissions))
                 {
                     if ($debug)
                     {
                         gtk_log("Adding Permission to $roleName: ".serialize($permission));
                     }
                     $this->addPermissionToRole($roleFromDB, $permission);
+                }
+                else
+                {
+                    if ($permissionQualifiers)
+                    {
+                        $permissionRelationship = DataAccessManager::get("role_permission_relationships")->getPermissionRelationshipForRolePermission($roleFromDB, $permission);
+
+                        $toUpdate = [
+                            "id"         => $permissionRelationship["id"],
+                            "qualifiers" => $permissionQualifiers,
+                        ];
+
+                        DataAccessManager::get("role_permission_relationships")->update($toUpdate);
+                    }
                 }
             }
 

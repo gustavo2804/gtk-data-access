@@ -19,6 +19,7 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
             new GTKColumnMapping($this, "role_id", [
                 "columnType" => "INTEGER",
             ]),
+            new GTKColumnMapping($this, "qualifiers"),
 			new GTKColumnMapping($this, "comments"),
 			new GTKColumnMapping($this, "is_active", [
                 "columnType" => "BOOLEAN",
@@ -43,6 +44,8 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
          date_created,
          date_modified,
         UNIQUE(role_permission_relationship_id))");
+
+        $this->getDB()->query("ALTER TABLE ".$this->tableName()." ADD COLUMN qualifiers;");
     }
 
     public function permissionRelationsForRole($role)
@@ -201,5 +204,64 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
         }
 
         return $toReturn;
+    }
+
+    public function getPermissionRelationshipForRolePermission($roleIDOrNameOrObject, $permissionNameOrIDOrObject)
+    {
+        $query = new SelectQuery($this);
+        
+        $permissionID = null;
+
+        if (is_numeric($permissionNameOrIDOrObject))
+        {
+            $permissionID = $permissionNameOrIDOrObject;
+        }
+        else if (is_string($permissionNameOrIDOrObject))
+        {
+            $permission = DataAccessManager::get("permissions")->where("name", $permissionNameOrIDOrObject);
+            $permissionID = $permission["id"];
+        }
+        else if (is_array($permissionNameOrIDOrObject))
+        {
+            $permissionID = $permissionNameOrIDOrObject["id"];
+        }
+
+        if (!$permissionID)
+        {
+            throw new Exception("Permission with ID or Name does not exist: ".$permissionNameOrIDOrObject);
+        }
+
+        $query->addWhereClause(new WhereClause(
+            "permission_id", "=", $permissionID
+        ));
+
+        $roleID = null;
+
+        if (is_numeric($roleIDOrNameOrObject))
+        {
+            $roleID = $roleIDOrNameOrObject;
+        }
+        else if (is_string($roleIDOrNameOrObject))
+        {
+            $role = DataAccessManager::get("roles")->where("name", $roleIDOrNameOrObject);
+            $roleID = $role["id"];
+        }
+        else if (is_array($roleIDOrNameOrObject))
+        {
+            $roleID = $roleIDOrNameOrObject["id"];
+        }
+
+        if (!$roleID)
+        {
+            throw new Exception("Role with ID or Name does not exist: ".$roleIDOrNameOrObject);
+        }
+
+        $query->addWhereClause(new WhereClause(
+            "role_id", "=", $roleID
+        ));
+
+        $permissionRelationship = $query->executeAndReturnOne();
+
+        return $permissionRelationship;
     }
 }
