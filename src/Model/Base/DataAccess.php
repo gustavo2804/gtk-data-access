@@ -2677,23 +2677,38 @@ class DataAccess /* implements Serializable */
         
     }
 
-    function addColumnIfNotExists($columnName, $columnDefinition = '') {
+    function doesColumnExist($columnName)
+    {
+        $db = $this->getDB();
+        $tableName = $this->tableName();
+    
         // Check if the column exists
-        $result = $this->getDB()->query("PRAGMA table_info('$this->tableName')");
+        $stmt = $db->query("PRAGMA table_info('$tableName')");
+        $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $exists = false;
     
-        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-            if ($row['name'] === $columnName) {
+        foreach ($columns as $column) {
+            if ($column['name'] === $columnName) {
                 $exists = true;
                 break;
             }
         }
+
+        return $exists;
+    }
+
+    function addColumnIfNotExists($columnName, $columnDefinition = '') {
+        $db = $this->getDB();
+        $tableName = $this->tableName();
     
-        // If the column does not exist, add it
-        if (!$exists) {
-            $this->getDB()->exec("ALTER TABLE `".$this->tableName()."` ADD COLUMN `$columnName` $columnDefinition;");
+        $exists = $this->doesColumnExist($columnName);
+    
+        if (!$exists) 
+        {
+            $db->exec("ALTER TABLE `$tableName` ADD COLUMN `$columnName` $columnDefinition");
         }
     }
+    
 
     public function insertIfNotExists($input, &$outError = null)
     {
