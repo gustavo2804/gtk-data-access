@@ -2677,6 +2677,24 @@ class DataAccess /* implements Serializable */
         
     }
 
+    function addColumnIfNotExists($columnName, $columnDefinition = '') {
+        // Check if the column exists
+        $result = $this->getDB()->query("PRAGMA table_info('$this->tableName')");
+        $exists = false;
+    
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            if ($row['name'] === $columnName) {
+                $exists = true;
+                break;
+            }
+        }
+    
+        // If the column does not exist, add it
+        if (!$exists) {
+            $this->getDB()->exec("ALTER TABLE `".$this->tableName()."` ADD COLUMN `$columnName` $columnDefinition;");
+        }
+    }
+
     public function insertIfNotExists($input, &$outError = null)
     {
         $debug = false;

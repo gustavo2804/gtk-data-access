@@ -45,7 +45,9 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
          date_modified,
         UNIQUE(role_permission_relationship_id))");
 
-        $this->getDB()->query("ALTER TABLE ".$this->tableName()." ADD COLUMN qualifiers;");
+        // $this->getDB()->query("ALTER TABLE ".$this->tableName()." ADD COLUMN qualifiers;");
+        $this->addColumnIfNotExists("qualifiers");
+
     }
 
     public function permissionRelationsForRole($role)
