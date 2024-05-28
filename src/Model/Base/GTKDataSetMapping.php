@@ -348,17 +348,22 @@ class GTKDataSetMapping {
         return null;
     }
 
-    public function columnMappingForPHPKey($phpKey, $crash = true) 
+    public function columnMappingForPHPKey($phpKey, $crash = true)
     {
         if ($crash)
         {
             if (!isset($this->phpMapping[$phpKey]))
             {
-                throw new Exception("`columnMappingForPHPKey` - $this->tableName - :::No column mapping for PHP key: " . $phpKey);
+                $className = get_class($this);
+                $methodName = __FUNCTION__;
+                throw new ColumnMappingException(
+                            $phpKey, 
+                            $className, 
+                            $methodName);
             }
         }
-
-        return $this->phpMapping[$phpKey];
+    
+        return $this->phpMapping[$phpKey] ?? null;
     }
 
     public function columnMappingForSqlServerKey($key) {

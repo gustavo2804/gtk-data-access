@@ -2996,14 +2996,16 @@ class DataAccess /* implements Serializable */
             gtk_log("Got statement!");
         }
 
+        $columnMappingErrorsToReport = [];
+
         foreach ($item as $key => $value)
         {
             if ($debug)
             {
                 gtk_log("Looking for column mapping: ".$key);
             }
-            
-            
+
+
             $columnMapping = $this->dataMapping->columnMappingForKey($key);
 
             if (!$columnMapping)
@@ -3049,6 +3051,12 @@ class DataAccess /* implements Serializable */
                 }
                 
             }
+        }
+
+        if (count($columnMappingErrorsToReport) > 0)
+        {
+            $isInvalid = $columnMappingErrorsToReport;
+            return null;
         }
 
         try
@@ -3134,7 +3142,7 @@ class DataAccess /* implements Serializable */
 
         $setClause = implode(' = ?, ', $columnNames) . ' = ?';
     
-        $sql = "UPDATE ".$this->tableName." SET " .$setClause . " WHERE ".$whereKey." = ?";
+        $sql = "UPDATE ".$this->tableName()." SET " .$setClause . " WHERE ".$whereKey." = ?";
     
         if ($debug) { gtk_log("Update SQL: {$sql}"); }
 
@@ -3399,6 +3407,8 @@ class DataAccess /* implements Serializable */
 
         $isFirst = true;
 
+        $columnMappingErrorsToReport = [];
+
         if (isset($options["updateAllKeys"]) && $options["updateAllKeys"])
         {
             if ($debug)
@@ -3439,7 +3449,18 @@ class DataAccess /* implements Serializable */
                     gtk_log("Looking for column mapping: ".$key." - value: ".$value);
                 }
 
-                $columnMapping = $this->dataMapping->columnMappingForPHPKey($key);
+                try
+                {
+                    $columnMapping = $this->dataMapping->columnMappingForPHPKey($key);
+                }
+                catch (ColumnMappingException $e) 
+                {
+                    $columnMappingErrorsToReport[] = $e;
+                    if ($debug) {
+                        gtk_log($e->getMessage());
+                    }
+                    continue;
+                }
 
                 if ($columnMapping)
                 {
@@ -3456,6 +3477,11 @@ class DataAccess /* implements Serializable */
                     }
                 }
             }
+        }
+
+        if (count($columnMappingErrorsToReport) > 0)
+        {
+            throw new AccumulatedColumnMappingException($columnMappingErrorsToReport);
         }
 
         $primaryKeyMapping = $this->dataMapping->primaryKeyMapping;
