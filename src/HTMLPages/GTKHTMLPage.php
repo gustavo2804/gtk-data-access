@@ -13,6 +13,8 @@ class GTKHTMLPage
 	public $files;
 	public $env;
 	
+	public $didSearchForCurrentUser;
+	public $didSearchForCurrentSession;
 
 	//----------------------------------------------------------
 	public $messages        = [];
@@ -166,6 +168,30 @@ class GTKHTMLPage
 	public function isAuthorized($maybeCurrentUser, $maybeCurrentSession)
 	{
 		return true;
+	}
+
+	public function currentSession()
+	{
+		if (!$this->didSearchForCurrentSession)
+		{
+			$this->didSearchForCurrentSession = true;
+			$this->session = DataAccessManager::get("session")->getCurrentApacheSession([
+				"requireValid" => true,
+			]);
+		}
+
+		return $this->session;
+	}
+
+	public function currentUser()
+	{
+		if (!$this->didSearchForCurrentUser)
+		{
+			$this->didSearchForCurrentUser = true;
+			$this->user = DataAccessManager::get("session")->getCurrentUser();
+		}
+
+		return $this->user;
 	}
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
