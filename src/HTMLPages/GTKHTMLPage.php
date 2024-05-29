@@ -194,6 +194,11 @@ class GTKHTMLPage
 		return $this->user;
 	}
 
+	public function dataSourceFor($name)
+	{
+		return DataAccessManager::get($name);
+	}
+
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$debug = false;
