@@ -195,6 +195,11 @@ class DataAccess /* implements Serializable */
         return DataAccessManager::get($name);
     }
 
+    public function dataSource($name)
+    {
+        return DataAccessManager::get($name);
+    }
+
     public static function initFromDataAccessManager(DataAccessManager $dataAccessManager, $configName, $config)
     {
         $debug = false;
