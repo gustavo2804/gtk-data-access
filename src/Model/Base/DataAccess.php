@@ -190,6 +190,10 @@ class DataAccess /* implements Serializable */
 	public $sqliteTableName;
 	public $sqliteDefaultOrderByColumn;
 
+    public function getDataSource($name)
+    {
+        return DataAccessManager::get($name);
+    }
 
     public static function initFromDataAccessManager(DataAccessManager $dataAccessManager, $configName, $config)
     {

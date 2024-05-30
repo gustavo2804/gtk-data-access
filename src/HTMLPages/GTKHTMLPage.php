@@ -199,6 +199,12 @@ class GTKHTMLPage
 		return DataAccessManager::get($name);
 	}
 
+	public function getDataSource($name)
+	{
+		return DataAccessManager::get($name);
+	}
+
+
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$debug = false;
