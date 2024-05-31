@@ -56,4 +56,9 @@ class PermissionDataAccess extends DataAccess
     {
         return DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
     }
+
+    public function getPermissionsForUser($user)
+    {
+        return DataAccessManager::get("persona")->permissionsForUser($user);
+    }
 }

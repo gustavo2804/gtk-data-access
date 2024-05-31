@@ -201,7 +201,7 @@ class SelectQuery
                     }
                     else if ($orderBy instanceof OrderBy)
                     {
-                        $sql .= $orderBy->column." ".$orderBy->order;
+                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy->column)." ".$orderBy->order;
                     }
                     else
                     {
@@ -553,6 +553,8 @@ class WhereGroup
     {
         $this->logicalOperator = $logicalOperator;
         $this->clauses         = $clauses;
+
+
     }
 
     public function addWhereClause($clause) { 
@@ -570,6 +572,11 @@ class WhereGroup
 
     public function getSQLForDataAccess($dataAccess, &$params) 
     {
+        if (!is_array($this->clauses))
+        {
+            throw new Exception("Clauses must be an array on WhereGroup");
+        }
+
         $sqlParts = [];
         foreach ($this->clauses as $clause) 
         {

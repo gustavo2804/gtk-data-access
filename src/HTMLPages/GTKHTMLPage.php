@@ -3,6 +3,8 @@
 use Dflydev\DotAccessData\Data;
 use Symfony\Component\Uid\NilUlid;
 
+
+
 class GTKHTMLPage
 {
 	public $get; 
@@ -39,6 +41,11 @@ class GTKHTMLPage
 	public function setAuthorize($toSet)
 	{
 		$this->authorize = $toSet;
+	}
+
+	public function currentPath()
+	{
+		return $_SERVER["PATH_INFO"];
 	}
 
 
@@ -268,11 +275,10 @@ class GTKHTMLPage
 			}
 		}
 
+		$this->processGet($get);
+
 		switch ($server["REQUEST_METHOD"])
 		{
-			case "GET":
-				$this->processGet($get);
-				break;
 			case "POST":
 				$this->processPost($post, $files);
 				break;
@@ -303,5 +309,20 @@ class GTKHTMLPage
 
 class GTKEditPage extends GTKHTMLPage
 {
+
+}
+
+
+
+class GTKEntityPage extends GTKHTMLPage
+{
+	public $entity;
+	public $entityDataSourceName;
+
+	public function entityValue($key)
+    {
+        
+        return $this->getDataSource($this->entityDataSourceName)->valueForKey($key, $this->entity);
+    }
 
 }

@@ -1075,6 +1075,11 @@ class DataAccess /* implements Serializable */
         }
     }
 
+    public function getById($identifier)
+    {
+        return $this->getByIdentifier($identifier);
+    }
+
 
     public function areEqual($itemA, $itemB)
     {

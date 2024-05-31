@@ -136,6 +136,10 @@ class RoleDataAccess extends DataAccess
         return false;
     }
 
+    public function getRolesForUser(&$user = null)
+    {
+        return $this->rolesForUser($user);
+    }
 
     public function rolesForUser(&$user = null)
     {
