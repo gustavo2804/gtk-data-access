@@ -29,7 +29,7 @@ class GTKDataSetMapping {
 
         $this->dataAccessor = $dataAccessor;
 
-        foreach($columns as $columnMapping) 
+        foreach($columns as $key => $columnMapping) 
         {
             // if (!$this->primaryMapping)
             // {
@@ -44,10 +44,22 @@ class GTKDataSetMapping {
                 }
             }
             */
+            $toAdd = $columnMapping;
+            
+            if (is_string($columnMapping))
+            {
+                $toAdd = new GTKColumnMapping($this->dataAccessor, $columnMapping);
+            }
+            else if (is_string($key) && is_array($columnMapping))
+            {
+                $toAdd = new GTKColumnMapping($this->dataAccessor, $columnMapping);
+            }
+
             $this->addColumn($columnMapping);
+
             if ($this->dataAccessor)
             {
-                $columnMapping->dataAccessor = $this->dataAccessor;
+                $toAdd->dataAccessor = $this->dataAccessor;
             }
         }
     }
