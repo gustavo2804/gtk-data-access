@@ -269,6 +269,8 @@ function stonewoodApp_idxErrorLogFormatException($exception)
 
 function doOrCatchAndReport($function)
 {
+    $debug = false;
+
     $containsLocal = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
     ]);
@@ -293,8 +295,12 @@ function doOrCatchAndReport($function)
     }
     
     
-    if ($shouldPrintToScreen)
+    if ($shouldPrintToScreen || $debug)
     {
+        if ($debug)
+        {
+            echo "<h1>Debug Mode</h1>";
+        }
         echo "Error Log Path: ".$errorLogPath;
         echo "<br/>";
         echo "Request URI: ".$_SERVER["REQUEST_URI"];
