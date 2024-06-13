@@ -503,4 +503,16 @@ class EmailQueueManager extends DataAccess
 
         return $mail;
     }
+
+    public function reportError($subject, $body)
+    {
+        global $_GLOBALS;
+        $errorEmail = $_GLOBALS["ON_ERROR_EMAIL"] ?? "gtavares@stonewood.com.do";
+        
+        DataAccessManager::get("email_queue")->addToQueue(
+            $errorEmail,
+            $subject,
+            $body);
+
+    }
 }

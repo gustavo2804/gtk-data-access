@@ -1,5 +1,66 @@
 <?php
 
+
+class GTKFTPTask
+{
+	public $host;
+	public $user;
+	public $password;
+	public $remoteFileName;
+	public $content;
+
+	public function send()
+	{
+
+        $ftp_conn = ftp_connect($this->host);
+
+        if (!$ftp_conn)
+        {
+            $subject = "Error al conectar con el servidor FTP: $this->host de Linea: ".$this->valueForKey("id", $linea);
+            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+
+            DataAccessManager::get("email_queue")->reportError($subject, $body);
+
+            return;
+        }
+
+
+        if (!ftp_login($ftp_conn, $this->user, $this->password)) 
+        {
+            $subject = "Error de login. Clave denegada";
+            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+
+            DataAccessManager::get("email_queue")->reportError($subject, $body);
+
+            ftp_close($ftp_conn);
+
+            return;
+        }
+        
+        $tempFile = tmpfile();
+        fwrite($tempFile, $this->content);
+        rewind($tempFile);
+        $meta_data = stream_get_meta_data($tempFile);
+        $tempFilePath = $meta_data['uri'];
+
+        $success = ftp_put($ftp_conn, $this->remoteFileName, $tempFilePath, FTP_ASCII);
+
+        if (!$success)
+        {
+            $subject = "Error subiendo archivo a linea";
+            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+
+            DataAccessManager::get("email_queue")->reportError($subject, $body);
+        }
+
+        ftp_close($ftp_conn);
+        fclose($tempFile);
+
+        return $success;
+	}
+
+}
+
 class GTKAction extends GTKDataAccessLink
 {
 	public $doObjectForUserItemDelegateOptions;

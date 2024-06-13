@@ -320,7 +320,7 @@ function doOrCatchAndReport($function)
     $toPrintOnScreen .= "Favor darle este numero: ".$guid;
     $toPrintOnScreen .= "</h1>";
 
-    $errorEmail = "gtavares@stonewood.com.do";
+    
 
     try
     {
@@ -333,13 +333,11 @@ function doOrCatchAndReport($function)
 
         try
         {
-            DataAccessManager::get("email_queue")->addToQueue(
-                $errorEmail,
+            DataAccessManager::get("email_queue")->reportError(
                 "STD Ex: ".$guid." - ".$e->getMessage(),
-                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e),
-            );
-    
-            error_log("Added to queue - email with error message to `$errorEmail` - ".$e->getMessage());
+                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e));
+
+            error_log("Reporting exception:".$e->getMessage());
         }
         catch (Exception $e)
         {
@@ -368,13 +366,12 @@ function doOrCatchAndReport($function)
 
         try
         {
-            DataAccessManager::get("email_queue")->addToQueue(
-                $errorEmail,
+            DataAccessManager::get("email_queue")->reportError(
                 "STD Ex: ".$guid." - ".$e->getMessage(),
                 stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e),
             );
     
-            error_log("Added to queue - email with error message to `$errorEmail` - ".$e->getMessage());
+            error_log("Added to queue - email with error message: ".$e->getMessage());
         }
         catch (Exception $e)
         {
