@@ -148,6 +148,13 @@ interface DataAccessInterface
 class DataAccess /* implements Serializable */
 {
 
+    public $identifierKeys = [
+        "id",
+        "identifier",
+        "identificador",
+    ];
+
+
     public function getOrderBySpec()
     {   
         /*
@@ -1049,35 +1056,20 @@ class DataAccess /* implements Serializable */
         return ($a === $b);
     }
 
+
     public function identifierForItem($item)
     {
         $identifierValue = $this->dataMapping->primaryKeyMapping->valueFromDatabase($item);
         
         if (!$identifierValue) 
         {
-            $identifiersToCheck = [
-                "id",
-                "identifier",
-                "identificador",
-            ];
-
-            foreach ($identifiersToCheck as $key)
+            foreach ($this->identifierKeys as $key)
             {
                 if (isset($item[$key]))
                 {
                     $identifierValue = $item[$key];
                 }
             }
-            /*
-            if (isset($item["identifier"]))
-            {
-                $identifierValue = $item["identifier"];
-            } 
-            else if (isset($item["identificador"]))
-            {
-                $identifierValue = $item["identificador"];
-            }
-            */
         }
 
         return $identifierValue;
@@ -3410,6 +3402,11 @@ class DataAccess /* implements Serializable */
             {
                 foreach ($item as $key => $value)
                 {
+                    if (in_array($key, $this->identifierKeys))
+                    {
+                        continue;
+                    }
+
                     $columnMapping = $this->dataMapping->columnMappingForPHPKey($key);
 
                     if ($columnMapping)
@@ -3482,11 +3479,16 @@ class DataAccess /* implements Serializable */
 
             foreach ($item as $key => $value)
             {
+                if (in_array($key, $this->identifierKeys))
+                {
+                    continue;
+                }
 
                 if ($debug)
                 {
                     gtk_log("Looking for column mapping: ".$key." - value: ".$value);
                 }
+
 
                 try
                 {
