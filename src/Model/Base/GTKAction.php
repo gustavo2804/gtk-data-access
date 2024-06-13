@@ -7,7 +7,10 @@ class GTKAction extends GTKDataAccessLink
 
     public function __construct($dataSource, $permission, $function, $options)
     {
+		$options["key"] = "/action.php"." ".$permission."_".$function;
+
 		parent::__construct($dataSource, $permission, "/action.php", $options);
+		
 		$this->doFunctionForUserItemDelegateOptions = $function;
     }
 

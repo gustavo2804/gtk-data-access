@@ -983,7 +983,7 @@ class DataAccess /* implements Serializable */
 
     public function actionsForLocationUserItem($location, $user, $item) 
     { 
-        $debug = false;
+        $debug = true;
 
         $actionsForLocation = [];
 
