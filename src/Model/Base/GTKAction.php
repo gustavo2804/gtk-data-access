@@ -16,7 +16,7 @@ class GTKFTPTask
 
         if (!$ftp_conn)
         {
-            $subject = "Error al conectar con el servidor FTP: $this->host de Linea: ".$this->valueForKey("id", $linea);
+            $subject = "Error al conectar con el servidor FTP: ".$this->host;
             $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 
             DataAccessManager::get("email_queue")->reportError($subject, $body);
@@ -47,7 +47,7 @@ class GTKFTPTask
 
         if (!$success)
         {
-            $subject = "Error subiendo archivo a linea";
+            $subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user;
             $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 
             DataAccessManager::get("email_queue")->reportError($subject, $body);
