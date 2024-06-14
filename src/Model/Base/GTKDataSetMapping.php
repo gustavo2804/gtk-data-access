@@ -172,6 +172,14 @@ class GTKDataSetMapping {
                 
                 return $primaryMapping->getValueFromArray($array);
             }
+
+            foreach ($idKeys as $idKey)
+            {
+                if (array_key_exists($idKey, $array))
+                {
+                    return $array[$idKey];
+                }
+            }   
         }
 
         $keysToTry = [
