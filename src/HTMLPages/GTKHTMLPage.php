@@ -165,17 +165,11 @@ class GTKHTMLPage
 	{
 		redirectToURL("/auth/login.php", null, [
 		]);
-		// die("No autenticado");
 	}
 
 	public function handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession)
 	{
 		die("No autorizado.");
-	}
-
-	public function isAuthorized($maybeCurrentUser, $maybeCurrentSession)
-	{
-		return true;
 	}
 
 	public function currentSession()
@@ -212,6 +206,38 @@ class GTKHTMLPage
 		return DataAccessManager::get($name);
 	}
 
+	public function isAuthorized()
+	{
+		$debug = true;
+
+		$isAuthorized = true;
+
+		if ($this->permissionRequired)
+		{
+			if (!$this->user)
+			{
+				if ($debug)
+				{
+					gtk_log("No current user, will redirect...");
+				}
+				return $this->handleNotAuthenticated($this->user, $this->session);
+			}
+
+			$userDataAccess = DataAccessManager::get("persona");
+
+			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->user);
+		}
+
+		if ($debug)
+		{
+			$message = "`render` : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
+
+			error_log($message);
+		}
+
+		return $isAuthorized;
+	}
+
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
@@ -241,39 +267,20 @@ class GTKHTMLPage
 		}
 
 
-		if ($this->authenticationRequired && !$maybeCurrentSession)
+		if ($this->authenticationRequired && !$this->session)
 		{
 			if ($debug)
 			{
 				gtk_log("Authentication required, No user, no session, will redirect...");
 			}
-			return $this->handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession);
+			return $this->handleNotAuthenticated($this->user, $this->session);
 		}
 
-		if ($this->permissionRequired)
+
+
+		if (!$this->isAuthorized())
 		{
-			if (!$maybeCurrentUser)
-			{
-				if ($debug)
-				{
-					gtk_log("No current user, will redirect...");
-				}
-				return $this->handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession);
-			}
-
-			$userDataAccess = DataAccessManager::get("persona");
-
-			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->user);
-
-			if ($debug)
-			{
-				error_log("`render` : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired);
-			}
-
-			if (!$isAuthorized)
-			{
-				return $this->handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession);
-			}
+			return $this->handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession);
 		}
 
 		$this->processGet($get);
