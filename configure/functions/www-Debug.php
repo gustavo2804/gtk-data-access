@@ -34,6 +34,68 @@ function idx_containsKeywords($string, $keywords)
 }
 
 
+if (!function_exists("findRootLevel"))
+{
+    function findRootLevel()
+    {
+        $dir = __DIR__;
+        while (!file_exists($dir . '/vendor/autoload.php')) {
+            $dir = dirname($dir);
+            if ($dir === '/') {
+                throw new Exception('Failed to find autoload.php. Run Composer install.');
+            }
+        }
+        return $dir;
+    }
+}
+
+
+if (!function_exists("findAppRootDirectory"))
+{
+    function findAppRootDirectory() 
+    {
+        $startDir = __DIR__;
+
+        $requiredFolders = [
+            "Repos", 
+            "Config", 
+            "Logs",
+        ];
+    
+        while ($startDir !== '/' && $startDir !== '') 
+        {
+            $allFoldersExist = true;
+
+            foreach ($requiredFolders as $folder) 
+            {
+                if (!is_dir($startDir . DIRECTORY_SEPARATOR . $folder)) 
+                {
+                    $allFoldersExist = false;
+                    break;
+                }
+            }
+    
+            if ($allFoldersExist) 
+            {
+                return $startDir;
+            }
+    
+            $startDir = dirname($startDir);
+        }
+    
+        return null;
+    }
+}
+
+if (!function_exists("findAutoloadFile"))
+{
+    function findAutoloadFile() {
+        $rootLevel = findRootLevel();
+        return $rootLevel.'/vendor/autoload.php';
+    }
+}
+
+
 function setPHPErrorLogPath()
 {
     $repoRoot = dirname($_SERVER["DOCUMENT_ROOT"]);
@@ -62,8 +124,8 @@ function setPHPErrorLogPath()
     {
         $pathToLogAsArray[] = '/var';
     }
-    
-    $pathToLogAsArray[] = "AppStonewood";
+
+    $pathToLogAsArray[] = basename(findAppRootDirectory());
     $pathToLogAsArray[] = "Logs";
     $pathToLogAsArray[] = $repoType;
     $pathToLogAsArray[] = $errorLogName.".log";
