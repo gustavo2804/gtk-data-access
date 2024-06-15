@@ -278,10 +278,12 @@ class DataAccessManager
 		$toReturn .= $label;
 		$toReturn .= "</a>";
 
+		/*
 		if (!$class)
 		{
 			$toReturn .= "<br/>";
 		}
+		*/
 		
 		return $toReturn;
 	}

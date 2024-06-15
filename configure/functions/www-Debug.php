@@ -1,5 +1,6 @@
 <?php
 
+use phpseclib3\File\ASN1\Maps\EcdsaSigValue;
 
 $functionsToCheck = [
     "stonewoodApp_idxHTMLFormatException",
@@ -332,6 +333,7 @@ function doOrCatchAndReport($function)
     
     if ($shouldPrintToScreen || $debug)
     {
+        echo "<div style='content:block;clear:both;width:100%; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;'>";
         if ($debug)
         {
             echo "<h1>Debug Mode</h1>";
@@ -343,6 +345,7 @@ function doOrCatchAndReport($function)
         echo "HTTP HOST: ".$_SERVER["HTTP_HOST"];
         echo "<br>";
         echo "Contains Local? ".($containsLocal ? "Yes" : "No")."<br>";
+        echo "</div>";
     }
     
 
