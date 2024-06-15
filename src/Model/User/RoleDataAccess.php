@@ -77,7 +77,7 @@ class RoleDataAccess extends DataAccess
 			new GTKColumnMapping($this, "date_modified"),
 		];
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumn = "name";
+		$this->defaultOrderByColumnKey = "name";
 		$this->defaultOrderByOrder  = "DESC";
     }
 

@@ -265,7 +265,7 @@ class SessionDataAccess extends DataAccess
 		   UNIQUE (id))");
 		*/
 
-		$this->defaultOrderByColumn = "created_at";
+		$this->defaultOrderByColumnKey = "created_at";
 		$this->defaultOrderByOrder  = "DESC";
 
 

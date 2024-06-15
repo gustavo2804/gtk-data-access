@@ -29,7 +29,7 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
 		];
 
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumn = "name";
+		$this->defaultOrderByColumnKey = "name";
 		$this->defaultOrderByOrder  = "DESC";
     }
 

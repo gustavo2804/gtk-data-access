@@ -72,7 +72,7 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"class"       			=> "EmailQueueManager", 
 		"db"          			=> "appDB",
 		"tableName"  		    => "EmailQueue",
-		"defaultOrderByColumn"  => "CreatedAt",
+		"defaultOrderByColumnKey"  => "CreatedAt",
 		"defaultOrderByOrder"   => "DESC",
 		"singleItemName"	    => "Email",
 		"pluralItemName"	    => "Emails",
@@ -86,13 +86,13 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"class"                => "PermissionDataAccess",                               
 		"db" 		           => "appDB",
 		"tableName"            => "permissions",
-		"defaultOrderByColumn" => "name",
+		"defaultOrderByColumnKey" => "name",
 		"defaultOrderByOrder"  => "DESC",
 	],
     "SetPasswordTokenDataAccess" => [
 		"class"                 => "SetPasswordTokenDataAccess",
 		"db"                    => "appDB",
-		"defaultOrderByColumn" 	=> "fecha_creado",
+		"defaultOrderByColumnKey" 	=> "fecha_creado",
 		"defaultOrderByOrder"  	=> "DESC",  
 	],
 	"session" => [
@@ -103,7 +103,7 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
         "class"       		   => "SolicitudUsuarioDataAccess",
         "db"          		   => "appDB",
 		"tableName" 		   => "solicitudes_usuario",
-		"defaultOrderByColumn" => "fecha_creado",
+		"defaultOrderByColumnKey" => "fecha_creado",
 		"defaultOrderByOrder"  => "DESC",
 	],
 ];

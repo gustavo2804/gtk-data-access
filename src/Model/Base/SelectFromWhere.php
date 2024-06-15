@@ -225,7 +225,7 @@ class SelectQuery
 
                 if (!$didSetOrderBy && ($driverName == "sqlsrv"))
                 {
-                    $orderByColumn = $this->dataSource->defaultOrderByColumn;
+                    $orderByColumn = $this->dataSource->defaultOrderByColumnKey;
                     $orderByOrder  = $this->dataSource->defaultOrderByOrder ?? "DESC";
                 
                     if (!$orderByColumn)
@@ -247,6 +247,11 @@ class SelectQuery
         }
 
         return $sql;
+    }
+
+    public function setOrderBy($toOrderBy)
+    {
+        $this->orderBy = $toOrderBy;
     }
 
     public function sqlForLimitOffset($limit, $offset, $pdo)

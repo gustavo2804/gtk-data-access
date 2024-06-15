@@ -250,7 +250,7 @@ class FlatRoleDataAccess extends DataAccess
 		];
 
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumn = "id";
+		$this->defaultOrderByColumnKey = "id";
 		$this->defaultOrderByOrder  = "DESC";
     }
     

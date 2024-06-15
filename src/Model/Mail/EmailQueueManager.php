@@ -99,7 +99,7 @@ class EmailQueueManager extends DataAccess
         ];
 
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columns);
-		$this->defaultOrderByColumn = "CreatedAt";
+		$this->defaultOrderByColumnKey = "CreatedAt";
 		$this->defaultOrderByOrder  = "DESC";
 		$this->singleItemName	    = "Email";
 		$this->pluralItemName	    = "Emails";

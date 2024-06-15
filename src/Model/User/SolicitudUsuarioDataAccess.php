@@ -196,7 +196,7 @@ class SolicitudUsuarioDataAccess extends DataAccess
 		];
 
 		$this->dataMapping		    = new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumn = "fecha_creado";
+		$this->defaultOrderByColumnKey = "fecha_creado";
 		$this->defaultOrderByOrder  = "DESC";
 
 		$generarUsuarioAction = new DataAccessAction($this, "generarUsuarioAction", "Generar Usuario");

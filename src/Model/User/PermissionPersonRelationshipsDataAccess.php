@@ -19,7 +19,7 @@ class PermissionPersonRelationshipDataAccess extends DataAccess
 		];
 
 		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumn = "date_modified";
+		$this->defaultOrderByColumnKey = "date_modified";
 		$this->defaultOrderByOrder  = "DESC";
     }
 

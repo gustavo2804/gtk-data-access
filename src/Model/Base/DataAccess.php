@@ -159,14 +159,14 @@ class DataAccess /* implements Serializable */
     {   
         /*
         $orderBy = new OrderByClause(
-            $this->defaultOrderByColumn, 
+            $this->defaultOrderByColumnKey, 
             $this->defaultOrderByOrder);
         return $orderBy;
         */
 
         return [
             [
-                $this->defaultOrderByColumn(),
+                $this->defaultOrderByColumnKey(),
                 $this->defaultOrderByOrder,
             ]
         ];
@@ -177,7 +177,8 @@ class DataAccess /* implements Serializable */
 	private $db;
 	public  $_tableName;
 	public  $dataMapping;
-	public  $defaultOrderByColumn; 
+    public  $defaultSearchByColumnKey;
+	public  $defaultOrderByColumnKey; 
 	public  $defaultOrderByOrder = 'ASC';
     public  $singleItemName      = 'Data Access Item';
     public  $pluralItemName      = 'Data Access Items';
@@ -220,6 +221,18 @@ class DataAccess /* implements Serializable */
     public function dataSource($name)
     {
         return DataAccessManager::get($name);
+    }
+
+    public function defaulSearchByColumnMapping()
+    {
+        if ($this->defaultSearchByColumnKey)
+        {
+            return $this->columnMappingForKey($this->defaultSearchByColumnKey);
+        }
+        else
+        {
+            return $this->primaryKeyMapping();
+        }
     }
 
     public static function initFromDataAccessManager(DataAccessManager $dataAccessManager, $configName, $config)
@@ -294,6 +307,58 @@ class DataAccess /* implements Serializable */
         
         }
 	}
+
+    public function createOrManage($item, $columnMappingKeyToSearchBy = null)
+    {
+        $debug = false;
+
+        if ($debug)
+        {
+            error_log("Will create or manage item: ".print_r($item, true));
+        }
+
+        if (!$columnMappingKeyToSearchBy)
+        {
+            $columnMappingKeyToSearchBy = $this->defaulSearchByColumnMapping();
+
+        }
+
+        $valueToSearchFor = $this->valueForKey($columnMappingKeyToSearchBy, $item);
+
+        $dbItem = $this->getOne($columnMappingKeyToSearchBy, $valueToSearchFor);
+
+        if ($dbItem)
+        {
+            if ($debug)
+            {
+                error_log("Will update item: ".print_r($item, true));
+            }
+            if (method_exists($this, "updateFromSeed"))
+            {
+                $this->updateFromSeed($item, $dbItem);
+            }
+            else
+            {
+                $this->update($item);
+            }
+        }
+        else
+        {
+            if ($debug)
+            {
+                error_log("Will insert item: ".print_r($item, true));
+            }
+            
+            if (method_exists($this, "insertFromSeed"))
+            {
+                $this->insertFromSeed($item);
+            }
+            else
+            {
+                $this->insert($item);
+            }
+        }
+    }
 
     public function createOrAnnounceTable()
     {
@@ -380,6 +445,10 @@ class DataAccess /* implements Serializable */
         {
             $this->setTableName($options["tableName"]);
         }
+
+        
+        $this->defaultOrderByColumnKey  = $options["defaultOrderByColumnKey"] ?? null;
+        $this->defaultSearchByColumnKey = $options["defaultSearchByColumnKey"] ?? null;
         
         $this->register();//no hace nada en DataAccess
 
@@ -441,11 +510,12 @@ class DataAccess /* implements Serializable */
 
         if (isset($config["permissions"]))
 		{
-			if (method_exists($instance, "setPermissions"))
+			if (method_exists($this, "setPermissions"))
 			{
-				$instance->setPermissions($config["permissions"]);
+				$this->setPermissions($config["permissions"]);
 			}
 		}
+
 
         
 
@@ -471,7 +541,7 @@ class DataAccess /* implements Serializable */
           'db' => get_class($this->db) . ' Connection', 
           'tableName' => $this->tableName,
           'dataMapping' => $this->dataMapping,
-          'defaultOrderByColumn' => $this->defaultOrderByColumn,
+          'defaultOrderByColumnKey' => $this->defaultOrderByColumnKey,
           'defaultOrderByOrder' => $this->defaultOrderByOrder,
           'singleItemName' => $this->singleItemName,
           'pluralItemName' => $this->pluralItemName,
@@ -977,8 +1047,8 @@ class DataAccess /* implements Serializable */
 		return $this->sqlServerTableName;
 	}
 
-	public function defaultOrderByColumn(){
-		return $this->defaultOrderByColumn;
+	public function defaultOrderByColumnKey(){
+		return $this->defaultOrderByColumnKey;
 	}
 
     public function actionsForLocationUserItem($location, $user, $item) 
@@ -2429,7 +2499,7 @@ class DataAccess /* implements Serializable */
         
         if (!$orderByColumn)
         {
-            $orderByColumn = $this->defaultOrderByColumn();
+            $orderByColumn = $this->defaultOrderByColumnKey();
             if ($debug)
             {
                 gtk_log("Order by column defined from default methos!");
@@ -2445,7 +2515,7 @@ class DataAccess /* implements Serializable */
             gtk_log("Order By Order  :: ".$orderByOrder);
         }
 
-        if (!$this->defaultOrderByColumn)
+        if (!$this->defaultOrderByColumnKey)
         {
             gtk_log("No default order by column set for data access class: " . get_class($this));
             die("Error de sistema.");
