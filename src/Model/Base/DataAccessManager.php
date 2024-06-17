@@ -88,6 +88,31 @@ function AllLinkTo($dataSourceName, $options = null)
 	return DataAccessManager::allLinkTo($dataSourceName, $options);
 }
 
+if (!function_exists("gtk_log"))
+{
+
+	if (strpos($_SERVER['SCRIPT_NAME'], 'phpunit.phar') !== false) {
+		// Code is being executed under PHPUnit
+		// echo "Running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
+		// echo "\n\n\n";
+		function gtk_log($toLog)
+		{
+			echo $toLog."\n";
+		}
+	} 
+	else 
+	{
+		// Code is being executed outside of PHPUnit (e.g., by Apache CGI)
+		// echo "Not running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
+		// echo "\n\n\n";
+		function gtk_log($toLog)
+		{
+			error_log($toLog);
+		}
+	}
+
+}
+
 class DataAccessManager 
 {
     private $dataAccessors             = [];
