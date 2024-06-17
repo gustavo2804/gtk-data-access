@@ -454,7 +454,17 @@ class WhereClause
         $debug = false;
 
         // $dbType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-        $columnName = $dataAccess->dbColumnNameForKey($this->column);
+
+        $columnName = null;
+
+        if ($this->column instanceof GTKColumnBase)
+        {
+            $columnName = $this->column->dbColumnName();
+        }
+        else
+        {
+            $columnName = $dataAccess->dbColumnNameForKey($this->column);
+        }
 
         if ($debug)
         {

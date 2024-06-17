@@ -364,7 +364,7 @@ function doOrCatchAndReport($function)
     {
         $function();
     }
-    catch (Exception $e)
+    catch (Throwable  $e)
     {
         error_log("=================================== $guid ===================================");
         error_log(stonewoodApp_idxErrorLogFormatException($e));
@@ -377,56 +377,20 @@ function doOrCatchAndReport($function)
 
             error_log("Reporting exception:".$e->getMessage());
         }
-        catch (Exception $e)
-        {
-            error_log("XXXXXXXXXXX --- Failed to send email");
-        }
-        catch (Error $e)
+        catch (Throwable  $e)
         {
             error_log("XXXXXXXXXXX --- Failed to send email");
         }
     
         if ($containsLocal)
         {
+            echo "<div style='display:block;clear:both;width:100%; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;position:fixed;top:0;left:0;visibility:visible;z-index:9999'>";    
             echo stonewoodApp_idxHTMLFormatException($e);
+            echo "</div>";
         }
         else
         {
             die($toPrintOnScreen);
         }
-    }
-    catch (Error $e)
-    {
-        
-        error_log("=================================== $guid ===================================");
-        error_log(stonewoodApp_idxErrorLogFormatException($e));
-          // This will catch any Error, including TypeError
-
-        try
-        {
-            DataAccessManager::get("email_queue")->reportError(
-                "STD Ex: ".$guid." - ".$e->getMessage(),
-                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e),
-            );
-    
-            error_log("Added to queue - email with error message: ".$e->getMessage());
-        }
-        catch (Exception $e)
-        {
-            error_log("XXXXXXXXXXX --- Failed to send email");
-        }
-        catch (Error $e)
-        {
-            error_log("XXXXXXXXXXX --- Failed to send email");
-        }
-
-        if ($containsLocal) 
-        {
-            // Assuming you want to handle Error instances similarly to Exception instances
-            // You might need to adjust the function if it's strictly typed to accept only Exception instances
-            echo stonewoodApp_idxHTMLFormatException($e);
-        } else {
-            error_log("Error: ".$e->getMessage());
-            die($toPrintOnScreen);        }
     }
 }

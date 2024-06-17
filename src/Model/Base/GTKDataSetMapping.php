@@ -97,6 +97,11 @@ class GTKDataSetMapping {
            
         }
 
+        if ($key instanceof GTKColumnMapping)
+        {
+            return $key->getValueFromArray($array);
+        }
+
         if (!is_array($array) && (count($array) === 0))
         {
             return null;

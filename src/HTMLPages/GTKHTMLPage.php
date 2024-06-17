@@ -49,6 +49,26 @@ class GTKHTMLPage
 		return null; // Or throw an exception if preferred
 	}
 
+	public function getClientIP() 
+	{
+		$ipAddress = null;
+		
+		if (!empty($this->server['HTTP_CLIENT_IP'])) 
+		{
+			$ipAddress = $this->server['HTTP_CLIENT_IP'];
+		} 
+		elseif (!empty($this->server['HTTP_X_FORWARDED_FOR'])) 
+		{
+			$ipAddress = $this->server['HTTP_X_FORWARDED_FOR'];
+		} 
+		else 
+		{
+			$ipAddress = $this->server['REMOTE_ADDR'];
+		}
+		
+		return $ipAddress;
+	}
+
 
 
 	//--- Process GET, POST, PUT, PATCH, renderBODY - Overidable Methods

@@ -254,4 +254,49 @@ class SetPasswordTokenDataAccess extends DataAccess
             return false;
         }
     }
+
+    public function createPasswordPhrase($length = 8)
+    {
+        global $dictionaryWords;
+
+        if (!$dictionaryWords)
+        {
+            $dictionaryWords = file_get_contents("words_with_affect.json");
+            $dictionaryWords = json_decode($dictionaryWords, true);
+        }
+
+        while (count($passwordWords) < 3)
+        {
+            $rand = rand(0, count($dictionaryWords) - 1);
+
+            $currentCount = count($passwordWords);
+
+            $wordObject = $dictionaryWords[$rand];
+
+            switch ($currentCount)
+            {
+                case 0:
+                    if ($wordObject["obj"] == "V")
+                    {
+                        $passwordWords[] = $dictionaryWords[$rand];
+                    }
+                    break;
+                case 1:
+                    if ($wordObject["obj"] == "A")
+                    {
+                        $passwordWords[] = $dictionaryWords[$rand];
+                        $passwordWords[] = rand(0, 100);
+                    }
+                    break;
+                case 2:
+                    if ($wordObject["obj"] == "N")
+                    {
+                        $passwordWords[] = $dictionaryWords[$rand];
+                    }
+                    break;
+            }
+        }
+
+        return implode("-", $passwordWords);
+    }
 }

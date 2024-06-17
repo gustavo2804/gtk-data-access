@@ -323,7 +323,7 @@ class DataAccess /* implements Serializable */
 
         }
 
-        $valueToSearchFor = $this->valueForKey($columnMappingKeyToSearchBy, $item);
+        $valueToSearchFor = $columnMappingKeyToSearchBy->getValueFromArray($item);
 
         $dbItem = $this->getOne($columnMappingKeyToSearchBy, $valueToSearchFor);
 
@@ -530,6 +530,12 @@ class DataAccess /* implements Serializable */
 
         ifResponds0($this, "postRegisterCreateTableAndMigrate"); 
 	}
+
+    public function getAll()
+    {
+        $query = new SelectQuery($this);
+        return $query->executeAndReturnAll();
+    }
 
 	public function register(){}
 
@@ -2012,8 +2018,15 @@ class DataAccess /* implements Serializable */
     {
         $debug = false;
 
-        $columnName = $this->dbColumnNameForKey($columnName);
-
+        if ($columnName instanceof GTKColumnMapping)
+        {
+            $columnName = $columnName->getSqlColumnName();
+        }
+        else
+        {
+            $columnName = $this->dbColumnNameForKey($columnName);
+        }
+    
 		if ($debug)
 		{
 			gtk_log("Debugging data access: `getMany()`");

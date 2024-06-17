@@ -328,5 +328,130 @@ class GTKColumnBase
     }
 
 
+    public function listDisplayForDataSourceUserItem($dataSource, $user, $item, $itemIdentifier, $options = null)
+    {
+        $debug = false; // $this->debug ?? false; 
+
+        if ($debug)
+        {
+            error_log("GTKColumnMapping->listDispaly --- ".$this->phpKey);
+        }
+
+        $toReturn     = "";
+        
+        $value        = $this->valueForItem($item);
+
+        $transformValueOnLists = $this->transformValueOnLists;
+
+        if ($transformValueOnLists)
+        {
+            $value = $transformValueOnLists($item, $value);
+        }
+        
+        $wrapStart    = "<td ";
+        $wrapStart   .= ' id="cell-'.$dataSource->dataAccessorName.'-'.$itemIdentifier.'-'.$this->phpKey.'"';
+        $wrapStart   .= " class='text-center align-middle'";
+        $wrapStart   .=  ">";
+        $wrapEnd      = "</td>";
+
+        if ($this->isPrimaryKey())
+        {
+            $updatePermission = $dataSource->userHasPermissionTo("update", $user, $item);
+
+            if ($debug)
+            {
+                error_log("Is Primary Key - ".$this->phpKey." - Has update permission? ".$updatePermission);
+            }
+
+            if ($updatePermission)
+            {
+                return '<td>'.$dataSource->editLinkForItem($item, [
+                    'label' => $value,
+                ]).'</td>';
+            }
+
+
+            $readPermission = $dataSource->userHasPermissionTo("show", $user, $item);
+
+            if ($readPermission)
+            {
+                return '<td>'.$dataSource->showLinkForItem($item, [
+                    'label' => $value,
+                ]).'</td>';
+            }
+            
+            return '<td>'.$value.'</td>';
+        }      
+        
+        $htmlForValue = "";
+
+        $href = null;
+
+        if ($this->linkTo)
+        {
+
+            $linkToModel = null;
+            $lookupOnKey = null;
+
+            if (is_string($this->linkTo))
+            {
+                $linkToModel = $this->linkTo;
+                $lookupOnKey = "id";
+            }
+            else if (is_array($this->linkTo))
+            {
+                $linkToModel = $this->linkTo["model"];
+                $lookupOnKey = $this->linkTo["lookupOnKey"] ?? "id";
+            }
+
+            if (!$linkToModel || !$lookupOnKey)
+            {
+                throw new Exception("Invalid `linkTo` protocol for ".get_class($this)." `linkTo`: ".print_r($this->linkTo, true));
+            }
+
+            $baseURL = $linkToModel."/edit";
+
+            $queryParameters = [
+                "data_source" => $linkToModel,
+                $lookupOnKey  => $value,
+            ];
+
+            $href = "/".$baseURL."?".http_build_query($queryParameters);
+
+
+            if ($debug)
+            {
+                error_log("linkTo - ".$href);
+            }
+        }
+
+        if ($href)
+        {
+            $htmlForValue .= '<a ';
+            $htmlForValue .= ' href="'.$href.'" ';
+            $htmlForValue .= ">";
+        }
+
+
+
+        $htmlForValue .= $value;
+      
+        if ($href)
+        {
+            $htmlForValue .= '</a>';
+        }
+        
+        $toReturn .= $wrapStart;
+        $toReturn .= $htmlForValue;
+        $toReturn .= $wrapEnd;
+
+        if ($debug)
+        {
+            error_log("GTKColumnMapping->listDisplay: --- \n  ".$toReturn);
+        }
+
+
+        return $toReturn;
+    }
 
 }
