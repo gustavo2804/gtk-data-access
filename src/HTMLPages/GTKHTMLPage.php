@@ -1,5 +1,6 @@
 <?php
 
+use function Deployer\desc;
 
 class GTKHTMLPage
 {
@@ -157,28 +158,60 @@ class GTKHTMLPage
 	
 	public function gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env)
 	{
-		$headerPath = $this->headerPath;
+		$contentType = $this->server["CONTENT_TYPE"];
 
-		if (!$headerPath)
+		switch($contentType)
 		{
-			$headerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/header.php";
+			case "application/json":
+				return "";
+			case "application/xml":
+				return "";
+			case "application/x-www-form-urlencoded":
+			case "multipart/form-data":
+			case "text/plain":
+			case "text/html":
+			default:
+				$headerPath = $this->headerPath;
 
+				if (!$headerPath)
+				{
+					$headerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/header.php";
+				
+				}
+			
+				require_once($headerPath);
+				break;
 		}
-
-		require_once($headerPath);
 	}
 
 	public function gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env)
 	{
-		$footerPath = $this->footerPath;
 
-		if (!$footerPath)
+
+		$contentType = $this->server["CONTENT_TYPE"];
+
+		switch($contentType)
 		{
-			$footerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/footer.php";
+			case "application/json":
+				return "";
+			case "application/xml":
+				return "";
+			case "application/x-www-form-urlencoded":
+			case "multipart/form-data":
+			case "text/plain":
+			case "text/html":
+			default:
+				$footerPath = $this->footerPath;
 
+				if (!$footerPath)
+				{
+					$footerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/footer.php";
+				
+				}
+			
+				require_once($footerPath);
+				break;
 		}
-
-		require_once($footerPath);
 	}
 
 	public function handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession)
@@ -271,7 +304,6 @@ class GTKHTMLPage
 		$this->files      = $files;
 		$this->env 		  = $env;
 
-
 		$maybeCurrentUser    = DataAccessManager::get("session")->getCurrentUser();
 		$maybeCurrentSession = DataAccessManager::get("session")->getCurrentApacheSession([
 			"requireValid" => true,
@@ -305,10 +337,14 @@ class GTKHTMLPage
 
 		$this->processGet($get);
 
-		switch ($server["REQUEST_METHOD"])
+		switch ($this->server["REQUEST_METHOD"])
 		{
 			case "POST":
-				$this->processPost($post, $files);
+				$toReturn = $this->processPost($post, $files);
+				if ($toReturn)
+				{
+					return $toReturn;
+				}
 				break;
 			case "PATCH":
 				$this->processPatch($post);
