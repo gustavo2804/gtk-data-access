@@ -376,13 +376,19 @@ class DataAccess /* implements Serializable */
         {
             switch ($driverName)
             {
-                case "sqlite":
-                    $this->createTable();
-                    break;
-                default:
+                case "mysql":
+                case "sqlsrv":
+                case "pgsql":
+                case "oci":
+                case "oci8":
+                case "odbc":
                     gtk_log("CANNOT create table for: ".get_class($this));
                     $sql = $this->createTableSQLString();
                     gtk_log("Table is not created. Consider: ".$sql);
+                    return;
+                case "sqlite":
+                default:
+                    $this->createTable();
                     return;
 
                 if ($debug)
@@ -393,31 +399,54 @@ class DataAccess /* implements Serializable */
         }
         else
         {
-            $columns = $this->dataMapping->ordered;
-            $missingColumns = [];
-
-            foreach ($columns as $columnMapping)
+            switch ($driverName)
             {
-                if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName()))
-                {
-                    $missingColumns[] = $columnMapping;
-                    // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
-                }
-            }
-
-            if (count($missingColumns))
-            {
-                gtk_log("On...`".get_class($this)."`: ".$this->tableName());
-                gtk_log("Missing columns: ");
-
-                foreach ($missingColumns as $columns)
-                {
-                    $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
-                    $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
-                    gtk_log($message);
-                }
-
-                return;
+                case "mysql":
+                case "sqlsrv":
+                case "pgsql":
+                case "oci":
+                case "oci8":
+                case "odbc":
+                    $columns = $this->dataMapping->ordered;
+                    $missingColumns = [];
+        
+                    foreach ($columns as $columnMapping)
+                    {
+                        if (!$columnMapping->doesColumnExist($this->getPDO(), $this->tableName()))
+                        {
+                            $missingColumns[] = $columnMapping;
+                            // $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                        }
+                    }
+        
+                    if (count($missingColumns))
+                    {
+                        gtk_log("On...`".get_class($this)."`: ".$this->tableName());
+                        gtk_log("Missing columns: ");
+        
+                        foreach ($missingColumns as $columns)
+                        {
+                            $columnSQL = $columnMapping->getCreateSQLForPDO($this->getPDO());
+                            $message = "For column: ".$columnMapping->phpKey." consider... ".$columnSQL;
+                            gtk_log($message);
+                        }
+        
+                        return;
+                    }
+                    return;
+                case "sqlite":
+                default:
+                    if ($debug)
+                    {
+                        error_log("Table already exists.");
+                        error_log("Creating missing columns...");
+                    }
+                    $columns = $this->dataMapping->ordered;
+                
+                    foreach ($columns as $columnMapping)
+                    {
+                        $columnMapping->addColumnIfNotExists($this->getPDO(), $this->tableName());
+                    }
             }
         }
     }
