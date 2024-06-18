@@ -41,6 +41,13 @@ class EmailQueueManager extends DataAccess
     public  $sendFrom;
     public  $debugLevel;
 
+    public function __construct($p_db, $options = [])
+    {
+        parent::__construct($p_db, $options);
+
+        $this->sendFrom = $options['sendFrom'] ?? null;
+    }
+
     public function register()
     {
 

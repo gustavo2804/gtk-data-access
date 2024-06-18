@@ -186,8 +186,6 @@ class GTKHTMLPage
 
 	public function gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env)
 	{
-
-
 		$contentType = $this->server["CONTENT_TYPE"];
 
 		switch($contentType)
@@ -261,7 +259,7 @@ class GTKHTMLPage
 
 	public function isAuthorized()
 	{
-		$debug = true;
+		$debug = false;
 
 		$isAuthorized = true;
 
