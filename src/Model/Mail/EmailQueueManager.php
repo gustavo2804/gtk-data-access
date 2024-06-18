@@ -389,7 +389,7 @@ class EmailQueueManager extends DataAccess
     }
 
 
-    public function sendPendingEmails($debug, $logFunction = null) 
+    public function sendPendingEmails($debug, $logFunction = null, $sendFrom = null) 
     {
         if ($debug && !$logFunction)
         {
@@ -410,7 +410,7 @@ class EmailQueueManager extends DataAccess
             $logFunction("Got pending emails: ".count($pendingEmails));
         }
 
-        $mailer = $this->getMailer();
+        $mailer = $this->getMailer($sendFrom);
 
         $infoString = "";
 
@@ -500,7 +500,14 @@ class EmailQueueManager extends DataAccess
             {
                 $sendFrom = $this->sendFrom;
             }
-            else
+            
+            if (!$sendFrom)
+            {
+                global $_GLOBALS;
+                $sendFrom = $_GLOBALS["EMAIL_QUEUE_SEND_FROM"];
+            }
+
+            if (!$sendFrom)
             {
                 $sendFrom = $this->userName;
             }
