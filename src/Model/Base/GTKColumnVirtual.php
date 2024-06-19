@@ -28,6 +28,11 @@ class GTKColumnReference extends GTKColumnBase
         return $this->getValueFromArray($item);
     }
 
+    public function isVirtual()
+    {
+        return true;
+    }
+
 
     public function getValueFromArray($item)
     {

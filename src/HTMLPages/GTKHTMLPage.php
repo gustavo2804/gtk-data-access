@@ -158,6 +158,8 @@ class GTKHTMLPage
 	
 	public function gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env)
 	{
+		
+
 		$contentType = $this->server["CONTENT_TYPE"];
 
 		switch($contentType)
@@ -178,9 +180,10 @@ class GTKHTMLPage
 					$headerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/header.php";
 				
 				}
-			
-				require_once($headerPath);
-				break;
+
+				ob_start();
+				include($headerPath);
+				return ob_get_clean();
 		}
 	}
 
@@ -207,8 +210,9 @@ class GTKHTMLPage
 				
 				}
 			
-				require_once($footerPath);
-				break;
+				ob_start();
+				include($footerPath);
+				return ob_get_clean();
 		}
 	}
 
