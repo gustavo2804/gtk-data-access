@@ -303,7 +303,7 @@ function stonewoodApp_idxErrorLogFormatException($exception)
 
 
 
-function doOrCatchAndReport($function)
+function doOrCatchAndReport($function, $options = [])
 {
     $debug = false;
 
@@ -330,8 +330,9 @@ function doOrCatchAndReport($function)
         die("`router` --- Requesting unauthorized JavaScript.");
     }
     
-    
-    if ($shouldPrintToScreen || $debug)
+    $supressErrorLogHeader = $options["SUPRRESS_ERROR_LOG_HEADER"] ?? false;
+
+    if (($shouldPrintToScreen || $debug) && !$supressErrorLogHeader)
     {
         echo "<div style='content:block;clear:both;width:100%; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;'>";
         if ($debug)
@@ -369,17 +370,20 @@ function doOrCatchAndReport($function)
         error_log("=================================== $guid ===================================");
         error_log(stonewoodApp_idxErrorLogFormatException($e));
 
-        try
+        if (!$containsLocal)
         {
-            DataAccessManager::get("email_queue")->reportError(
-                "STD Ex: ".$guid." - ".$e->getMessage(),
-                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e));
+            try
+            {
+                DataAccessManager::get("email_queue")->reportError(
+                    "STD Ex: ".$guid." - ".$e->getMessage(),
+                    stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e));
 
-            error_log("Reporting exception:".$e->getMessage());
-        }
-        catch (Throwable  $e)
-        {
-            error_log("XXXXXXXXXXX --- Failed to send email");
+                error_log("Reporting exception:".$e->getMessage());
+            }
+            catch (Throwable  $e)
+            {
+                error_log("XXXXXXXXXXX --- Failed to send email");
+            }
         }
     
         if ($containsLocal)
