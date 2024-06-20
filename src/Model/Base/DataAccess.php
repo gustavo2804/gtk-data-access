@@ -1700,6 +1700,21 @@ class DataAccess /* implements Serializable */
         $this->transferRecords($newTableName, $whereConditions);
     }
 
+    public function beginDefferedTransaction()
+    {
+        $this->getDB()->beginTransaction();
+    }
+
+    public function beginExclusiveTransaction()
+    {
+        $this->getDB()->exec("BEGIN EXCLUSIVE TRANSACTION;");
+    }
+
+    public function beginImmediateTransaction()
+    {
+        $this->getDB()->exec("BEGIN IMMEDIATE TRANSACTION;");
+    }
+
     public function beginTransaction($timeout = 5000)
     {
         $dbDriver = $this->getDB()->getAttribute(PDO::ATTR_DRIVER_NAME);
