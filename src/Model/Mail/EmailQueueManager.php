@@ -529,6 +529,9 @@ class EmailQueueManager extends DataAccess
             $message .= "Aviso - Ha occurido un error en el sistema.";
             $message .= "Aun no se ha configurado un correo electrónico para recibir notificaciones de error.";
             $message .= "Favor tomar las acciones de lugar.";
+
+            error_log($message);
+
             die($message);
         }
         
