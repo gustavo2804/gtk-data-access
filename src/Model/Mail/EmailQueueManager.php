@@ -521,7 +521,16 @@ class EmailQueueManager extends DataAccess
     public function reportError($subject, $body)
     {
         global $_GLOBALS;
-        $errorEmail = $_GLOBALS["ON_ERROR_EMAIL"] ?? "gtavares@stonewood.com.do";
+        $errorEmail = $_GLOBALS["ON_ERROR_EMAIL"];
+
+        if (!$errorEmail)
+        {
+            $message  = "";
+            $message .= "Aviso - Ha occurido un error en el sistema.";
+            $message .= "Aun no se ha configurado un correo electrónico para recibir notificaciones de error.";
+            $message .= "Favor tomar las acciones de lugar.";
+            die($message);
+        }
         
         DataAccessManager::get("email_queue")->addToQueue(
             $errorEmail,
