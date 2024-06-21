@@ -216,25 +216,28 @@ class GTKHTMLPage
 		}
 	}
 
-	public function handleNotAuthenticated($maybeCurrentUser, $maybeCurrentSession)
+	public function handleNotAuthenticated()
 	{
 		redirectToURL("/auth/login.php", null, [
 		]);
 	}
 
-	public function handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession)
+	public function handleNotAuthorized()
 	{
 		die("No autorizado.");
 	}
 
 	public function currentSession()
 	{
-		if (!$this->didSearchForCurrentSession)
+		if (!$this->session)
 		{
-			$this->didSearchForCurrentSession = true;
-			$this->session = DataAccessManager::get("session")->getCurrentApacheSession([
-				"requireValid" => true,
-			]);
+			if (!$this->didSearchForCurrentSession)
+			{
+				$this->didSearchForCurrentSession = true;
+				$this->session = DataAccessManager::get("session")->getCurrentApacheSession([
+					"requireValid" => true,
+				]);
+			}
 		}
 
 		return $this->session;
@@ -242,10 +245,13 @@ class GTKHTMLPage
 
 	public function currentUser()
 	{
-		if (!$this->didSearchForCurrentUser)
+		if (!$this->user)
 		{
-			$this->didSearchForCurrentUser = true;
-			$this->user = DataAccessManager::get("session")->getCurrentUser();
+			if (!$this->didSearchForCurrentUser)
+			{
+				$this->didSearchForCurrentUser = true;
+				$this->user = DataAccessManager::get("session")->getCurrentUser();
+			}
 		}
 
 		return $this->user;
@@ -263,31 +269,46 @@ class GTKHTMLPage
 
 	public function isAuthorized()
 	{
-		$debug = false;
+		$debug = true;
+
+		$logFunction = "gtk_log";
+
+		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
+		{
+			$debug = true;
+		}
+
+		if ($debug)
+		{
+			$logFunction = function($message) {
+				error_log($message);
+				echo $message;
+			};
+		}
 
 		$isAuthorized = true;
 
 		if ($this->permissionRequired)
 		{
-			if (!$this->user)
+			if (!$this->currentUser())
 			{
 				if ($debug)
 				{
-					gtk_log("No current user, will redirect...");
+					$logFunction("No current user, will redirect...");
 				}
-				return $this->handleNotAuthenticated($this->user, $this->session);
+				return $this->handleNotAuthenticated();
 			}
 
 			$userDataAccess = DataAccessManager::get("persona");
 
-			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->user);
+			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->currentUser());
 		}
 
 		if ($debug)
 		{
 			$message = "`render` : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
 
-			error_log($message);
+			$logFunction($message);
 		}
 
 		return $isAuthorized;
@@ -306,13 +327,6 @@ class GTKHTMLPage
 		$this->files      = $files;
 		$this->env 		  = $env;
 
-		$maybeCurrentUser    = DataAccessManager::get("session")->getCurrentUser();
-		$maybeCurrentSession = DataAccessManager::get("session")->getCurrentApacheSession([
-			"requireValid" => true,
-		]);
-
-		$this->user    = $maybeCurrentUser;
-		$this->session = $maybeCurrentSession;
 		
 		if ($debug)
 		{
@@ -321,20 +335,18 @@ class GTKHTMLPage
 		}
 
 
-		if ($this->authenticationRequired && !$this->session)
+		if ($this->authenticationRequired && !$this->currentUser())
 		{
 			if ($debug)
 			{
 				gtk_log("Authentication required, No user, no session, will redirect...");
 			}
-			return $this->handleNotAuthenticated($this->user, $this->session);
+			return $this->handleNotAuthenticated();
 		}
-
-
 
 		if (!$this->isAuthorized())
 		{
-			return $this->handleNotAuthorized($maybeCurrentUser, $maybeCurrentSession);
+			return $this->handleNotAuthorized();
 		}
 
 		$this->processGet($get);
