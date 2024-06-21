@@ -11,6 +11,8 @@ class GTKHTMLPage
 	public $phpSession;
 	public $files;
 	public $env;
+
+	public $allowsCache = false;
 	
 	public $didSearchForCurrentUser;
 	public $didSearchForCurrentSession;
@@ -318,10 +320,13 @@ class GTKHTMLPage
 		$this->files      = $files;
 		$this->env 		  = $env;
 
-		session_start();
-		header("Cache-Control: no-cache, must-revalidate");
-		header("Pragma: no-cache");
-
+		if ($this->allowsCache)
+		{
+			session_start();
+			header("Cache-Control: no-cache, must-revalidate");
+			header("Pragma: no-cache");
+	
+		}
 		
 		if ($debug)
 		{
