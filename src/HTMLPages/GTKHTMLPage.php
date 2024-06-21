@@ -156,7 +156,7 @@ class GTKHTMLPage
 	//---------------------------------------------------------
 	//---------------------------------------------------------
 	
-	public function gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env)
+	public function gtk_renderHeader()
 	{
 		
 
@@ -187,7 +187,7 @@ class GTKHTMLPage
 		}
 	}
 
-	public function gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env)
+	public function gtk_renderFooter()
 	{
 		$contentType = $this->server["CONTENT_TYPE"];
 
@@ -273,6 +273,7 @@ class GTKHTMLPage
 
 		$logFunction = "gtk_log";
 
+		/*
 		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
 		{
 			$debug = true;
@@ -285,6 +286,7 @@ class GTKHTMLPage
 				echo $message;
 			};
 		}
+		*/
 
 		$isAuthorized = true;
 
@@ -306,7 +308,7 @@ class GTKHTMLPage
 
 		if ($debug)
 		{
-			$message = "`render` for".get_class($this)." : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
+			$message = "`render` for ".get_class($this)." : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
 
 			$logFunction($message);
 		}
