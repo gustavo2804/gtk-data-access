@@ -271,23 +271,6 @@ class GTKHTMLPage
 	{
 		$debug = true;
 
-		$logFunction = "gtk_log";
-
-		/*
-		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
-		{
-			$debug = true;
-		}
-
-		if ($debug)
-		{
-			$logFunction = function($message) {
-				error_log($message);
-				echo $message;
-			};
-		}
-		*/
-
 		$isAuthorized = true;
 
 		if ($this->permissionRequired)
@@ -296,7 +279,7 @@ class GTKHTMLPage
 			{
 				if ($debug)
 				{
-					$logFunction("No current user, will redirect...");
+					error_log("No current user, will redirect...");
 				}
 				return $this->handleNotAuthenticated();
 			}
@@ -310,7 +293,7 @@ class GTKHTMLPage
 		{
 			$message = "`render` for ".get_class($this)." : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
 
-			$logFunction($message);
+			error_log($message);
 		}
 
 		return $isAuthorized;
@@ -346,7 +329,7 @@ class GTKHTMLPage
 		{
 			if ($debug)
 			{
-				gtk_log("Authentication required, No user, no session, will redirect...");
+				error_log("Authentication required, No user, no session, will redirect...");
 			}
 			return $this->handleNotAuthenticated();
 		}
