@@ -74,7 +74,7 @@ class SetPasswordHTMLPage extends GTKHTMLPage
     }
 
 	
-	public function renderMessages($get, $post, $server, $cookie, $session, $files, $env)
+	public function renderMessages()
 	{
 		$toReturn = "";
 
@@ -111,7 +111,7 @@ class SetPasswordHTMLPage extends GTKHTMLPage
         <h1>Reset Your Password</h1>
 
         <?php
-        echo $this->renderMessages($get, $post, $server, $cookie, $session, $files, $env);
+        echo $this->renderMessages();
         ?>
 
         <form action="/auth/passwordSetLink.php" method="post">

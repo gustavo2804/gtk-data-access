@@ -101,9 +101,9 @@ class GTKHTMLPage
 	}
 
 
-	public function gtk_renderBody($get, $post, $server, $cookie, $session, $files, $env)
+	public function gtk_renderBody()
 	{
-		$toReturn = $this->renderMessages($get, $post, $server, $cookie, $session, $files, $env);
+		$toReturn = $this->renderMessages();
 
 		if (method_exists($this, "renderBody"))
 		{
@@ -119,7 +119,7 @@ class GTKHTMLPage
 		return $toReturn;
 	}
 	
-	public function renderMessages($get, $post, $server, $cookie, $session, $files, $env)
+	public function renderMessages()
 	{
 		$toReturn = "";
 
