@@ -318,6 +318,10 @@ class GTKHTMLPage
 		$this->files      = $files;
 		$this->env 		  = $env;
 
+		session_start();
+		header("Cache-Control: no-cache, must-revalidate");
+		header("Pragma: no-cache");
+
 		
 		if ($debug)
 		{
