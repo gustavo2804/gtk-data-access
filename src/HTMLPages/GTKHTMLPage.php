@@ -107,7 +107,7 @@ class GTKHTMLPage
 
 		if (method_exists($this, "renderBody"))
 		{
-			$toReturn .= $this->renderBody($get, $post, $server, $cookie, $session, $files, $env);
+			$toReturn .= $this->renderBody();
 		}
 		else
 		{
@@ -306,7 +306,7 @@ class GTKHTMLPage
 
 		if ($debug)
 		{
-			$message = "`render` : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
+			$message = "`render` for".get_class($this)." : Is authorized: ".print_r($isAuthorized, true)." for permission: ".$this->permissionRequired;
 
 			$logFunction($message);
 		}
@@ -319,6 +319,11 @@ class GTKHTMLPage
 	{
 		$debug = false;
 
+		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
+		{
+			$debug = true;
+		}
+
 		$this->get 		  = $get;
 		$this->post 	  = $post;
 		$this->server 	  = $server;
@@ -330,8 +335,8 @@ class GTKHTMLPage
 		
 		if ($debug)
 		{
-			error_log("`render` : Got current user: ".print_r($maybeCurrentUser, true));
-			error_log("`render` : Got current session: ".print_r($maybeCurrentSession, true));
+			error_log("`render` : Got current user: ".print_r($this->currentUser(), true));
+			error_log("`render` : Got current session: ".print_r($this->currentSession(), true));
 		}
 
 
@@ -369,9 +374,9 @@ class GTKHTMLPage
 		}
 
 		$text = "";
-		$text .= $this->gtk_renderHeader($get, $post, $server, $cookie, $session, $files, $env);
-		$text .= $this->gtk_renderBody($get, $post, $server, $cookie, $session, $files, $env);
-		$text .= $this->gtk_renderFooter($get, $post, $server, $cookie, $session, $files, $env);
+		$text .= $this->gtk_renderHeader();
+		$text .= $this->gtk_renderBody();
+		$text .= $this->gtk_renderFooter();
 		return $text;
 	}
 
