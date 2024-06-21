@@ -112,7 +112,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 	}
 
 
-	public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
+	public function renderBody()
     {
         $debug = false;
 

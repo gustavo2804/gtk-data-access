@@ -199,6 +199,42 @@ class DataAccess /* implements Serializable */
 	public $sqliteTableName;
 	public $sqliteDefaultOrderByColumn;
 
+
+    public function withTransaction($closure, $maxRetries = 5, $retryDelay = 100000)
+    {
+        $attempt = 0;
+        while ($attempt < $maxRetries) {
+            try 
+            {
+                $this->getPDO()->beginTransaction();
+
+                $result = $closure();
+
+                $this->getPDO()->commit();
+                return $result;
+            } 
+            catch (PDOException $e) 
+            {
+                if ($e->getCode() === '40001' || $e->getCode() === 'HY000') { // SQLSTATE code for a busy database
+                    gtk_log("Database is busy, retrying... Attempt: " . ($attempt + 1));
+                    usleep($retryDelay); // wait before retrying
+                    $attempt++;
+                } else {
+                    gtk_log("Error during transaction: " . $e->getMessage());
+                    $this->getPDO()->rollBack();
+                    throw $e; // Re-throw the exception after rollback
+                }
+            } catch (Exception $e) {
+                gtk_log("Error during transaction: " . $e->getMessage());
+                $this->getPDO()->rollBack();
+                throw $e; // Re-throw the exception after rollback
+            }
+        }
+
+        gtk_log("Max retries reached. Database is still busy.");
+        return false;
+    }
+
     public function currentUser()
     {
         return DataAccessManager::get("persona")->getCurrentUser();

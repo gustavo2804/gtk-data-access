@@ -2,7 +2,7 @@
 
 class RequestResetPasswordEmailPage extends GTKHTMLPage
 {
-    public function processPost($postObject, $files)
+    public function processPost()
     {
         $email = $_POST['email'];
         
@@ -18,7 +18,7 @@ class RequestResetPasswordEmailPage extends GTKHTMLPage
             die($formResult->message());
         }
     }
-    public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
+    public function renderBody()
     {
         ob_start(); ?>
 

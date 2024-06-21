@@ -237,7 +237,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 		return $toReturn;
 	}
 
-	public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
+	public function renderBody()
 	{
 		$debug = false;
 
@@ -271,8 +271,8 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			Count: <?php echo $this->count(); ?>
 	    </h3>
 
-		<form action="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>" method="get">
-			<input type="text" name="search" id="search" value="<?php echo isset($_GET['search']) ? $_GET['search'] : ''; ?>">
+		<form action="<?php echo htmlspecialchars($this->server['REQUEST_URI']); ?>" method="get">
+			<input type="text" name="search" id="search" value="<?php echo isset($this->get['search']) ? $_GET['search'] : ''; ?>">
 			<button type="submit">Search</button>
 			<select name="columnToSearch" id="columnToSearch_select">
     			<?php

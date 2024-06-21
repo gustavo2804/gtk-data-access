@@ -52,7 +52,7 @@ class TablePlusResultsFromSubmitPage extends TablePlusPage
     }
     
 
-    public function processPost($postObject, $files)
+    public function processPost()
     {
         $debug = false;
 

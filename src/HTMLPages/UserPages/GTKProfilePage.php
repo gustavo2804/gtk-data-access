@@ -15,15 +15,15 @@ class GTKProfilePage extends GTKHTMLPage
         return $this->getDataSource("persona")->valueForKey($key, $this->user);
     }
 
-    public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
+    public function renderBody()
     {
-        if (!$get["id"])
+        if (!$this->get["id"])
         {
             $this->user = DataAccessManager::get("session")->getCurrentUser();
         }
         else
         {
-            $this->user = DataAccessManager::get("persona")->getByIdentifier($get["id"]);
+            $this->user = DataAccessManager::get("persona")->getByIdentifier($this->get["id"]);
         }
 
 

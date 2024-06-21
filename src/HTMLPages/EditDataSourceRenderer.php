@@ -31,7 +31,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 		}
 	}
 
-    public function processPost($postObject, $files)
+    public function processPost()
     {
 		$debug = false;
 
@@ -77,7 +77,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 
 					if (method_exists($this->dataSource, "didCreateNewOnFormWith"))
 					{
-						$this->dataSource->didCreateNewOnFormWith($postObject, $this->item, $user);
+						$this->dataSource->didCreateNewOnFormWith($this->post, $this->item, $user);
 					}
 
 				}
@@ -110,7 +110,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 			{
 				if (method_exists($this->dataSource, "didUpdateOnFormWith"))
 				{
-					$this->dataSource->didUpdateOnFormWith($postObject, $this->item, $user);
+					$this->dataSource->didUpdateOnFormWith($this->post, $this->item, $user);
 				}
 
 				$methodToCheckFor = "renderEditSuccess";
@@ -204,7 +204,7 @@ class EditDataSourceRenderer extends ShowDataSourceRenderer
 		}
     }
 
-    public function renderBody($get, $post, $server, $cookie, $session, $files, $env)
+    public function renderBody()
     {
         $debug = false;
 

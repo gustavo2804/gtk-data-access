@@ -89,13 +89,13 @@ class GTKHTMLPage
 		
 	}
 
-	public function processPost($postObject, $files)
+	public function processPost()
 	{
 		$debug = false;
 
 		if ($debug)
 		{
-			error_log("Process POST Basic: ".print_r($postObject, true));
+			error_log("Process POST Basic: ".print_r($this->post, true));
 		}
 		// Does nothing..
 	}
