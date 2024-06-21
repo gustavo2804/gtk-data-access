@@ -218,8 +218,7 @@ class GTKHTMLPage
 
 	public function handleNotAuthenticated()
 	{
-		redirectToURL("/auth/login.php", null, [
-		]);
+		redirectToURL("/auth/login.php", null, []);
 	}
 
 	public function handleNotAuthorized()
@@ -286,7 +285,9 @@ class GTKHTMLPage
 
 			$userDataAccess = DataAccessManager::get("persona");
 
-			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $this->currentUser());
+			$currentUser = $this->currentUser();
+
+			$isAuthorized = $userDataAccess->hasPermission($this->permissionRequired, $currentUser);
 		}
 
 		if ($debug)
