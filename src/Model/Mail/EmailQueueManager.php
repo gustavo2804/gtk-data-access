@@ -409,8 +409,7 @@ class EmailQueueManager extends DataAccess
         {
             $this->updateEmailWithException($email, $e);
 
-            $errorString  = "FAIL!!! - ".$infoString."\n";
-            $errorString .= "Message: ".$e->getMessage();
+            $errorString = "FAIL @ Email Send Message: ".$e->getMessage();
 
             if ($debug)
             {
