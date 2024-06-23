@@ -15,7 +15,7 @@ class FlatRoleDataAccess extends DataAccess
             new GTKColumnMapping($this, "user_id", [
                 "transformValueOnLists" => function ($item, $value) {
                     $persona = DataAccessManager::get("persona")->getByIdentifier($value);
-                    return $value." - ".DataAccessManager::get("persona")->fullNameForItem($persona);
+                    return $value." - ".DataAccessManager::get("persona")->getFullName($persona);
                 },
             ]),
 			new GTKColumnMapping($this, "role_id", [

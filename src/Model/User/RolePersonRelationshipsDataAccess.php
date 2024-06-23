@@ -17,7 +17,7 @@ class RolePersonRelationshipsDataAccess extends DataAccess
                 "formLabel" => "Persona",
                 "transformValueOnLists" => function ($item, $value) {
                     $persona = DataAccessManager::get("persona")->getByIdentifier($value);
-                    return $value." - ".DataAccessManager::get("persona")->fullNameForItem($persona);
+                    return $value." - ".DataAccessManager::get("persona")->getFullName($persona);
                 },
             ]),
 			new GTKColumnMapping($this, "comments",	                   [ "formLabel" => "Comentarios"]),

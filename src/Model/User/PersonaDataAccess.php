@@ -239,7 +239,7 @@ class PersonaDataAccess extends DataAccess
 		die(Glang::get("session_expired_message"));
 	}
 
-	public function fullNameForItem($item)
+	public function getFullName($item)
 	{
 		return $this->valueForKey("nombres", $item)." ".$this->valueForKey("apellidos", $item);
 	}
