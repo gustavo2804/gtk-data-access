@@ -72,6 +72,8 @@ class GTKColumnBase
 
     public function __construct($dataSource, $phpKey, $options = [])
     {
+        $debug = true;
+
         $this->dataSource = $dataSource;
         $this->phpKey     = trim($phpKey);
         
@@ -103,11 +105,38 @@ class GTKColumnBase
 
         $this->_isNullable  = $options["isNullable"] ?? true;
         $this->isSearchable = $options["isSearchable"] ?? true;
+
+        $hideOnLists = false;
+
+        if (isset($options["hideOnLists"]))
+        {
+            $hideOnLists = $options["hideOnLists"];
+        }
+
+        if (isset($options["showOnLists"]))
+        {
+            $hideOnLists = !$options["showOnLists"];
+        }
+
+        if ($hideOnLists)
+        {
+            $this->_hideOnLists = true;
+            $this->_hideOnSearch = true;
+        }
+        else
+        {
+            $this->_hideOnSearch = $options["hideOnSearch"] ?? false;
+        }
+
+        if ($debug)
+        {
+            error_log("Column: ".get_class($this->dataSource)."//".$this->phpKey." - Hide on lists: ".$this->_hideOnLists);
+
+        }
     
         $this->type                       = $options["type"]                          ?? false;
         $this->_hideOnLists               = $options["hideOnLists"]                   ?? false;
         $this->_hideOnShow                = $options["hideOnShow"]                    ?? false;
-        $this->_hideOnSearch              = $options["hideOnSearch"]                  ?? false;
         $this->_hideOnForms               = $options["hideOnForms"]                   ?? false;
         $this->_hideOnInsert              = $options["hideOnInsert"]                  ?? false;
         $this->_hideOnUpdate              = $options["hideOnUpdate"]                  ?? false;

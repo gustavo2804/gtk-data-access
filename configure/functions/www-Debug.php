@@ -339,7 +339,9 @@ function doOrCatchAndReport($function, $options = [])
         {
             echo "<h1>Debug Mode</h1>";
         }
-        echo "Error Log Path: ".$errorLogPath;
+        echo 'Error Log Path: <a href="/debug/viewErrorLog.php">'.$errorLogPath.'</a>';
+        echo '&nbsp;&nbsp;&nbsp';
+        echo "<a href='/debug/clearErrorLog.php'>Clear Error Log</a>";
         echo "<br/>";
         echo "Request URI: ".$_SERVER["REQUEST_URI"];
         echo "<br>";

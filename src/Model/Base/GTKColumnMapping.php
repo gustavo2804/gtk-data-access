@@ -117,6 +117,12 @@ class GTKColumnMapping extends GTKColumnBase
         parent::__construct($dataSource, $phpKey, $options);
         
         $this->sqlServerKey        = $options['dbKey']            ?? null;
+
+        if (!$this->sqlServerKey)
+        {
+            $this->sqlServerKey = $options["dbColumn"] ?? null;
+        }
+
         $this->type                = $options['type']             ?? null;
         $this->formInputType       = $options['formInputType']    ?? null;
         $this->linkTo              = $options['linkTo']           ?? null;
