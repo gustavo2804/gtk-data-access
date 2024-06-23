@@ -102,6 +102,8 @@ class EmailQueueManager extends DataAccess
             new GTKColumnMapping($this, "cc_recipients",     [ "dbKey" => "CCRecipients",       "formLabel" => "Destinatarios en Copia"]),
             new GTKColumnMapping($this, "bcc_recipients",    [ "dbKey" => "BCCRecipients",      "formLabel" => "Destinatarios en Copia Oculta"]),
             new GTKColumnMapping($this, "is_html"),
+            new GTKColumnMapping($this, "string_to_attach_filename"),
+            new GTKColumnMapping($this, "string_to_attach"),
              
         ];
 
@@ -127,11 +129,25 @@ class EmailQueueManager extends DataAccess
         return true;
     }
 
-    function verifyEmailString($email) 
+    function verifyEmailString($toCheck) 
     {
-        // Check if the email format is valid
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return false;
+        $emails = null;
+
+
+        if (str_contains($toCheck, ","))
+        {
+            $emails = explode(",", $toCheck);
+        }
+        else
+        {
+            $emails = [$toCheck];
+        }
+        
+        foreach ($emails as $email)
+        {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return false;
+            }
         }
 
         return true;
@@ -169,9 +185,14 @@ class EmailQueueManager extends DataAccess
     ) {
         $debug = false;
 
-        if (!$sendTo || !$this->verifyEmailString($sendTo))
+        if (!$sendTo)
         {
             throw new Exception("El campo `sendTo` es obligatorio.");
+        }
+
+        if (!$this->verifyEmailString($sendTo))
+        {
+            throw new Exception("El campo `sendTo` no es un correo electrónico válido.");
         }
 
         $senderEmail   = $options['senderEmail']   ?? $this->sendFrom; 
@@ -181,6 +202,8 @@ class EmailQueueManager extends DataAccess
         $status        = "Pending";
         $createdAt     = $options['createdAt']     ?? date('Y-m-d H:i:s');
 
+        $stringToAttach         = $options["stringToAttach"] ?? null;
+        $stringToAttachFilename = $options["stringToAttachFilename"] ?? null;
 
 
         $toInsert = [
@@ -195,6 +218,8 @@ class EmailQueueManager extends DataAccess
             "cc_recipients"    => $options['ccRecipients']  ?? null,
             "bcc_recipients"   => $options['bccRecipients'] ?? null,
             "is_html"          => $options["isHTML"] ?? true,
+            "string_to_attach"          => $stringToAttach,
+            "string_to_attach_filename" => $stringToAttachFilename,
         ];
 
         $this->insert($toInsert);
@@ -356,6 +381,14 @@ class EmailQueueManager extends DataAccess
 
         foreach ($bccRecipients as $address) {
             $mailer->addBCC($address);
+        }
+
+        if ($email["string_to_attach"])
+        {
+            $mailer->addStringAttachment(
+                $email["string_to_attach"],
+                $email["string_to_attach_filename"] ?? "attachment.txt"
+            );
         }
 
         try 
