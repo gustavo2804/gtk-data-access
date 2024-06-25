@@ -348,80 +348,88 @@ class DataAccessManager
 	public static function configureSystem()
 	{
 		$debug = false; 
-		
-		/*
-		error_reporting(E_STRICT);
-		
-		function terminate_missing_variables($errno, $errstr, $errfile, $errline)
-		{                               
-		  if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
-		  {
-			die ("$errstr in $errfile line $errline");
-		  }
-		   
-		
-		  return false; // Let the PHP error handler handle all the rest  
-		}
-		*/
-		
-		// $old_error_handler = set_error_handler("terminate_missing_variables"); 
-		
-		if (!function_exists("gtk_log"))
+
+		static $didConfigure;
+
+		if (!$didConfigure)
 		{
-		
-			if (strpos($_SERVER['SCRIPT_NAME'], 'phpunit.phar') !== false) {
-				// Code is being executed under PHPUnit
-				// echo "Running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
-				// echo "\n\n\n";
-				function gtk_log($toLog)
+			$didConfigure = true;
+			
+			/*
+			error_reporting(E_STRICT);
+			
+			function terminate_missing_variables($errno, $errstr, $errfile, $errline)
+			{                               
+			  if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
+			  {
+				die ("$errstr in $errfile line $errline");
+			  }
+			
+			
+			  return false; // Let the PHP error handler handle all the rest  
+			}
+			*/
+			
+			// $old_error_handler = set_error_handler("terminate_missing_variables"); 
+			
+			if (!function_exists("gtk_log"))
+			{
+			
+				if (strpos($_SERVER['SCRIPT_NAME'], 'phpunit.phar') !== false) {
+					// Code is being executed under PHPUnit
+					// echo "Running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
+					// echo "\n\n\n";
+					function gtk_log($toLog)
+					{
+						echo $toLog."\n";
+					}
+				} 
+				else 
 				{
-					echo $toLog."\n";
+					// Code is being executed outside of PHPUnit (e.g., by Apache CGI)
+					// echo "Not running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
+					// echo "\n\n\n";
+					function gtk_log($toLog)
+					{
+						error_log($toLog);
+					}
+				}
+			
+			}
+			
+			date_default_timezone_set('America/Santo_Domingo');
+			
+			$envPath = null;
+			global $_GLOBALS;
+		
+			if (isset($_GLOBALS["ENV_FILE_PATH"]))
+			{
+				$envPath = $_GLOBALS["ENV_FILE_PATH"];
+			}
+			
+			if (!$envPath || !file_exists($envPath))
+			{
+				die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
+			}
+			
+			if ($debug)
+			{
+				error_log("Reading `env.php` at: $envPath");
+			}
+			
+			require_once($envPath);	
+			
+			if (class_exists('PHPUnit\Framework\TestCase')) 
+			{
+				$testFilePath = dirname($envPath)."test-env.php";
+			
+				if (file_exists($testFilePath))
+				{
+					require_once($testFilePath);
 				}
 			} 
-			else 
-			{
-				// Code is being executed outside of PHPUnit (e.g., by Apache CGI)
-				// echo "Not running under PHPUnit: ".$_SERVER['SCRIPT_NAME']."\n";
-				// echo "\n\n\n";
-				function gtk_log($toLog)
-				{
-					error_log($toLog);
-				}
-			}
-		
-		}
-		
-		date_default_timezone_set('America/Santo_Domingo');
-		
-		$envPath = null;
-		global $_GLOBALS;
 
-		if (isset($_GLOBALS["ENV_FILE_PATH"]))
-		{
-			$envPath = $_GLOBALS["ENV_FILE_PATH"];
 		}
-		
-		if (!$envPath || !file_exists($envPath))
-		{
-			die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
-		}
-		
-		if ($debug)
-		{
-			error_log("Reading `env.php` at: $envPath");
-		}
-		
-		require_once($envPath);	
-		
-		if (class_exists('PHPUnit\Framework\TestCase')) 
-		{
-			$testFilePath = dirname($envPath)."test-env.php";
-
-			if (file_exists($testFilePath))
-			{
-				require_once($testFilePath);
-			}
-		} 
 
 	}
 

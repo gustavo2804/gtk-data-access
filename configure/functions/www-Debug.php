@@ -301,6 +301,32 @@ function stonewoodApp_idxErrorLogFormatException($exception)
     return $formattedMessage;
 }
 
+function cmdOrCatchAndReport($function, $options = [])
+{
+    
+    try
+    {
+        $function();
+    }
+    catch (Throwable  $e)
+    {
+        $guid = uniqid();
+        error_log("=================================== $guid ===================================");
+        error_log(stonewoodApp_idxErrorLogFormatException($e));
+
+        try
+        {
+            DataAccessManager::get("email_queue")->reportError(
+                "Stonewood Command Line Exception $guid - ".$e->getMessage(),
+                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e));
+            error_log("Reporting exception:".$e->getMessage());
+        }
+        catch (Throwable  $e)
+        {
+            error_log("XXXXXXXXXXX --- Failed to send email");
+        }
+    }
+}
 
 
 function doOrCatchAndReport($function, $options = [])
