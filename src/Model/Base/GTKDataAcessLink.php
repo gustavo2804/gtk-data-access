@@ -19,6 +19,8 @@ class GTKDataAccessLink
 	public $isInvalidForUserItemDelegateOptionsObject;
     public $isInvalidForUserItemDelegateOptionsFunction;
 
+	public $_queryParametersForItem;
+
     public function __construct($dataSource, $permission, $url, $options)
     {
 		$this->url = $url;
@@ -41,6 +43,11 @@ class GTKDataAccessLink
 		{
 			$this->isInvalidForUserItemDelegateOptionsFunction = $options["isInvalidForUserItemDelegateOptionsFunction"];
 		}
+
+		if (isset($options["queryParametersForItem"]))
+		{
+			$this->_queryParametersForItem = $options["queryParametersForItem"];
+		}
     }
 
 	public function labelForUserItem($user, $item)
@@ -60,8 +67,22 @@ class GTKDataAccessLink
 		}
 	}
 
-    public function linkForItem($item, $options = [])
-    {
+	public function queryParametersForItem($item, $options = [])
+	{
+		if ($this->_queryParametersForItem)
+		{
+			if (is_callable($this->_queryParametersForItem))
+			{
+				$toCall = $this->_queryParametersForItem;
+				$queryParameters = $toCall($item, $options);
+				return http_build_query($queryParameters);
+			}
+			else
+			{
+				return $this->_queryParametersForItem;
+			}
+		}
+		
         $defaultQueryArguments = [
             "actionName"     => $this->key,
             "dataSourceName" => $this->dataSource->dataAccessorName,
@@ -70,7 +91,13 @@ class GTKDataAccessLink
 
         $queryArguments = array_merge($defaultQueryArguments, $options);
 
-        return $this->url.'?'.http_build_query($queryArguments);
+        return http_build_query($queryArguments);
+
+	}
+
+    public function linkForItem($item, $options = [])
+    {
+        return $this->url.'?'.$this->queryParametersForItem($item, $options);
     }
 
 	
