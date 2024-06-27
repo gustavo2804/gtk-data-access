@@ -1,5 +1,24 @@
 <?php
 
+class GTKColumnMappingListDisplayArgument
+{
+    public $dataSource;
+    public $user;
+    public $item;
+    public $itemIdentifier;
+    public $options;
+
+    public function __construct($dataSource, $user, $item, $itemIdentifier, $options)
+    {
+        $this->dataSource     = $dataSource;
+        $this->user           = $user;
+        $this->item           = $item;
+        $this->itemIdentifier = $itemIdentifier;
+        $this->options        = $options;
+    }
+
+}
+
 class GTKColumnBase 
 {
     public $debug = false;
@@ -13,6 +32,8 @@ class GTKColumnBase
     public $customInputFunctionClass;
     public $customInputFunctionScope;
     public $customInputFunctionOptions;
+
+    public $_listDisplayForDataSourceUserItem;
 
     public $formNewProcessFunction;
     public $formEditProcessFunction;
@@ -167,6 +188,7 @@ class GTKColumnBase
         $this->linkTo                     = $options['linkTo']                        ?? false;
         $this->debug                      = $options['debug']                         ?? false;
         $this->_groups                    = $options['groups']                        ?? false;   
+        $this->_listDisplayForDataSourceUserItem = $options['listDisplayForDataSourceUserItem'] ?? null;
     }
 
     public function isPartOfGroupAndUser($groupName, $user)
@@ -360,6 +382,36 @@ class GTKColumnBase
     public function listDisplayForDataSourceUserItem($dataSource, $user, $item, $itemIdentifier, $options = null)
     {
         $debug = false; // $this->debug ?? false; 
+
+        if ($this->_listDisplayForDataSourceUserItem)
+        {
+            if (is_callable($this->_listDisplayForDataSourceUserItem))
+            {
+                $toCall = $this->_listDisplayForDataSourceUserItem;
+
+                $reflection = new ReflectionFunction($toCall);
+                $numberOfParameters = $reflection->getNumberOfParameters();
+
+                if ($numberOfParameters == 1)
+                {
+                    return $toCall($dataSource, $user, $item, $itemIdentifier, $options);
+                }
+                else
+                {
+                    $argument = new GTKColumnMappingListDisplayArgument(
+                        $dataSource, 
+                        $user, 
+                        $item, 
+                        $itemIdentifier,
+                        $options);
+                        
+                    return call_user_func($toCall, $argument);
+                }                
+            }
+            else
+            {
+                throw new Exception("Invalid `_listDisplayForDataSourceUserItem` for ".get_class($this)." `_listDisplayForDataSourceUserItem`: ".print_r($this->_listDisplayForDataSourceUserItem, true));
+            }        }
 
         if ($debug)
         {
