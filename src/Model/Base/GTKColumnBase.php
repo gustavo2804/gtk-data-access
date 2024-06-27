@@ -392,11 +392,9 @@ class GTKColumnBase
                 $reflection = new ReflectionFunction($toCall);
                 $numberOfParameters = $reflection->getNumberOfParameters();
 
+                //die("Number of parameters: ".$numberOfParameters);
+
                 if ($numberOfParameters == 1)
-                {
-                    return $toCall($dataSource, $user, $item, $itemIdentifier, $options);
-                }
-                else
                 {
                     $argument = new GTKColumnMappingListDisplayArgument(
                         $dataSource, 
@@ -404,9 +402,13 @@ class GTKColumnBase
                         $item, 
                         $itemIdentifier,
                         $options);
-                        
+
                     return call_user_func($toCall, $argument);
-                }                
+                }         
+                else
+                {
+                    return $toCall($dataSource, $user, $item, $itemIdentifier, $options);
+                }       
             }
             else
             {
