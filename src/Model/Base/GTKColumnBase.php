@@ -468,7 +468,7 @@ class GTKColumnBase
 
         $toReturn     = "";
         
-        $value        = $this->valueForItem($item);
+        $value = $this->valueForItem($item);
 
         $transformValueOnLists = $this->transformValueOnLists;
 

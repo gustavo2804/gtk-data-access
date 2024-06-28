@@ -28,7 +28,7 @@ class FormRendererBaseForDataSource extends ShowDataSourceRenderer
 		}
 	}
 
-	public function didUpdateSuccessfully($message)
+	public function didUpdateSuccessfully($message, $redirectTo = null, $redirectToText = null)
 	{
 		$debug = true;
 
@@ -36,34 +36,28 @@ class FormRendererBaseForDataSource extends ShowDataSourceRenderer
 					
 		$linkToAll = AllURLTo($this->dataSource);
 
-		$linkToItem = $this->dataSource->editURLForItem($this->item);
+		$linkToItem = $this->dataSource->editURLForItem($this->itemIdentifier);
 
 		$EOL = "<br/>";
 		$redirectText = "";
 
 		$redirectText .= $message.$EOL.$EOL;
 		
-		if (DataAccessManager::get("persona")->getCurrentUser())
+		if (!$redirectTo)
 		{
-			if (false)
-			{
-				$redirectText .= "En breve lo volvemos a la lista".$EOL;
-				$redirectTo = $linkToAll;
-			}
-			else
-			{
-				$redirectTo = $linkToItem;		
-				$redirectText .= "Lo vamos a redigir al registo automaticamente.".$EOL;
-			}
+			$redirectTo = $linkToItem;
 		}
-		else
+		
+		if ($redirectToText)
 		{
-			$redirectTo = "/";
-			$redirectText .= "Lo vamos a redirigir a inicio automaticamente".$EOL;
+			$redirectText .= $redirectToText.$EOL;		}
+		else
+		{			
+			$redirectText .= "Lo vamos a redigir al registro automaticamente.".$EOL.$EOL;
 		}
 
 		
-		$redirectText .= "<a href='".$redirectTo."'>Ir a registro</a>".$EOL.$EOL;
+		$redirectText .= "<a href='".$linkToItem."'>Ir a registro</a>".$EOL.$EOL;
 
 		$redirectText .= "<a href='".$linkToAll."'>Ir a lista</a>".$EOL.$EOL;
 
@@ -75,7 +69,7 @@ class FormRendererBaseForDataSource extends ShowDataSourceRenderer
 			error_log("Will redirect to: ".$redirectTo);
 		}
 
-		header("Refresh:3; url=".$redirectTo);
+		// header("Refresh:3; url=".$redirectTo);
 		echo $redirectText;
 		die();
 	}

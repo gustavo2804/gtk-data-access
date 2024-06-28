@@ -830,12 +830,26 @@ class DataAccess /* implements Serializable */
 
     public function urlForKeyItemOptions($key, $item, $options = null)
     {
-        $primaryKeyMapping = $this->primaryKeyMapping();
-        $primaryKeyValue   = $primaryKeyMapping->valueFromDatabase($item);
+        $itemIdentifier = null;
+        
+        if (is_array($item))
+        {
+            $primaryKeyMapping = $this->primaryKeyMapping();
+            $itemIdentifier    = $primaryKeyMapping->valueFromDatabase($item);
+        }
+        else
+        {
+            $itemIdentifier = $item;
+        }
+        
+        return $this->urlForKeyItemIdentifierOptions($key, $itemIdentifier, $options);
+    }
 
+    public function urlForKeyItemIdentifierOptions($key, $itemIdentifier, $options = null)
+    {
         $queryParameters = $options["queryParameters"] ?? [];
 
-        $queryParameters["id"]          = $primaryKeyValue;
+        $queryParameters["id"]          = $itemIdentifier;
         $queryParameters["data_source"] = get_class($this);
         $queryParameters["data_source"] = $this->dataAccessorName;
 

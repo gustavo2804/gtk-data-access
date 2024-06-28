@@ -15,6 +15,8 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 			$user =  DataAccessManager::get("persona")->getCurrentUser();
 			
 			$isInvalid = null;
+			
+			$this->itemIdentifier = $this->post[$this->primaryKeyMapping()->phpKey] ?? $this->post["id"] ?? $this->post["identifier"];
 
 			$didSucceed = $this->dataSource->updateFromFormForUser(
 				$this->post, 
@@ -32,10 +34,8 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 				return;
 			}
 
-			$this->messages[] = 'Item editado exitosamente.';
-			$this->itemIdentifier = $this->get[$this->primaryKeyMapping()->phpKey];
-			$this->item 	      = $this->dataSource->getOne($this->primaryKeyMapping()->phpKey, $this->itemIdentifier);
-				
+			$this->messages[]     = 'Item editado exitosamente.';
+
 			if (method_exists($this->dataSource, "didUpdateOnFormWith"))
 			{
 				$this->dataSource->didUpdateOnFormWith($this->post, $this->item, $user);
@@ -43,13 +43,15 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 
 			if (method_exists($this->dataSource, "renderEditSuccess"))
 			{
-				$this->dataSource->renderEditSuccess($this);
+				return $this->dataSource->renderEditSuccess($this);
 			}
 
 			if ($debug)
 			{
 				error_log("Item (Succes:$didSucceed): ".serialize($_POST));
 			}
+
+			return $this->didUpdateSuccessfully("Item editado exitosamente.");
 		}
 		catch (Exception $e)
 		{
@@ -112,6 +114,9 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
         				<th><?php echo $columnMapping->getFormLabel($this->dataSource); ?></th>
         				<td>
         					<?php echo $columnMapping->valueFromDatabase($this->item); ?>
+							<input type="hidden"                   
+        				   		   value="<?php echo $columnMapping->valueFromDatabase($this->item); ?>"
+        				   		   name="<?php echo $columnMapping->phpKey; ?>">
         				</td>
         			</tr>
 				<?php elseif ($columnMapping->onlyDisplayOnFormsForUser($user)): ?>
