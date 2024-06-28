@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Database\QueryException;
-
 function getFunctionArgumentCount($functionName) {
     $reflectionFunction = new ReflectionFunction($functionName);
     return $reflectionFunction->getNumberOfParameters();
@@ -14,7 +12,7 @@ class DataAccessInputSelectArgument
     public $objectID           = null;
     public $foreignColumnName  = null;
     public $foreignColumnValue = null;
-    public $options            = []
+    public $options            = [];
 }
 
 function generateSelectOptionsDataLabelColumn($rows, $currentValue, $dataSourceName, $dataColumn, $labelColumn)
