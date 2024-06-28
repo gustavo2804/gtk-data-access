@@ -23,7 +23,9 @@ class GTKCmdJob
         $logFile = $logDirectory . "{$className}_{$date}.log";
 
         ini_set('error_log', $logFile);
-        $this->main();
+        GTKLockManager::withLockDo(get_class($this), function (){
+            $this->main();
+        });
         ini_set('error_log', $oldErrorLog);
     }
 
