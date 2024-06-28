@@ -35,17 +35,17 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function getNewHref()
 	{
-		$editHref = "edit";
+		$editHref = "new";
 
 		$requestUri = $_SERVER['REQUEST_URI'];
 		$uriWithoutQueryString = parse_url($requestUri, PHP_URL_PATH);
 		
 		if (stringEndsWith(".php", $uriWithoutQueryString))
 		{
-			$editHref = "edit.php";
+			$editHref = "new.php";
 		}
 
-	   return $editHref."?isNew=true";
+	   return $editHref;
 	}
 
 	public function count()

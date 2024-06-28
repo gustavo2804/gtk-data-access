@@ -4469,7 +4469,7 @@ class DataAccess /* implements Serializable */
 		{
 			case "create":
             case "new":
-				return DataAccessManager::get("EditDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForEditPage());
+				return DataAccessManager::get("NewDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForEditPage());
             case "show":
 			case "read":
 				return DataAccessManager::get("ShowDataSourceRenderer", false)->renderForDataSource($this, $user, $this->optionsForShowPage());

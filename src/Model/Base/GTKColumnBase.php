@@ -54,6 +54,8 @@ class GTKColumnBase
     public $_hideOnShow;
     public $_hideOnSearch;
     public $_hideOnForms;
+    public $_hideOnNewForUser;
+    public $_hideOnEditForUser;
     public $_removeOnForms;
     public $_hideOnInsert;
     public $_hideOnUpdate;
@@ -159,6 +161,8 @@ class GTKColumnBase
         $this->_hideOnLists               = $options["hideOnLists"]                   ?? false;
         $this->_hideOnShow                = $options["hideOnShow"]                    ?? false;
         $this->_hideOnForms               = $options["hideOnForms"]                   ?? false;
+        $this->_hideOnNewForUser          = $options["hideOnNewForUser"]                     ?? false;
+        $this->_hideOnEditForUser         = $options["hideOnEditForUser"]                     ?? false;
         $this->_hideOnInsert              = $options["hideOnInsert"]                  ?? false;
         $this->_hideOnUpdate              = $options["hideOnUpdate"]                  ?? false;
         $this->type                       = $options["type"]                          ?? false;
@@ -295,7 +299,49 @@ class GTKColumnBase
         return isset($this->_hideOnSearch) ? $this->_hideOnSearch : false;
     }
 
+    public function hideOnNewForUser($user)
+    {
+        if (!$this->_hideOnNewForUser)
+        {
+            return $this->hideOnFormsForUser($user);
+        }
 
+        $hideOnNewForUser = $this->_hideOnNewForUser; 
+
+        if (is_callable($hideOnNewForUser))
+        {
+            return $hideOnNewForUser($user);
+        }
+
+        if (is_bool($hideOnNewForUser))
+        {
+            return $hideOnNewForUser;
+        }
+
+        return $hideOnNewForUser;
+    }
+
+    public function hideOnEditForUser($user)
+    {
+        if (!$this->_hideOnEditForUser)
+        {
+            return $this->hideOnFormsForUser($user);
+        }
+
+        $hideOnEditForUser = $this->_hideOnEditForUser; 
+
+        if (is_callable($hideOnEditForUser))
+        {
+            return $hideOnEditForUser($user);
+        }
+
+        if (is_bool($hideOnEditForUser))
+        {
+            return $hideOnEditForUser;
+        }
+
+        return $hideOnEditForUser;
+    }
 
     public function hideOnFormsForUser($user)
     {

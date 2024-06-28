@@ -22,6 +22,10 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
         "class" => "ShowDataSourceRenderer",
 		"db" 	=> "appDB",
 	],
+	"NewDataSourceRenderer" => [
+        "class" => "NewDataSourceRenderer",
+		"db" 	=> "appDB",
+	],
 	"EditDataSourceRenderer" => [
         "class" => "EditDataSourceRenderer",
 		"db" 	=> "appDB",
