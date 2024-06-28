@@ -270,7 +270,7 @@ class GTKHTMLPage
 
 	public function isAuthorized()
 	{
-		$debug = true;
+		$debug = false;
 
 		$isAuthorized = true;
 
@@ -309,7 +309,7 @@ class GTKHTMLPage
 
 		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
 		{
-			$debug = true;
+			$debug = false;
 		}
 
 		$this->get 		  = $get;

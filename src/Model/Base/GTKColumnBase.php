@@ -93,7 +93,7 @@ class GTKColumnBase
 
     public function __construct($dataSource, $phpKey, $options = [])
     {
-        $debug = true;
+        $debug = false;
 
         $this->dataSource = $dataSource;
         $this->phpKey     = trim($phpKey);

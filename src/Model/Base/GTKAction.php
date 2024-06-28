@@ -57,7 +57,7 @@ class GTKFTPTask extends GTKEDITask
 
             DataAccessManager::get("email_queue")->reportError($subject, $body);
 
-            return;
+            return false;
         }
 
 
@@ -70,7 +70,7 @@ class GTKFTPTask extends GTKEDITask
 
             ftp_close($ftp_conn);
 
-            return;
+            return false;
         }
         
         $tempFile = tmpfile();
@@ -87,6 +87,8 @@ class GTKFTPTask extends GTKEDITask
             $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 
             DataAccessManager::get("email_queue")->reportError($subject, $body);
+
+			return false;
         }
 
         ftp_close($ftp_conn);

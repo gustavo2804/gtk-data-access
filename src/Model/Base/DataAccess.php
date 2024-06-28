@@ -7,6 +7,16 @@ function getFunctionArgumentCount($functionName) {
     return $reflectionFunction->getNumberOfParameters();
 }
 
+class DataAccessInputSelectArgument
+{
+    public $user               = null;
+    public $dataAccessor       = null;
+    public $objectID           = null;
+    public $foreignColumnName  = null;
+    public $foreignColumnValue = null;
+    public $options            = []
+}
+
 function generateSelectOptionsDataLabelColumn($rows, $currentValue, $dataSourceName, $dataColumn, $labelColumn)
 {
     $debug = false;
@@ -4094,15 +4104,38 @@ class DataAccess /* implements Serializable */
 		$options = []
     ){
     */
+
     public function generateSelectForUserColumnValueName(
         $user,
-		$dataAccessor,
-		$objectID,
-		$foreignColumnName,
-		$foreignColumnValue,
+		$dataAccessor       = null,
+		$objectID           = null,
+		$foreignColumnName  = null,
+		$foreignColumnValue = null,
 		$options = []
 	){
+        $argument = new DataAccessInputSelectArgument();
+
+        $argument->user                 = $user;               
+        $argument->dataAccessor         = $dataAccessor;       
+        $argument->objectID             = $objectID;           
+        $argument->foreignColumnName    = $foreignColumnName;  
+        $argument->foreignColumnValue   = $foreignColumnValue; 
+        $argument->options              = $options;            
+
+        return $this->generateSelect($argument);
+    }
+
+
+    public function generateSelect(DataAccessInputSelectArgument $argument)
+    {
         $debug = false;
+
+        $user               = $argument->user;                 
+        $dataAccessor       = $argument->dataAccessor;         
+        $objectID           = $argument->objectID;             
+        $foreignColumnName  = $argument->foreignColumnName;    
+        $foreignColumnValue = $argument->foreignColumnValue;   
+        $options            = $argument->options;
 
         if ($debug)
         {
@@ -4114,9 +4147,15 @@ class DataAccess /* implements Serializable */
             gtk_log("Options: ".print_r($options, true));
         }
 
-        $item = $dataAccessor->getByIdentifier($objectID);
+        $item         = null;
+        $currentValue = null;
 
-        $currentValue = $dataAccessor->valueForKey($foreignColumnName, $item);
+        if ($dataAccessor)
+        {
+            $item = $dataAccessor->getByIdentifier($objectID);
+
+            $currentValue = $dataAccessor->valueForKey($foreignColumnName, $item);
+        }
         
 
         $defaultColumnForDataAccessor = [
