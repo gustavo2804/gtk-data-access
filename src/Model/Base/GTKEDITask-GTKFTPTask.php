@@ -87,6 +87,7 @@ class GTKFTPTask extends GTKEDITask
         {
 			$subject = "Error de login. Clave denegada para enviar archivo: ".$this->remoteFileName;
 			gtk_log($subject);
+
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
 			{
             	$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
@@ -102,22 +103,28 @@ class GTKFTPTask extends GTKEDITask
         fwrite($tempFile, $this->content);
         rewind($tempFile);
         $meta_data = stream_get_meta_data($tempFile);
+		gtk_log(print_r($meta_data, true));
         $tempFilePath = $meta_data['uri'];
 
-        $success = ftp_put($ftp_conn, $this->remoteFileName, $tempFilePath, FTP_ASCII);
+        $success = ftp_put($ftp_conn, $this->remoteFileName, $tempFilePath, FTP_BINARY);
 
-        if (!$success)
-        {
+		if (!$success)
+		{
+			$error = error_get_last();
+
+			gtk_log("Error uploading file: ".$this->remoteFileName." to host: ".$this->host." with user: ".$this->user." error: ".print_r($error, true));
+			gtk_log(print_r($error, true));
+		
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
 			{
 				$subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user." para enviar archivo: ".$this->remoteFileName;
-				$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
-	
+				$body    = $subject."\n\n\n\Sending...\n\n\n".$this->content."\n\nError details: ".print_r($error, true);
+			
 				DataAccessManager::get("email_queue")->reportError($subject, $body);
 			}
-
+		
 			return false;
-        }
+		}
 
         ftp_close($ftp_conn);
         fclose($tempFile);
