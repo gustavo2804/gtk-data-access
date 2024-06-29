@@ -12,7 +12,27 @@ enum GTKLogFileResolution : string
 }
 class GTKCmdJob
 {
-    public $logFileResolution = GTKLogFileResolution::DAILY;
+    public $logFileResolution   = GTKLogFileResolution::DAILY;
+    public $runWithLock         = true;
+    public $runWithTimeOut      = false;
+    public $timeoutTime         = 10;
+    public $onTimeout           = null;
+
+
+    public function getOnTimeoutFunction() 
+    {
+        if ($this->onTimeout)
+        {
+            return $this->onTimeout;
+        }
+        else
+        {
+            return function() {
+                error_log("Timeout while acquiring lock on file:".get_class($this));
+                echo "Timeout while acquiring lock on file: ".get_class($this)."\n";
+            };
+        }
+    }
 
     public function logFileName()
     {
@@ -80,9 +100,25 @@ class GTKCmdJob
         }
 
         ini_set('error_log', $logFilePath);
-        GTKLockManager::withLockDo(get_class($this), function (){
+        if ($this->runWithLock)
+        {
+            if ($this->runWithTimeOut)
+            {
+                GTKTimeOutLock::withLockDo(get_class($this), function() {
+                    $this->main();
+                }, $this->timeoutTime, $this->getOnTimeoutFunction());
+            }
+            else
+            {
+                GTKLockManager::withLockDo(get_class($this), function() {
+                    $this->main();
+                });
+            }
+        }
+        else
+        {
             $this->main();
-        });
+        }
         ini_set('error_log', $oldErrorLog);
     }
 
