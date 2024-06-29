@@ -7,6 +7,8 @@ class GTKEDITask
 	public $password;
 	public $remoteFileName;
 	public $content;
+	public $attemptNumber;
+	public $attemptErrorThreshold = 5;
 
 	public function send()
 	{
@@ -52,10 +54,14 @@ class GTKFTPTask extends GTKEDITask
 
         if (!$ftp_conn)
         {
-            $subject = "Error al conectar con el servidor FTP: ".$this->host;
-            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+			
+			if ($this->attemptNumber > $this->attemptErrorThreshold)
+			{
+            	$subject = "Error al conectar con el servidor FTP: ".$this->host;
+            	$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 
-            DataAccessManager::get("email_queue")->reportError($subject, $body);
+            	DataAccessManager::get("email_queue")->reportError($subject, $body);
+			}
 
             return false;
         }
@@ -63,10 +69,13 @@ class GTKFTPTask extends GTKEDITask
 
         if (!ftp_login($ftp_conn, $this->user, $this->password)) 
         {
-            $subject = "Error de login. Clave denegada";
-            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+			if ($this->attemptNumber > $this->attemptErrorThreshold)
+			{
+            	$subject = "Error de login. Clave denegada";
+            	$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 
-            DataAccessManager::get("email_queue")->reportError($subject, $body);
+            	DataAccessManager::get("email_queue")->reportError($subject, $body);
+			}
 
             ftp_close($ftp_conn);
 
@@ -83,10 +92,13 @@ class GTKFTPTask extends GTKEDITask
 
         if (!$success)
         {
-            $subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user;
-            $body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
-
-            DataAccessManager::get("email_queue")->reportError($subject, $body);
+			if ($this->attemptNumber > $this->attemptErrorThreshold)
+			{
+				$subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user;
+				$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+	
+				DataAccessManager::get("email_queue")->reportError($subject, $body);
+			}
 
 			return false;
         }
