@@ -22,8 +22,7 @@ class GTKCmdJob
                 return date('Y-m-d_H-i-s').".log";
             case GTKLogFileResolution::HOURLY:
                 return date('Y-m-d_H').".log";
-            case GTKLogFileResolution::DAILY:
-                return date('Y-m-d').".log";
+
             case GTKLogFileResolution::WEEKLY:
                 return date('Y-W').".log";
             case GTKLogFileResolution::BIWEEKLY:
@@ -32,6 +31,10 @@ class GTKCmdJob
                 return date('Y-m').".log";
             case GTKLogFileResolution::YEARLY:
                 return date('Y').".log";
+
+            case GTKLogFileResolution::DAILY:
+            default:
+                return date('Y-m-d').".log";
         
         }
     }
@@ -58,7 +61,7 @@ class GTKCmdJob
                 mkdir(implode(DIRECTORY_SEPARATOR, $logPathComponents), 0777, true);
             }
 
-            $logPathComponents[] = $this->logFileName().".log";
+            $logPathComponents[] = $this->logFileName();
 
             $logFilePath = implode(DIRECTORY_SEPARATOR, $logPathComponents);
         }
