@@ -54,12 +54,13 @@ class GTKFTPTask extends GTKEDITask
 
         if (!$ftp_conn)
         {
+			$subject = "Error al conectar con el servidor FTP: ".$this->host." para enviar archivo: ".$this->remoteFileName;
+			$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
+
+			gtk_log($subject.$body);
 			
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
 			{
-            	$subject = "Error al conectar con el servidor FTP: ".$this->host;
-            	$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
-
             	DataAccessManager::get("email_queue")->reportError($subject, $body);
 			}
 
@@ -69,11 +70,11 @@ class GTKFTPTask extends GTKEDITask
 
         if (!ftp_login($ftp_conn, $this->user, $this->password)) 
         {
+			$subject = "Error de login. Clave denegada para enviar archivo: ".$this->remoteFileName;
+			gtk_log($subject);
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
 			{
-            	$subject = "Error de login. Clave denegada";
             	$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
-
             	DataAccessManager::get("email_queue")->reportError($subject, $body);
 			}
 
@@ -94,7 +95,7 @@ class GTKFTPTask extends GTKEDITask
         {
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
 			{
-				$subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user;
+				$subject = "Error subiendo archivo a host: ".$this->host." con usuario: ".$this->user." para enviar archivo: ".$this->remoteFileName;
 				$body    = $subject."\n\n\n\Sending...n\n\n".$this->content;
 	
 				DataAccessManager::get("email_queue")->reportError($subject, $body);
