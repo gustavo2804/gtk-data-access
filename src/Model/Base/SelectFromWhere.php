@@ -220,7 +220,7 @@ class SelectQuery
             }
             else if ($this->orderBy instanceof OrderBy)
             {
-                $sql .= $this->dataSource->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
+                $sql .= ' ORDER BY '.$this->dataSource->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
             }
             else if ($this->dataSource->defaultOrderByColumnKey)
             {
