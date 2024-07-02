@@ -103,7 +103,22 @@ class GTKFTPTask extends GTKEDITask
         fwrite($tempFile, $this->content);
         rewind($tempFile);
         $meta_data = stream_get_meta_data($tempFile);
-		gtk_log(print_r($meta_data, true));
+		
+		$fileMetaDataMessage = "File metadata when sending :".$this->remoteFileName."\n\n";
+
+		$fileMetaDataMessage .= "timed_out: ".$meta_data["timed_out"]."\n"; 
+		$fileMetaDataMessage .= "blocked: ".$meta_data["blocked"]."\n"; 
+		$fileMetaDataMessage .= "eof: ".$meta_data["eof"]."\n"; 
+		$fileMetaDataMessage .= "wrapper_type: ".$meta_data["wrapper_type"]."\n";
+		$fileMetaDataMessage .= "stream_type: ".$meta_data["stream_type"]."\n";
+		$fileMetaDataMessage .= "mode: ".$meta_data["mode"]."\n";
+		$fileMetaDataMessage .= "unread_bytes: ".$meta_data["unread_bytes"]."\n";
+		$fileMetaDataMessage .= "seekable: ".$meta_data["seekable"]."\n";
+		$fileMetaDataMessage .= "uri: ".$meta_data["uri"]."\n";
+
+		gtk_log($fileMetaDataMessage);
+
+
         $tempFilePath = $meta_data['uri'];
 
         $success = ftp_put($ftp_conn, $this->remoteFileName, $tempFilePath, FTP_BINARY);
@@ -112,7 +127,10 @@ class GTKFTPTask extends GTKEDITask
 		{
 			$error = error_get_last();
 
-			gtk_log("Error uploading file: ".$this->remoteFileName." to host: ".$this->host." with user: ".$this->user." error: ".print_r($error, true));
+			$subject = "Error uploading file to host: ".$this->host." - ".$this->remoteFileName;
+			$subject .= " - User: ".$this->user;
+			
+			gtk_log($subject);
 			gtk_log(print_r($error, true));
 		
 			if ($this->attemptNumber > $this->attemptErrorThreshold)
