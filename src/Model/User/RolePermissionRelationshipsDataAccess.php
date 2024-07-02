@@ -28,9 +28,7 @@ class RolePermissionRelationshipsDataAccess extends DataAccess
 			new GTKColumnMapping($this, "date_modified"),
 		];
 
-		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumnKey = "name";
-		$this->defaultOrderByOrder  = "DESC";
+		$this->dataMapping = new GTKDataSetMapping($this, $columnMappings);
     }
 
     public function migrate()
