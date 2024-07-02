@@ -521,6 +521,7 @@ class DataAccess /* implements Serializable */
 
         
         $this->defaultOrderByColumnKey  = $options["defaultOrderByColumnKey"] ?? null;
+        $this->defaultOrderByOrder      = $options["defaultOrderByOrder"] ?? "ASC";
         $this->defaultSearchByColumnKey = $options["defaultSearchByColumnKey"] ?? null;
         
         $this->register();//no hace nada en DataAccess
