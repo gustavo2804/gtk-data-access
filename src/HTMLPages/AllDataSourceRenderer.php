@@ -271,6 +271,8 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			Count: <?php echo $this->count(); ?>
 	    </h3>
 
+		<?php $columnToSearch = isset($this->get['columnToSearch']) ? $this->get['columnToSearch'] : $this->dataSource->defaulSearchByColumnMapping()->phpKey; ?>
+
 		<form action="<?php echo htmlspecialchars($this->server['REQUEST_URI']); ?>" method="get">
 			<input type="text" name="search" id="search" value="<?php echo isset($this->get['search']) ? $_GET['search'] : ''; ?>">
 			<button type="submit">Search</button>
@@ -280,8 +282,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
         		{
         		    echo '<option';
 					echo ' value="'.$columnMapping->phpKey.'"';
-					$isSelected = false;
-					if ($isSelected)
+					if ($columnToSearch == $columnMapping->phpKey)
 					{
 						echo ' selected';
 					}

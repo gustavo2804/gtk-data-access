@@ -218,6 +218,15 @@ class SelectQuery
             {
     
             }
+            else if ($this->orderBy instanceof OrderBy)
+            {
+                $sql .= $this->dataSource->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
+            }
+            else if ($this->dataSource->defaultOrderByColumnKey)
+            {
+                $sql .= " ORDER BY ".$this->dataSource->defaultOrderByColumnKey." ".($this->dataSource->defaultOrderByOrder ?? "DESC");
+                $didSetOrderBy = true;
+            }
 
             if ($this->limit || $this->offset)
             {
