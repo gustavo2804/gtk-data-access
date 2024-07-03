@@ -302,15 +302,17 @@ class GTKHTMLPage
 		return $isAuthorized;
 	}
 
+	public function setCustomLogFile()
+	{
+		// DO NOTHING
+	}
+
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
 		$debug = false;
 
-		if ($this instanceof WizardDespacho_ListaPreDespachoPage)
-		{
-			$debug = false;
-		}
+		$this->setCustomLogFile();
 
 		$this->get 		  = $get;
 		$this->post 	  = $post;
