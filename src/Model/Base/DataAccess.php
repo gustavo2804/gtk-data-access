@@ -207,6 +207,11 @@ class DataAccess /* implements Serializable */
 	public $sqliteTableName;
 	public $sqliteDefaultOrderByColumn;
 
+    public function columnIsFalsyClauseRawSQL($columnName)
+    {
+        return " (".$this->dbColumnNameForKey($columnName)." = 0 OR ".$this->dbColumnNameForKey($columnName)." IS NULL)";
+    }
+
 
     public function withTransaction($closure, $maxRetries = 5, $retryDelay = 100000)
     {
