@@ -209,7 +209,28 @@ class DataAccess /* implements Serializable */
 
     public function columnIsFalsyClauseRawSQL($columnName)
     {
-        return " (".$this->dbColumnNameForKey($columnName)." = 0 OR ".$this->dbColumnNameForKey($columnName)." IS NULL)";
+        $toReturn = " (";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." = 0";
+        $toReturn .= " OR ";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." IS NULL";
+        $toReturn .= " OR ";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." = ''";
+        $toReturn .= ")";
+
+        return $toReturn;
+    }
+
+    public function columnIsTruthyClauseRawSQL($columnName)
+    {
+        $toReturn = " (";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." = 1";
+        $toReturn .= " OR ";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." != 0";
+        $toReturn .= " OR ";
+        $toReturn .= $this->dbColumnNameForKey($columnName)." != ''";
+        $toReturn .= ")";
+
+        return $toReturn;
     }
 
 
@@ -3568,7 +3589,6 @@ class DataAccess /* implements Serializable */
         if ($debug)
         {
             gtk_log("SQL String: ".$sql);
-            // die($sql);
         }
 
         try
@@ -3600,11 +3620,33 @@ class DataAccess /* implements Serializable */
 
                     $columnMapping = $this->dataMapping->columnMappingForPHPKey($key);
 
-                    if ($columnMapping)
+                    if ($columnMapping == $primaryKeyMapping)
                     {
+                        continue;
+                    }
+
+                    if ($columnMapping->doesItemContainOurKey($item))
+                    {
+                        if ($debug)
+                        {
+                            gtk_log("`updateWithPHPKeys`: Will bind value for column mapping: ".$columnMapping->phpKey);
+                        }
+
                         $columnMapping->bindValueToStatementForItem($stmt, $item);
                     }
+                    else
+                    {
+                        if ($debug)
+                        {
+                            gtk_log("`updateWithPHPKeys`: No column mapping for key: ".$key);
+                        }
+                    }
                 }
+            }
+
+            if ($debug)
+            {
+                gtk_log("`updateWithPHPKeys`: Binding primary key value ($primaryKeyMapping->phpKey): ".$identifierValue);
             }
 
             $stmt->bindValue(":".$primaryKeyMapping->phpKey, $identifierValue);
