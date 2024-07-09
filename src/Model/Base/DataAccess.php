@@ -917,6 +917,39 @@ class DataAccess /* implements Serializable */
 
     //-----------
 
+    public function mostAdvancedLinkForUserItem($user, $item, $options = null)
+    {
+        $debug = true;
+
+        $updatePermission = $this->userHasPermissionTo("update", $user, $item);
+
+        $value = $options["label"] ?? $this->identifierForItem($item);
+
+        if ($debug)
+        {
+            error_log("Has update permission? ".$updatePermission);
+        }
+
+        if ($updatePermission)
+        {
+            return $this->editLinkForItem($item, [
+                'label' => $value,
+            ]);
+        }
+
+
+        $readPermission = $this->userHasPermissionTo("show", $user, $item);
+
+        if ($readPermission)
+        {
+            return $this->showLinkForItem($item, [
+                'label' => $value,
+            ]);
+        }
+
+        return '';
+    }
+
     public function showLinkForItem($item, $options = null)
     {
         return $this->linkForKeyItemOptions("show", $item, $options);

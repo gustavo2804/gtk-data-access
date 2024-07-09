@@ -492,24 +492,16 @@ class GTKColumnBase
                 error_log("Is Primary Key - ".$this->phpKey." - Has update permission? ".$updatePermission);
             }
 
-            if ($updatePermission)
+            $link = $dataSource->mostAdvancedLinkForUserItem($user, $item);
+
+            if ($link)
             {
-                return '<td>'.$dataSource->editLinkForItem($item, [
-                    'label' => $value,
-                ]).'</td>';
+                return '<td>'.$link.'</td>';
             }
-
-
-            $readPermission = $dataSource->userHasPermissionTo("show", $user, $item);
-
-            if ($readPermission)
+            else
             {
-                return '<td>'.$dataSource->showLinkForItem($item, [
-                    'label' => $value,
-                ]).'</td>';
+                return '<td>'.$value.'</td>';
             }
-            
-            return '<td>'.$value.'</td>';
         }      
         
         $htmlForValue = "";
