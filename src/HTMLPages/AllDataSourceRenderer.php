@@ -35,17 +35,22 @@ class AllDataSourceRenderer extends GTKHTMLPage
 
 	public function getNewHref()
 	{
+		/*
 		$editHref = "new";
 
 		$requestUri = $_SERVER['REQUEST_URI'];
+		
 		$uriWithoutQueryString = parse_url($requestUri, PHP_URL_PATH);
+		
 		
 		if (stringEndsWith(".php", $uriWithoutQueryString))
 		{
 			$editHref = "new.php";
 		}
 
-	   return $editHref;
+		*/
+
+	   return "new.php";
 	}
 
 	public function count()
@@ -458,5 +463,43 @@ class AllDataSourceRenderer extends GTKHTMLPage
 		</table>
 		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
 	}
+
+
+	public function tableRowContentsForUserItemColumns($user, $item, $columnsToDisplay)
+    {
+        $debug = false;
+
+        if ($debug)
+        {
+            gtk_log("tableRowContents --- item --- ".print_r($item, true));
+        }
+
+        $isFirstColumn = true;
+
+        $toReturn = "";
+    
+        $toReturn .= "<td>".$this->dataSource->displayActionsForUserItem($user, $item)."</td>";
+    
+        $primaryKeyMapping = $this->dataSource->primaryKeyMapping();
+        // $primaryKeyPHPKey  = $primaryKeyMapping->phpKey;
+        $primaryKeyValue   = $primaryKeyMapping->valueFromDatabase($item);
+
+        if ($debug)
+        {
+            error_log("Will display columns: ");
+        }
+    
+        foreach ($columnsToDisplay as $columnMapping) 
+        {
+            $toReturn .= $columnMapping->listDisplayForDataSourceUserItem($this, $user, $item, $primaryKeyValue);
+        }
+
+        if ($debug)
+        {
+            error_log("tableRowContents --- ".$toReturn);
+        }
+        
+        return $toReturn;
+    }
 
 }

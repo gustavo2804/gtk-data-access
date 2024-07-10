@@ -8,7 +8,7 @@ class GTKColumnMappingListDisplayArgument
     public $itemIdentifier;
     public $options;
 
-    public function __construct($dataSource, $user, $item, $itemIdentifier, $options)
+    public function __construct($dataSource = null, $user = null, $item = null, $itemIdentifier = null, $options = null)
     {
         $this->dataSource     = $dataSource;
         $this->user           = $user;

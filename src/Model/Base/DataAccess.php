@@ -4243,7 +4243,7 @@ class DataAccess /* implements Serializable */
         $item         = null;
         $currentValue = null;
 
-        if ($dataAccessor)
+        if ($dataAccessor && $objectID)
         {
             $item = $dataAccessor->getByIdentifier($objectID);
 
@@ -4262,7 +4262,9 @@ class DataAccess /* implements Serializable */
             {
                 error_log("Calling - getDefaultOptionsForSelectForUser");
             }
+
             $defaultColumnForDataAccessor = $this->getDefaultOptionsForSelectForUser($user);
+            
             if ($debug)
             {
                 error_log("Got - ".print_r($defaultColumnForDataAccessor, true));
@@ -4583,6 +4585,149 @@ class DataAccess /* implements Serializable */
     {
 
     }
+
+    public function generateTableForUserItems($user, $itemsOrQueryObject, $columnsToDisplay = null, $options = null)
+    {
+        $debug = false;
+		$items = null;
+		$count = 0;
+
+        $columnMappingsToDisplay = null;
+
+        if (!$columnsToDisplay)
+        {
+            $columnMappingsToDisplay = $this->dataMapping->ordered;
+        }
+        else
+        {
+            $columnMappingsToDisplay = [];
+
+            foreach ($columnsToDisplay as $maybeColumnMapping)
+            {
+                if (is_string($maybeColumnMapping))
+                {
+                    $columnMappingsToDisplay[] = $this->columnMappingForKey($maybeColumnMapping);
+                }
+                else 
+                {
+                    $columnMappingsToDisplay[] = $maybeColumnMapping;
+                }
+            }
+        }
+	
+		if (is_array($itemsOrQueryObject))
+		{
+			$count = count($itemsOrQueryObject);
+			$items = $itemsOrQueryObject;
+	
+			if ($debug)
+			{
+				gtk_log("Is Array!");
+				gtk_log("Items count: ".$count);
+				if ($count < 200)
+				{
+					gtk_log("Items: ".print_r($items, true));
+				}
+				
+			}
+		}
+		else
+		{
+			$count = $itemsOrQueryObject->count();
+			$items = $itemsOrQueryObject->executeAndYield();
+	
+			if ($debug)
+			{
+				gtk_log("Is Query Object!");
+				gtk_log("Items count: ".$count);
+			}
+		}
+	
+	
+		if (!isset($dataSourceName))
+		{
+			$dataSourceName = $this->dataAccessorName;
+		}
+	
+		if ($debug)
+		{
+			error_log("Generating table for user: ".print_r($user, true));
+			// error_log("Columns to display: ".print_r($columnsToDisplay, true));
+			if (is_array($items))
+			{
+				error_log("Items: ".print_r($items, true));
+			}
+			else
+			{
+				error_log("Items: ".get_class($items));
+			}
+			error_log("Data source: ".get_class($this));
+		}
+	
+		$index = 0;
+	
+		ob_start(); // Start output buffering 
+		?>
+		<table>
+			<thead>
+				<tr>
+					<?php foreach ($columnMappingsToDisplay as $columnMapping): ?>
+						<?php
+                            echo "<th class='min-w-[75px]'>";
+							echo $columnMapping->getFormLabel();
+							echo "</th>";
+						?>
+					<?php endforeach; ?>
+				</tr>
+			</thead>
+			<tbody>
+			
+			<?php if ($count == 0): ?>
+			<tr>
+				<td colspan="<?php echo count($columnsToDisplay) + 1; ?>">
+					No hay elementos que mostrar.
+				</td>
+			</tr>
+			<?php else: ?>
+				<?php foreach ($items as $currentItem): ?>
+						<?php $itemIdentifier = $this->dataMapping->valueForIdentifier($currentItem); ?>
+						<tr class="border-b border-gray-200"
+							style=<?php echo '"'.$this->rowStyleForItem($currentItem, $index).'"'; ?>
+							id=<?php echo '"cell-'.$this->dataAccessorName.'-'.$itemIdentifier.'"'; ?>
+						>
+                        <?php 
+                        foreach ($columnMappingsToDisplay as $columnMapping)
+                        {
+                            $displayFunction = null;
+
+                            $toDisplay = null;
+
+                            if ($displayFunction)
+                            {
+                                $argument = new GTKColumnMappingListDisplayArgument();
+
+                                $argument->user    = $user;
+                                $argument->item    = $currentItem;
+                                $argument->options = null;
+                                
+                                $toDisplay = $displayFunction($argument);
+                            }
+                            else
+                            {
+                                $toDisplay = $columnMapping->valueFromDatabase($currentItem);
+                            }
+
+                            echo "<td>".$toDisplay."</td>";
+                        } 
+                        ?>
+						</tr>
+						<?php $index++; ?>
+				<?php endforeach; ?>
+			<?php endif; ?>
+			</tbody>
+		</table>
+		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
+	}
 }
 
 function TestableDataAccess_generateMicroTimeUUID() 
