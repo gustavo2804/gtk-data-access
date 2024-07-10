@@ -947,7 +947,7 @@ class DataAccess /* implements Serializable */
             ]);
         }
 
-        return '';
+        return null;
     }
 
     public function showLinkForItem($item, $options = null)
