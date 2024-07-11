@@ -483,7 +483,35 @@ class WhereClause
             error_log("...END SQL");
         }
 
-        switch ($this->operator) {
+        $pdo     = $dataAccess->getPDO();
+        $pdoType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        switch ($this->operator) 
+        {
+            case "NOT EMPTY":
+                switch ($pdoType)
+                {
+                    case 'mysql':
+                        return "LENGTH({$columnName})";
+                    
+                    case 'pgsql':
+                        return "OCTET_LENGTH({$columnName}) > 0";
+                    
+                    case 'sqlite':
+                        return "LENGTH({$columnName}) > 0";
+                    
+                    case 'sqlsrv':
+                    case 'dblib':  // Sybase or MS SQL Server
+                    case 'mssql':
+                        return "DATALENGTH({$columnName}) > 0 ";
+                    
+                    case 'oci':    // Oracle
+                        return "LENGTH({$columnName}) > 0";
+                    
+                    case 'firebird':
+                        return "OCTET_LENGTH({$columnName}) > 0";
+        
+                }
             case 'IN':
             case 'NOT IN':
                 if ($debug)

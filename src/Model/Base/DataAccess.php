@@ -152,6 +152,14 @@ interface DataAccessInterface
     
 }
 
+class GTKTableCellItemPresenter
+{
+    public function listDisplayForDataSourceUserItem($dataSource, $user, $item, $primaryKeyValue)
+    {
+
+    }
+}
+
 
 class DataAccess /* implements Serializable */
 {
@@ -841,9 +849,25 @@ class DataAccess /* implements Serializable */
         {
             error_log("Will display columns: ");
         }
+
+
     
-        foreach ($columnsToDisplay as $columnMapping) 
+        foreach ($columnsToDisplay as $maybeColumnMapping) 
         {
+            if (is_string($maybeColumnMapping))
+            {
+                $columnMapping = $this->columnMappingForKey($maybeColumnMapping);
+            }
+            else if ($maybeColumnMapping instanceof GTKTableCellItemPresenter)
+            {
+                $columnMapping = $maybeColumnMapping;
+            }
+            else
+            {
+                $columnMapping = $maybeColumnMapping;
+            }
+
+
             $toReturn .= $columnMapping->listDisplayForDataSourceUserItem($this, $user, $item, $primaryKeyValue);
         }
 
@@ -1053,7 +1077,7 @@ class DataAccess /* implements Serializable */
         {
             foreach ($columns as $columnMapping)
             {
-                if ($columnMapping->isSearchable)
+                if ($columnMapping->isSearchable())
                 {
                     array_push($toReturn, $columnMapping);
                 }
@@ -1075,7 +1099,15 @@ class DataAccess /* implements Serializable */
         }
         else
         {
-            $toReturn = $columns;
+            $toReturn = [];
+
+            foreach ($columns as $columnMapping)
+            {
+                if ($columnMapping->isSearchable())
+                {
+                    array_push($toReturn, $columnMapping);
+                }
+            }
         }
 
 

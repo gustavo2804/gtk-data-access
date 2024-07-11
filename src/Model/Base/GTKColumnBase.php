@@ -50,6 +50,7 @@ class GTKColumnBase
     public $display;
 
     public $_isAutoIncrement;
+    public $_showOnSearch;
     public $_hideOnLists;
     public $_hideOnShow;
     public $_hideOnSearch;
@@ -66,7 +67,7 @@ class GTKColumnBase
     public $_groups;
     public $_processOnInsert;
     public $_processOnAll;
-    public $isSearchable;
+    public $_isSearchable;
     public $_onlyDisplayOnForms;
     public $_possibleValues;
     public $_formInputType;
@@ -76,6 +77,21 @@ class GTKColumnBase
     public function isInsertable()
     {
         return false;
+    }
+
+    public function isSearchable()
+    {
+        if ($this->_showOnSearch)
+        {
+            return true;
+        }
+
+        if ($this->_hideOnLists)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public function getLabel($dataAccess = null)
@@ -127,7 +143,7 @@ class GTKColumnBase
         }
 
         $this->_isNullable  = $options["isNullable"] ?? true;
-        $this->isSearchable = $options["isSearchable"] ?? true;
+        $this->_isSearchable = $options["isSearchable"] ?? true;
 
         $hideOnLists = false;
 
@@ -158,11 +174,12 @@ class GTKColumnBase
         }
     
         $this->type                       = $options["type"]                          ?? false;
+        $this->_showOnSearch              = $options["showOnSearch"]                  ?? null;
         $this->_hideOnLists               = $options["hideOnLists"]                   ?? false;
         $this->_hideOnShow                = $options["hideOnShow"]                    ?? false;
         $this->_hideOnForms               = $options["hideOnForms"]                   ?? false;
-        $this->_hideOnNewForUser          = $options["hideOnNewForUser"]                     ?? false;
-        $this->_hideOnEditForUser         = $options["hideOnEditForUser"]                     ?? false;
+        $this->_hideOnNewForUser          = $options["hideOnNewForUser"]              ?? false;
+        $this->_hideOnEditForUser         = $options["hideOnEditForUser"]             ?? false;
         $this->_hideOnInsert              = $options["hideOnInsert"]                  ?? false;
         $this->_hideOnUpdate              = $options["hideOnUpdate"]                  ?? false;
         $this->type                       = $options["type"]                          ?? false;
@@ -204,7 +221,7 @@ class GTKColumnBase
 
         if ($groupName === "searchable")
         {
-            return $this->isSearchable;
+            return $this->_isSearchable;
         }   
 
         if ($groupName === "lists")
