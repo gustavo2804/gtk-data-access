@@ -602,7 +602,17 @@ class FlatRoleDataAccess extends DataAccess
 
         foreach ($roleRelations as $roleRelation)
         {
-            $roleIDS[] = $roleRelation["role_id"];
+            $roleID = $roleRelation["role_id"] ?? null;
+
+            if (!$roleID)
+            {
+                die("No role ID for role relation: ".print_r($roleRelation, true));
+                continue;
+            }
+            else
+            {
+                $roleIDS[] = $roleID;
+            }
         }
 
         $query = new SelectQuery(DataAccessManager::get("roles"));
@@ -712,10 +722,11 @@ class FlatRoleDataAccess extends DataAccess
 
         if ($debug)
         {
-            error_log("Roles relations for user: ".print_r($roles, true));
+            error_log("Roles relations for user: ".print_r($allowedRolesIDS, true));
         }
 
         $roleIDS = [];
+        
         foreach ($roleRelations as $roleRelation)
         {
             $roleIDS[] = $roleRelation["role_id"];
@@ -778,7 +789,7 @@ class FlatRoleDataAccess extends DataAccess
 
             $toReturn = $query->executeAndReturnAll();
         
-            $toReturn[$userID] = $toReturn;
+            // $this->_cache[$userID] = $toReturn;
         }
 
         if ($debug)

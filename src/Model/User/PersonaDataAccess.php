@@ -1056,7 +1056,7 @@ class PersonaDataAccess extends DataAccess
 	{
 		try
 		{
-			$this->createOrManageUser($user);
+			$this->rawCreateOrManageUser($user);
 		}
 		catch (Exception $e) 
 		{
@@ -1092,8 +1092,9 @@ class PersonaDataAccess extends DataAccess
 	    {
             echo "Creating user: ".$user['nombres']." ".$user['apellidos']." - Cedula: ".($cedula ?? "NA")."\n";                    
            
-            $password         = null;
-            $generatePassword = true;
+            $password          = null;
+            $generatePassword  = true;
+			$generatedPassword = null;
             
             if (isset($user['password']))
             {
@@ -1101,14 +1102,14 @@ class PersonaDataAccess extends DataAccess
             }
             else if ($generatePassword)
             {
-                $password = uniqid();
+                $generatedPassword = uniqid();
                 // $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
                 echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
             }
 
-            if ($password)
+            if ($generatedPassword)
             {
-                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $password_hash = password_hash($generatedPassword, PASSWORD_DEFAULT);
             
                 $user['password_hash'] = $password_hash;
             }
@@ -1125,14 +1126,14 @@ class PersonaDataAccess extends DataAccess
                 $userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
             }
 
-            if ($user["email"] && $user["sendEmail"])
+            if ($email && $generatedPassword)
             {
-                DataAccessManager::get("email_queue")->addToQueue([
+                DataAccessManager::get("email_queue")->addDictionaryToQueue([
                     "to"      => $user["email"],
                     "subject" => "Bienvenido a Stonewood",
                     "body"    => "Bienvenido a App Stonewood, ".$user["nombres"]." ".$user["apellidos"].".\n\n".
-                                 "Su usuario es: ".$user["email"]."\n".
-                                 "Su contraseña es: ".$password."\n\n".
+                                 "Su usuario es: ".$email."\n".
+                                 "Su contraseña es: ".$generatedPassword."\n\n".
                                  "Gracias por confiar en nosotros.\n\n".
                                  "Saludos,\n".
                                 "El equipo de Stonewood.",
