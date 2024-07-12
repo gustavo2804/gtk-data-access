@@ -830,7 +830,7 @@ class PersonaDataAccess extends DataAccess
 			error_log("Role: ".print_r($role, true));
 		}
 
-		$roleID = $this->valueForKey("id", $role);
+		$roleID = DataAccessManager::get("roles")->valueForKey("id", $role);
 		$userID = $this->valueForKey("id", $user);
 
 		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
@@ -855,6 +855,12 @@ class PersonaDataAccess extends DataAccess
 		{
 			error_log("Not a qualified role");
 		}
+
+		if (!$userID)
+		{
+			throw new Exception("User ID not found in".print_r($user, true));
+		}
+
 		$toInsert = [
 			"role_id" => $roleID,
 			"user_id" => $userID,
@@ -1044,6 +1050,112 @@ class PersonaDataAccess extends DataAccess
 		{
 			return false;
 		}
+	}
+	
+	public function createOrManageUser($user)
+	{
+		try
+		{
+			$this->createOrManageUser($user);
+		}
+		catch (Exception $e) 
+		{
+			echo 'Excecption Creating User: '.$e->getMessage()."\n";
+			echo "User: ".print_r($user, true)."\n";
+			die();
+		}
+		echo "----------------------------------------------------------------------------------------\n";
+		echo "----------------------------------------------------------------------------------------\n";
+		echo "----------------------------------------------------------------------------------------\n";
+	}
+
+	public function rawCreateOrManageUser($user)
+	{
+		$cedula       = $user['cedula'] ?? null;
+        $email        = $user['email']  ?? null;
+        $toIdentifyBy = $email ?? $cedula;
+
+
+        echo "Looking for user with names: ".$user['nombres']." ".$user['apellidos']." - ID: ".$toIdentifyBy."\n";
+        
+        
+        if ($cedula)
+        {
+            $userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
+        }
+        else
+        {
+            $userFromDB = DataAccessManager::get("persona")->getOne("email", $email);
+        }
+
+	    if (!$userFromDB)
+	    {
+            echo "Creating user: ".$user['nombres']." ".$user['apellidos']." - Cedula: ".($cedula ?? "NA")."\n";                    
+           
+            $password         = null;
+            $generatePassword = true;
+            
+            if (isset($user['password']))
+            {
+                $password = $user['password'];
+            }
+            else if ($generatePassword)
+            {
+                $password = uniqid();
+                // $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
+                echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
+            }
+
+            if ($password)
+            {
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            
+                $user['password_hash'] = $password_hash;
+            }
+        
+	    	DataAccessManager::get("persona")->createUser($user);	
+
+            
+            if ($cedula)
+            {
+                $userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
+            }
+            else
+            {
+                $userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
+            }
+
+            if ($user["email"] && $user["sendEmail"])
+            {
+                DataAccessManager::get("email_queue")->addToQueue([
+                    "to"      => $user["email"],
+                    "subject" => "Bienvenido a Stonewood",
+                    "body"    => "Bienvenido a App Stonewood, ".$user["nombres"]." ".$user["apellidos"].".\n\n".
+                                 "Su usuario es: ".$user["email"]."\n".
+                                 "Su contraseña es: ".$password."\n\n".
+                                 "Gracias por confiar en nosotros.\n\n".
+                                 "Saludos,\n".
+                                "El equipo de Stonewood.",
+                ]);
+            }
+
+	    }
+        else
+        {
+            echo "User exists!\n";
+        }
+        
+        $roles = $user['roles'] ?? [];
+        
+        echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
+
+        foreach ($roles as $role)
+        {
+            DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
+            echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
+        }
+
+		return $userFromDB;
 	}
 }
 

@@ -3,6 +3,7 @@
 
 class FlatRoleDataAccess extends DataAccess
 {
+    private $_cache;
     
     public function register()
     {
@@ -249,9 +250,9 @@ class FlatRoleDataAccess extends DataAccess
 			new GTKColumnMapping($this, "date_modified"),
 		];
 
-		$this->dataMapping 			= new GTKDataSetMapping($this, $columnMappings);
+		$this->dataMapping 			   = new GTKDataSetMapping($this, $columnMappings);
 		$this->defaultOrderByColumnKey = "id";
-		$this->defaultOrderByOrder  = "DESC";
+		$this->defaultOrderByOrder     = "DESC";
     }
     
     public function isActive($item)
@@ -745,7 +746,7 @@ class FlatRoleDataAccess extends DataAccess
 
         if ($debug)
         {
-            error_log("Role Relations for user: $user");
+            error_log("Role Relations for user: ".print_r($user, true));
         }
 
         $userID = null;
@@ -758,18 +759,33 @@ class FlatRoleDataAccess extends DataAccess
         {
             $userID = $user;
         }
-        else
+        else if (!$user)
         {
             return [];
         }
+        else
+        {
+            throw new Exception("Invalid user type: ".gettype($user));
+        }
 
+        $toReturn = $this->_cache[$userID] ?? null;
 
-        $query = new SelectQuery($this, null, [
-            new WhereClause("user_id", "=",  DataAccessManager::get("persona")->valueForKey("id", $user)),
-        ]);
+        if (!$toReturn)
+        {
+            $query = new SelectQuery($this, null, [
+                new WhereClause("user_id", "=",  $userID),
+            ]);
 
-        $results = $query->executeAndReturnAll();
+            $toReturn = $query->executeAndReturnAll();
+        
+            $toReturn[$userID] = $toReturn;
+        }
 
-        return $results;
+        if ($debug)
+        {
+            error_log("Role Relations for user: ".print_r($toReturn, true));
+        }
+
+        return $toReturn;
     }
 }

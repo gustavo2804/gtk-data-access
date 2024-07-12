@@ -943,7 +943,7 @@ class DataAccess /* implements Serializable */
 
     public function mostAdvancedLinkForUserItem($user, $item, $options = null)
     {
-        $debug = true;
+        $debug = false;
 
         $updatePermission = $this->userHasPermissionTo("update", $user, $item);
 
@@ -2154,32 +2154,24 @@ class DataAccess /* implements Serializable */
 
     function getOne($columnName, $input, $debug = false)
     {
+        $debug = false;
+
         $result = $this->getMany($columnName, $input, $debug);
 
-        if ($debug)
-        {
-            gtk_log("Result: ".serialize($result));
-        }
+        $toReturn = null;
 
         if (count($result))
         {
-
+            $toReturn = $result[0];
+        }
         
-        $toReturn = $result[0];
         if ($debug)
         {
             gtk_log("Returning: ".serialize($toReturn));
         }
+
         return $toReturn;
-        }
-        else
-        {
-            if ($debug)
-            {
-                gtk_log("No results.");
-            }
-            return $result;
-        }
+
     }
  
 

@@ -30,7 +30,7 @@ class FormRendererBaseForDataSource extends ShowDataSourceRenderer
 
 	public function didUpdateSuccessfully($message, $redirectTo = null, $redirectToText = null)
 	{
-		$debug = true;
+		$debug = false;
 
 		$redirectTo = null;		
 					

@@ -4,7 +4,7 @@ class NewDataSourceRenderer extends FormRendererBaseForDataSource
 {
 	public function processPost()
 	{
-		$debug = true;
+		$debug = false;
 
 		$user =  DataAccessManager::get("persona")->getCurrentUser();
 
