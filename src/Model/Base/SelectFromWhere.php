@@ -18,6 +18,23 @@ class OrderBy
         return "{$columnName} {$this->order}";
     }
 }
+
+class LimitClause
+{
+    public $limit;
+    public $offset;
+
+    public function __construct($limit, $offset = null)
+    {
+        $this->limit  = $limit;
+        $this->offset = $offset;
+    }
+
+    public function getSQLForDataAccess($dataAccess, &$params) 
+    {
+        return $dataAccess->sqlForLimitOffset($this->limit, $this->offset);
+    }
+}
 class SelectQuery
 {
     public $isCountQuery = false;
@@ -62,7 +79,22 @@ class SelectQuery
 
     public function addClause($whereClause)
     {
-        return $this->addWhereClause($whereClause);
+        if (($whereClause instanceof WhereClause) || ($whereClause instanceof WhereGroup) || ($whereClause instanceof RawWhereClause))
+        {
+            return $this->addWhereClause($whereClause);
+        }
+        else if ($whereClause instanceof OrderBy)
+        {
+            $this->orderBy = $whereClause;
+        }
+        else if ($whereClause instanceof LimitClause)
+        {
+            $this->limit = $whereClause;
+        }
+        else
+        {
+            throw new Exception("Don't know how to handle clause of type: ".get_class($whereClause));
+        }
     }
 
     public function addWhereClause($whereClause) 
@@ -243,6 +275,12 @@ class SelectQuery
                     }
 
                     $sql .= " ORDER BY ".$orderByColumn." ".$orderByOrder;
+                }
+
+                if ($this->limit instanceof LimitClause)
+                {
+                    $this->limit  = $this->limit->limit;
+                    $this->offset = $this->limit->offset;
                 }
                 
                 $sql .= $this->sqlForLimitOffset($this->limit, $this->offset, $pdo);

@@ -23,8 +23,8 @@ class UNEDIFACTGateInGateOutFile
     public $lineaID;
     public $dateTimePreparation;
     public $bookingReferenceNumber;
-    public $documentMessageName = "36"; // References Gate In/Out - 
-    public $messageReferenceNumber      = "0031"; // Gate In/Out -
+    public $documentMessageName      = "36"; // References Gate In/Out - 
+    public $messageReferenceNumber   = "0031"; // Gate In/Out -
     public $containerNumber;
     public $containerISOType;
     public $equipmentStatus;
@@ -34,6 +34,10 @@ class UNEDIFACTGateInGateOutFile
     public $transportReferenceNumber;
     public $transportName;
     public $dateAndTime;
+
+    public $fullEmptyIndicator;
+    public $containerSupplierLeseeIndicator;
+    public $positionOfEquipment;
 
     public $currentSegments;
 
@@ -98,16 +102,17 @@ class UNEDIFACTGateInGateOutFile
         a X sign       (X)    for marked for deletion (within both batch and interactive messages)
         */
 
+        
 
         /* UNB - Interchange Header            */ $this->writeLine("UNB+UNOA:2+{$this->senderID}+{$this->recipientID}+{$this->dateTimePreparation}+{$this->interchangeControlReference}");
         /* UNH - Message Header                */ $this->writeLine("UNH+{$this->messageReferenceNumber}+CODECO:D:95B:UN:ITG13");
         /* BGM - Beginning of Message          */ $this->writeLine("BGM+{$this->documentMessageName}++9");
-        /* TDT - Transport Details             */ $this->writeLine("TDT+{$this->transportStageQualifier}++1++172:ZZZ+++146");
+        /* TDT - Transport Details             */ $this->writeLine("TDT+{$this->transportStageQualifier}++1++:172:ZZZ+++146");
         /* NAD - Name and Address              */ $this->writeLine("NAD+CF+".$this->lineaID.":160:166");
-        /* EQD - Equipment Details             */ $this->writeLine("EQD+CN+{$this->containerNumber}+{$this->containerISOType}:102:5++{$this->equipmentStatus}");
+        /* EQD - Equipment Details             */ $this->writeLine("EQD+CN+{$this->containerNumber}+{$this->containerISOType}:102:5+{$this->fullEmptyIndicator}+{$this->containerSupplierLeseeIndicator}+{$this->equipmentStatus}");
         /* RFF - Reference                     */ $this->writeLine("RFF+BN:{$this->bookingReferenceNumber}");
         /* TMD - Transport Movement Details    */ $this->writeLine("TMD+{$this->movementType}");
-        /* DTM - Date/Time/Period              */ $this->writeLine("DTM+".UNDateTimePeriodFunctionCodeQualifier::EffectiveFromDatetime->value.":".$this->dateAndTime.":".UNDateTimeFormatCode::CCYYMMDDTHHMM->value);
+        /* DTM - Date/Time/Period              */ $this->writeLine("DTM+".UNDateTimePeriodFunctionCodeQualifier::EffectiveFromDatetime->value.":".$this->dateAndTime->format('YmdHi').":".UNDateTimeFormatCode::CCYYMMDDHHMM->value);
         /* MEA - Measurements                  */ $this->writeLine("MEA+AAE+T+KGM:1900");
         /* TDT - Transport Details (Repeated)  */ $this->writeLine("TDT+1++3++{$this->transportReferenceNumber}:172:ZZZ+++{$this->transportReferenceNumber}:146::{$this->transportName}");
     
