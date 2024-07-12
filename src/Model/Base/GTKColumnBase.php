@@ -593,3 +593,29 @@ class GTKColumnBase
     }
 
 }
+
+
+class GTKItemCellContentPresenter
+{
+    public $label;
+    public $presenterFunction;
+
+    public function __construct($label, $presenterFunction)
+    {
+        $this->label = $label;
+        $this->presenterFunction = $presenterFunction;
+    }
+
+
+    public function getFormLabel()
+    {
+        return $this->label;
+    }
+
+    public function valueFromDatabase($item)
+    {
+        $presenterFunction = $this->presenterFunction;
+
+        return $presenterFunction($item);
+    }
+}

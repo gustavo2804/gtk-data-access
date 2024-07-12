@@ -767,3 +767,6 @@ class DataAccessManager
 	}
 
 }
+
+
+class_alias('DataAccessManager', 'DAM');

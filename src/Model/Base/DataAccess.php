@@ -4632,7 +4632,7 @@ class DataAccess /* implements Serializable */
                 {
                     $columnMappingsToDisplay[] = $this->columnMappingForKey($maybeColumnMapping);
                 }
-                else 
+                else if (($maybeColumnMapping instanceof GTKColumnBase) || ($maybeColumnMapping instanceof GTKItemCellContentPresenter))
                 {
                     $columnMappingsToDisplay[] = $maybeColumnMapping;
                 }
