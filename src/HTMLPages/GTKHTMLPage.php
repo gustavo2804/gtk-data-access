@@ -44,12 +44,23 @@ class GTKHTMLPage
 
 	public function currentPath()
 	{
-	    if (isset($_SERVER["PATH_INFO"])) {
+	    if (isset($_SERVER["PATH_INFO"])) 
+		{
 			return $_SERVER["PATH_INFO"];
-		} elseif (isset($_SERVER["REQUEST_URI"])) {
+		} 
+		elseif (isset($_SERVER["REQUEST_URI"])) 
+		{
 			return parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 		}
 		return null; // Or throw an exception if preferred
+	}
+
+	public function currentURL()
+	{
+		$protocol = $this->server["HTTPS"] ? "https" : "http";
+		$host = $this->server["HTTP_HOST"];
+		$path = $this->currentPath();
+		return $protocol."://".$host.$path;
 	}
 
 	public function getClientIP() 

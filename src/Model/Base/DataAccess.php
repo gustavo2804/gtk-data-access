@@ -4616,6 +4616,8 @@ class DataAccess /* implements Serializable */
 		$items = null;
 		$count = 0;
 
+        $whileIterating = $options["whileIterating"] ?? null;
+
         $columnMappingsToDisplay = null;
 
         if (!$columnsToDisplay)
@@ -4655,6 +4657,17 @@ class DataAccess /* implements Serializable */
 				
 			}
 		}
+        else if ($itemsOrQueryObject instanceof GTKCountableGenerator)
+        {
+            $count = $itemsOrQueryObject->count();
+            $items = $itemsOrQueryObject->getIterator();
+
+            if ($debug)
+            {
+                gtk_log("Is GTK Countable Generator!");
+                gtk_log("Items count: ".$count);
+            }
+        }
 		else
 		{
 			$count = $itemsOrQueryObject->count();
@@ -4713,8 +4726,14 @@ class DataAccess /* implements Serializable */
 				</td>
 			</tr>
 			<?php else: ?>
-				<?php foreach ($items as $currentItem): ?>
-						<?php $itemIdentifier = $this->dataMapping->valueForIdentifier($currentItem); ?>
+				<?php foreach ($items as $index => $currentItem): ?>
+						<?php 
+                            $itemIdentifier = $this->dataMapping->valueForIdentifier($currentItem); 
+                            if ($whileIterating)
+                            {
+                                $whileIterating($currentItem, $index);
+                            }
+                        ?>
 						<tr class="border-b border-gray-200"
 							style=<?php echo '"'.$this->rowStyleForItem($currentItem, $index).'"'; ?>
 							id=<?php echo '"cell-'.$this->dataAccessorName.'-'.$itemIdentifier.'"'; ?>

@@ -323,11 +323,7 @@ class RoleDataAccess extends DataAccess
     public function createOrManageRole(&$roleToCreateOrManage)
     {
         $debug = false;
-
-        if ($debug)
-        {
-            gtk_log("Role to create or manage: ".serialize($roleToCreateOrManage));
-        }
+        gtk_log("Role to create or manage: ".serialize($roleToCreateOrManage));
 
         $roleName = $roleToCreateOrManage["name"];
 
@@ -335,25 +331,16 @@ class RoleDataAccess extends DataAccess
 
         if ($roleFromDB)
         {
-            if ($debug)
-            {
-                gtk_log("Role Exists: ".serialize($roleToCreateOrManage));
-            }
+            gtk_log(" - Role Exists: ".serialize($roleToCreateOrManage));
             $roleFromDB = $this->manageRole($roleFromDB, $roleToCreateOrManage);
         }
         else
         {
-            if ($debug)
-            {
-                gtk_log("Role Does Not Exist: ($roleName) ".serialize($roleToCreateOrManage));
-            }
+            gtk_log(" - Does not exist...will create role...: ($roleName) ".serialize($roleToCreateOrManage));
             $roleFromDB = $this->createRole($roleToCreateOrManage);
         }
 
-        if ($debug)
-        {
-            gtk_log("Role from DB: ".serialize($roleFromDB));
-        }
+        gtk_log(" - Role from DB: ".$this->identifierForItem($roleFromDB));
 
         $permissions = $this->getPermissionsForRole($roleFromDB);
 
@@ -363,10 +350,8 @@ class RoleDataAccess extends DataAccess
 
             foreach ($permissionsToRemove as $permission)
             {
-                if ($debug)
-                {
-                    gtk_log("Removing Permission from $roleName: ".serialize($permission));
-                }
+                gtk_log(" - Removing Permission from $roleName: ".serialize($permission));
+                
                 if (in_array($permission, $permissions))
                 {
                     $this->removePermissionFromRole($existingRole, $permission);
@@ -375,10 +360,7 @@ class RoleDataAccess extends DataAccess
         }
         else
         {
-            if ($debug)
-            {
-                gtk_log("No permissions to remove for: ".$roleName);
-            }
+            gtk_log(" - No permissions to remove for: ".$roleName);
         }
 
         if (isset($roleToCreateOrManage["permissions"])) 
@@ -410,10 +392,7 @@ class RoleDataAccess extends DataAccess
 
                 if (!in_array($permissionName, $permissions))
                 {
-                    if ($debug)
-                    {
-                        gtk_log("Adding Permission to $roleName: ".serialize($permission));
-                    }
+                    gtk_log("Adding Permission to $roleName: ".serialize($permission));
                     $this->addPermissionToRole($roleFromDB, $permission);
                 }
                 else
