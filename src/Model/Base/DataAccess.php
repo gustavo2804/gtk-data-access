@@ -529,6 +529,48 @@ class DataAccess /* implements Serializable */
         }
     }
 
+    public function createOrManagePermissionsWithKey($key)
+    {
+        $permissions = [
+            "create",
+            "read",
+            "update",
+            "delete",
+            //-------------------------------------------------------------------------
+            "all",
+        ];
+
+        foreach ($permissions as $permissionKey)
+        {
+            $permissionName = $key.".".$permissionKey;
+
+            $permission = [
+                "name"         => $permissionName,
+                "is_active"    => true,
+                "date_created" => date("Y-m-d H:i:s"),
+            ];
+
+            echo "Creating permission: ".$permissionName."\n";
+
+            DataAccessManager::get("permissions")->insertIfNotExists($permission);
+        }
+
+        foreach ($this->dataSetViews as $name => $dataSetView)
+        {
+            $permissionName = $key.".".$name;
+
+            $permission = [
+                "name"         => $permissionName,
+                "is_active"    => true,
+                "date_created" => date("Y-m-d H:i:s"),
+            ];
+
+            echo "Creating permission: ".$permissionName."\n";
+
+            DataAccessManager::get("permissions")->insertIfNotExists($permission);
+        }
+    }
+
     
 	public function __construct($p_db, $options)
     {

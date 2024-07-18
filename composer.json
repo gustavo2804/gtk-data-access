@@ -63,7 +63,8 @@
             "configure/functions/HasPermission.php",
             "configure/functions/www-Debug.php",
             "configure/lang.php",
-            "configure/permissions.php"
+            "configure/permissions.php",
+            "configure/pages.php"
         ],
         "classmap": [
             "src/"

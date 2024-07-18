@@ -2,6 +2,14 @@
 
 use function Deployer\desc;
 
+class GTKHTMLFragment
+{
+	public function render()
+	{
+		return "";
+	}
+}
+
 class GTKHTMLPage
 {
 	public $get; 
@@ -22,14 +30,15 @@ class GTKHTMLPage
 	public $user;
 	public $session;
 
-	public $headerPath;
-	public $footerPath;
+	public $header;
+	public $footer;
 
 	public bool    $authenticationRequired = false; // ovveride in construct
 	public ?string $permissionRequired 	   = null;  // override in construct
 
 	public function __construct($options = [])
 	{
+		// $pageOptions = OAM::get(get_class($this));
 	}
 
 	public function setAuthenticate($toSet)
@@ -168,12 +177,46 @@ class GTKHTMLPage
 	//--- Header, Footer methods
 	//---------------------------------------------------------
 	//---------------------------------------------------------
+
+	public function includeOrRenderPathOrIncludeDefault($toIncludeOrRender, $theDefaultPath)
+	{
+		$classExists = class_exists($toIncludeOrRender);
+
+		if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
+		{
+			$instance = new $toIncludeOrRender();
+			return $instance->renderForUser($this->currentUser());
+		}
+		else if ($classExists && method_exists($toIncludeOrRender, "render"))
+		{
+			$instance = new $toIncludeOrRender();
+			return $instance->render();
+		}
+
+		$classExists = class_exists($theDefaultPath);
+
+		if ($classExists && method_exists($theDefaultPath, "renderForUser"))
+		{
+			$instance = new $theDefaultPath();
+			return $instance->renderForUser($this->currentUser());
+		}
+		else if ($classExists && method_exists($theDefaultPath, "render"))
+		{
+			$instance = new $theDefaultPath();
+			return $instance->render();
+		}
+
+		return "";
+	}
 	
 	public function gtk_renderHeader()
 	{
-		
+		$contentType = $this->server["CONTENT_TYPE"] ?? "text/html";
 
-		$contentType = $this->server["CONTENT_TYPE"];
+		global $_GLOBALS;
+		$defaultHeader = $_GLOBALS["DEFAULT_HEADER"];
+
+		// die("Header: ".$this->header . " Default: ".$defaultHeader);
 
 		switch($contentType)
 		{
@@ -186,23 +229,16 @@ class GTKHTMLPage
 			case "text/plain":
 			case "text/html":
 			default:
-				$headerPath = $this->headerPath;
-
-				if (!$headerPath)
-				{
-					$headerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/header.php";
-				
-				}
-
-				ob_start();
-				include($headerPath);
-				return ob_get_clean();
+				return $this->includeOrRenderPathOrIncludeDefault($this->header, $defaultHeader);
 		}
 	}
 
 	public function gtk_renderFooter()
 	{
-		$contentType = $this->server["CONTENT_TYPE"];
+		$contentType = $this->server["CONTENT_TYPE"] ?? "text/html";
+		global $_GLOBALS;
+
+		$defaultFooter = $_GLOBALS["DEFAULT_FOOTER"];
 
 		switch($contentType)
 		{
@@ -215,17 +251,7 @@ class GTKHTMLPage
 			case "text/plain":
 			case "text/html":
 			default:
-				$footerPath = $this->footerPath;
-
-				if (!$footerPath)
-				{
-					$footerPath = dirname($_SERVER['DOCUMENT_ROOT'])."/templates/footer.php";
-				
-				}
-			
-				ob_start();
-				include($footerPath);
-				return ob_get_clean();
+				return $this->includeOrRenderPathOrIncludeDefault($this->footer, $defaultFooter);
 		}
 	}
 
