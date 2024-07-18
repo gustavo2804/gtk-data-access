@@ -52,4 +52,39 @@ class DataSetView
 
         return $this->compiledColumns;
     }
+
+
+    public function renderForUser($user)
+    {
+        return "<h1>Renders for user: $user</h1>";
+        /*
+        $columns = $this->getColumns();
+        $data = $this->dataAccessor->getData();
+        $rows = $this->dataAccessor->getRows();
+
+        $html = "<table class='table table-striped table-bordered table-hover'>";
+        $html .= "<thead><tr>";
+        foreach ($columns as $column)
+        {
+            $html .= "<th>".$column->name."</th>";
+        }
+        $html .= "</tr></thead>";
+
+        $html .= "<tbody>";
+        foreach ($rows as $row)
+        {
+            $html .= "<tr>";
+            foreach ($columns as $column)
+            {
+                $html .= "<td>".$column->render($row)."</td>";
+            }
+            $html .= "</tr>";
+        }
+        $html .= "</tbody>";
+
+        $html .= "</table>";
+
+        return $html;
+        */
+    }
 }

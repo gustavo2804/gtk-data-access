@@ -4603,6 +4603,16 @@ class DataAccess /* implements Serializable */
 			case "delete":
 				die("NEED TO CREATE RENDER `Delete`");
 		}
+
+        $dataSetView = $this->getDataSetView($routeAsString);
+
+        if ($dataSetView)
+        {
+            return $dataSetView->renderForUser($user);
+        }
+
+        return null;
+
     }
 
     public function printRowContents($item, $columnsToDisplay, $options)
