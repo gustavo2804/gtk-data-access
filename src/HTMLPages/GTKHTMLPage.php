@@ -329,6 +329,11 @@ class GTKHTMLPage
 
 		$isAuthorized = true;
 
+		if ($this->permissionRequired == "public")
+		{
+			return true;
+		}
+
 		if ($this->permissionRequired)
 		{
 			if (!$this->currentUser())
