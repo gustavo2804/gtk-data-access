@@ -88,17 +88,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
         <h2 class="ml-12 text-2xl font-bold my-4 center">
 			Edita <?php echo $this->dataSource->singleItemName();?> 
 		</h2>
-        <?php
-			if (is_string($this->header))
-			{
-				echo $this->header;
-			}
-			else if (is_callable($this->header))
-			{
-				$header = $this->header;
-				echo $header($this);
-			}
-        ?>
+        <?php echo $this->renderItemAttribute($this->itemHeader); ?>
         
         <?php $inputOptions = [
         	"identifier"     => $this->itemIdentifier,
@@ -141,15 +131,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
         	<?php endforeach; ?>
         	</table>
         <?php
-			if (is_string($this->footer))
-			{
-				echo $this->footer;
-			}
-			else if (is_callable($this->footer))
-			{
-				$footer = $this->footer;
-				echo $footer($this);
-			}
+			echo $this->renderItemAttribute($this->itemFooter);
 
 			$submitButtonValue = Glang::get("EditDataSourceRenderer/SubmitButtonValue");
 

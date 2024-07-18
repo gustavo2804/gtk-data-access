@@ -24,12 +24,15 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	public $itemsPerPage;
     public $echoSelectedIfTrue;
 
+	public $itemHeader;
+	public $itemFooter;
+
     public function renderForDataSource($dataSource, $user, $options)
     {
         $this->dataSource = $dataSource;
         $this->user 	  = $user;
-		$this->header = $options["header"] ?? null;
-		$this->footer = $options["footer"] ?? null;
+		$this->itemHeader = $options["header"] ?? null;
+		$this->itemFooter = $options["footer"] ?? null;
         return $this;
     }
 
@@ -329,16 +332,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 				$debug);
 		}
 
-		if (is_string($this->footer))
-		{
-			echo $this->footer;
-		}
-		else if (is_callable($this->footer))
-		{
-			$footer = $this->footer;
-			$footer($this);
-		}
-
+		echo $this->renderItemAttribute($this->itemHeader);
 		echo $this->pageSection();
 
 		return ob_get_clean();

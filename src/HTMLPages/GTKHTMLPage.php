@@ -213,6 +213,19 @@ class GTKHTMLPage
 
 		return "";
 	}
+
+	public function renderItemAttribute($attribute)
+	{
+		if (is_string($attribute))
+		{
+			return $attribute;
+		}
+		else if (is_callable($attribute))
+		{
+			return $attribute($this);
+		}
+	}
+
 	
 	public function gtk_renderHeader()
 	{

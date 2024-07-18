@@ -74,16 +74,11 @@ class NewDataSourceRenderer extends FormRendererBaseForDataSource
 			error_log("Data Set Mapping: ".get_class($this->dataSource->dataMapping));
 			error_log("Ordered: ".count($this->dataSource->dataMapping->ordered));
 		}
-		if (is_string($this->header))
-		{
-			echo $this->header;
-		}
-		else if (is_callable($this->header))
-		{
-			$header = $this->header;
-			echo $header($this);
-		}
-    	ob_start(); ?>
+
+    	ob_start(); 
+		
+		echo $this->renderItemAttribute($this->itemHeader);
+		?>
 		
 		<?php $inputOptions = [
 			"identifier"     => $this->itemIdentifier,
@@ -130,15 +125,7 @@ class NewDataSourceRenderer extends FormRendererBaseForDataSource
 			<input type="hidden" name="isNew" value="<?php echo $this->isNew; ?>">
 				
 		<?php
-			if (is_string($this->footer))
-			{
-				echo $this->footer;
-			}
-			else if (is_callable($this->footer))
-			{
-				$footer = $this->footer;
-				echo $footer($this);
-			}
+			echo $this->renderItemAttribute($this->itemFooter);
 		
 
 			$submitButtonValue = Glang::get("EditDataSourceRenderer/SubmitButtonValue/IsNew");

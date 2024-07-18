@@ -111,19 +111,6 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 		}
 	}
 
-	public function renderItemAttribute($attribute)
-	{
-		if (is_string($attribute))
-		{
-			return $attribute;
-		}
-		else if (is_callable($attribute))
-		{
-			return $attribute($this);
-		}
-	}
-
-
 	public function renderBody()
     {
         $debug = false;
