@@ -179,7 +179,7 @@ class SelectQuery
             {
                 if (is_string($column))
                 {
-                    $toQueryColumns[] = $this->dataSource->dbColumnNameForKey($column);
+                    $toQueryColumns[] = $this->dbColumnNameForKey($column);
                 }
                 else 
                 {
@@ -225,16 +225,16 @@ class SelectQuery
     
                     if (is_string($orderBy))
                     {
-                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy)." ASC";
+                        $sql .= $this->dbColumnNameForKey($orderBy)." ASC";
                     }
                     else if (is_array($orderBy) && (count($orderBy) == 2))
                     {
     
-                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
+                        $sql .= $this->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
                     }
                     else if ($orderBy instanceof OrderBy)
                     {
-                        $sql .= $this->dataSource->dbColumnNameForKey($orderBy->column)." ".$orderBy->order;
+                        $sql .= $this->dbColumnNameForKey($orderBy->column)." ".$orderBy->order;
                     }
                     else
                     {
@@ -253,7 +253,7 @@ class SelectQuery
             }
             else if ($this->orderBy instanceof OrderBy)
             {
-                $sql .= ' ORDER BY '.$this->dataSource->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
+                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
             }
             else if ($this->dataSource->defaultOrderByColumnKey)
             {
