@@ -5,8 +5,8 @@ class ShowDataSourceRenderer extends GTKHTMLPage
     public $dataSource;
     public $user;
 
-	public $header;
-	public $footer;
+	public $itemHeader;
+	public $itemFooter;
 
 	public $dataMapping;
 	public $columnMappings;
@@ -21,8 +21,8 @@ class ShowDataSourceRenderer extends GTKHTMLPage
     {
         $this->dataSource = $dataSource;
         $this->user = $user;
-		$this->header = $options["header"] ?? null;
-		$this->footer = $options["footer"] ?? null;
+		$this->itemHeader = $options["header"] ?? null;
+		$this->itemFooter = $options["footer"] ?? null;
         return $this;
     }
 	
@@ -111,6 +111,18 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 		}
 	}
 
+	public function renderItemAttribute($attribute)
+	{
+		if (is_string($attribute))
+		{
+			return $attribute;
+		}
+		else if (is_callable($attribute))
+		{
+			return $attribute($this);
+		}
+	}
+
 
 	public function renderBody()
     {
@@ -134,17 +146,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 
         ob_start(); ?>
         <h2 class="ml-4 mt-4 text-2xl font-bold"><?php echo $this->dataSource->singleItemName(); ?></h2>
-        <?php
-			if (is_string($this->header))
-			{
-				echo $this->header;
-			}
-			else if (is_callable($this->header))
-			{
-				$header = $this->header;
-				echo $header($this);
-			}
-        ?>
+        <?php echo $this->renderItemAttribute($this->itemHeader); ?>
         <table>
         	<?php foreach ($this->columnMappings as $columnMapping): ?>
         		<?php if ($columnMapping->hideOnShow()): ?>
@@ -184,17 +186,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
 			?>
 		</div>
 
-        <?php
-			if (is_string($this->footer))
-			{
-				echo $this->footer;
-			}
-			else if (is_callable($this->footer))
-			{
-				$footer = $this->footer;
-				echo $footer($this);
-			}
-        ?>
+        <?php echo $this->renderItemAttribute($this->itemFooter); ?>
         <?php return ob_get_clean();
     }
 }
