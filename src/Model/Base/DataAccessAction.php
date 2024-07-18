@@ -15,6 +15,13 @@ class DataAccessAction
     public $hideOnEditForUserItemFunction;
 	public $doObjectForUserItemDelegateOptions;
 	public $doFunctionForUserItemDelegateOptions;
+	public $isPositive = false;
+
+
+	public $isValidForUserItemDelegateOptionsObject;
+    public $isValidForUserItemDelegateOptionsFunction;
+
+
     public $isInvalidForUserItemDelegateOptionsObject;
     public $isInvalidForUserItemDelegateOptionsFunction;
 
@@ -88,6 +95,46 @@ class DataAccessAction
             return true;
         }
         return false;
+    }
+
+	public function isValidForUserOnItem(&$user, &$item, &$delegate = null, &$options = null)
+    {
+		$debug = false;
+
+		if ($debug)
+		{
+			error_log("`isInvalidForUserOnItem` - trying...");
+		}
+
+        if ($this->isValidForUserItemDelegateOptionsObject)
+        {
+			if ($debug)
+			{
+				error_log("Trying object with function option");
+			}
+			$isValidForUserItemDelegateOptionsFunction = $this->isValidForUserItemDelegateOptionsFunction;
+			return $this->isValidForUserItemDelegateOptionsObject->$isValidForUserItemDelegateOptionsFunction($user, $item, $delegate, $options);
+        }
+        else if ($this->isValidForUserItemDelegateOptionsFunction)
+		{
+			if ($debug)
+			{
+				error_log("Trying object with function option");
+			}
+			$isValidForUserItemDelegateOptionsFunction = $this->isValidForUserItemDelegateOptionsFunction;
+			return $isValidForUserItemDelegateOptionsFunction($user, $item, $delegate, $options);
+		}
+        else if (is_array($this->allowedFor))
+        {
+            $userHasPermission = DataAccessManager::get('roles')->isUserInAnyOfTheseRolesNamed($user, $this->allowedFor);
+			if ($debug)
+			{
+				error_log("User has permission: $userHasPermission on ".print_r($this->allowedFor, true));
+			}
+			return !$userHasPermission;
+		}
+
+		return true;
     }
     public function isInvalidForUserOnItem(&$user, &$item, &$delegate = null, &$options = null)
     {

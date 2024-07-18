@@ -1491,6 +1491,37 @@ class DataAccess /* implements Serializable */
         }
     }
 
+    public function editableFieldsForUserItem($user, $item)
+    {
+        $debug = false;
+
+        $fields = [];
+
+        foreach ($this->dataMapping->ordered as $columnMapping)
+        {
+            if ($columnMapping->isPrimaryKey)
+            {
+                continue;
+            }
+            if ($columnMapping->isAutoIncrement)
+            {
+                continue;
+            }
+
+            if ($columnMapping->isEditableForUserOnItem($user, $item))
+            {
+                array_push($fields, $columnMapping);
+            }
+        }
+
+        if ($debug)
+        {
+            error_log("Editable fields for user: ".count($fields));
+        }
+
+        return $fields;
+    }
+
     /////////////////////////////////////////////////////////////////////////////////
     // -
     // - CREATION

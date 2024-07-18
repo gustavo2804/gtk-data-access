@@ -190,9 +190,28 @@ class EmailQueueManager extends DataAccess
             throw new Exception("El campo `sendTo` es obligatorio.");
         }
 
-        if (!$this->verifyEmailString($sendTo))
+        if (is_string($sendTo))
         {
-            throw new Exception("El campo `sendTo` no es un correo electrónico válido.");
+            $sendTo = strtolower($sendTo);
+    
+            if (!$this->verifyEmailString($sendTo))
+            {
+                throw new Exception("El campo `sendTo` no es un correo electrónico válido: ".print_r($sendTo, true));
+            }
+        }
+        else if (is_array($sendTo))
+        {
+            $sendToArray = $sendTo;
+
+            foreach ($sendToArray as $email)
+            {
+                if (!$this->verifyEmailString($email))
+                {
+                    throw new Exception("El campo `sendTo` no es un correo electrónico válido: ".print_r($sendTo, true));
+                }
+            }
+
+            $sendTo = implode(",", $sendToArray);
         }
 
         $senderEmail   = $options['senderEmail']   ?? $this->sendFrom; 

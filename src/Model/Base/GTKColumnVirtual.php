@@ -33,6 +33,11 @@ class GTKColumnReference extends GTKColumnBase
         return true;
     }
 
+    public function htmlInputForUserItem($user, $item)
+    {
+        return "N / A";
+    }
+
 
     public function getValueFromArray($item)
     {
