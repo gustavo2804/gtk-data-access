@@ -1,60 +1,6 @@
 <?php
 
 
-class OrderBy
-{
-    public $column;
-    public $order;
-
-    public function __construct($column, $order = 'ASC')
-    {
-        $this->column = $column;
-        $this->order  = $order;
-    }
-
-    public function getSQLForDataAccess($dataAccess, &$params) 
-    {
-        $columnName = $dataAccess->dbColumnNameForKey($this->column);
-        return "{$columnName} {$this->order}";
-    }
-}
-
-class LimitClause
-{
-    public $limit;
-    public $offset;
-
-    public function __construct($limit, $offset = null)
-    {
-        $this->limit  = $limit;
-        $this->offset = $offset;
-    }
-
-    public function getSQLForDataAccess($dataAccess, &$params) 
-    {
-        return $dataAccess->sqlForLimitOffset($this->limit, $this->offset);
-    }
-}
-
-class GTKCountableGenerator implements IteratorAggregate, Countable 
-{
-    private $generator;
-    private $count;
-
-    public function __construct(Generator $generator, int $count) {
-        $this->generator = $generator;
-        $this->count = $count;
-    }
-
-    public function getIterator(): Generator {
-        yield from $this->generator;
-    }
-
-    public function count(): int {
-        return $this->count;
-    }
-}
-
 class SelectQuery
 {
     public $isCountQuery = false;
@@ -90,12 +36,47 @@ class SelectQuery
         $this->queryOptions = $queryOptions;
     }
 
+    public function getPDO()
+    {
+        return $this->dataSource->getPDO();
+    }
+
+    public function getDriverName()
+    {
+        return $this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME);
+    }
+
+    public function setDataSource($dataSource)
+    {
+        $this->dataSource = $dataSource;
+    }
+
     public function setColumns($columns)
     {
         $this->columns = $columns;
     }
 
+    public function dbColumnNameForKey($key)
+    {
+        if (strpos($key, '.') !== false) 
+        {
+            list($dataAccessorName, $columnName) = explode('.', $key);
+            
+            $dataAccessor = DAM::get($dataAccessorName);
+            $dbColumnName = $dataAccessor->dbColumnNameForKey($columnName);
 
+            if (!$dbColumnName)
+            {
+                throw new Exception("Column not found: ".$key);
+            }
+
+            return $dbColumnName;
+        }
+        else
+        {
+            return $this->dataSource->dbColumnNameForKey($key);
+        }
+    }
 
     public function addClause($whereClause)
     {
@@ -218,7 +199,7 @@ class SelectQuery
         
         if ($this->whereGroup && (count($this->whereGroup->clauses) > 0))
         {
-            $sql .= ' WHERE ' . $this->whereGroup->getSQLForDataAccess($this->dataSource, $params);
+            $sql .= ' WHERE ' . $this->whereGroup->getSQLForSelectQuery($this, $params);
         }          
         
         if (!$this->isCountQuery)
@@ -496,7 +477,7 @@ class RawWhereClause
         $this->params = $params;
     }
 
-    public function getSQLForDataAccess($dataAccess, &$params) 
+    public function getSQLForSelectQuery($selectQuery, &$params) 
     {
         $params = array_merge($params, $this->params);
         return $this->sql;
@@ -523,7 +504,7 @@ class WhereClause
         $this->values   = $values;
     }
 
-    public function getSQLForDataAccess($dataAccess, &$params) 
+    public function getSQLForSelectQuery($selectQuery, &$params) 
     {
         $debug = false;
 
@@ -537,7 +518,7 @@ class WhereClause
         }
         else
         {
-            $columnName = $dataAccess->dbColumnNameForKey($this->column);
+            $columnName = $selectQuery->dbColumnNameForKey($this->column);
         }
 
         if ($debug)
@@ -548,8 +529,7 @@ class WhereClause
             error_log("...END SQL");
         }
 
-        $pdo     = $dataAccess->getPDO();
-        $pdoType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $pdoType = $selectQuery->getDriverName();
 
         switch ($this->operator) 
         {
@@ -644,23 +624,6 @@ class WhereClause
     }
 }
 
-class AndClause extends WhereClause 
-{
-    public function __construct($column, $operator, ...$values) 
-    {
-        parent::__construct($column, $operator, ...$values);
-    }
-}
-
-class OrClause extends WhereClause 
-{
-    public function __construct($column, $operator, ...$values) 
-    {
-        parent::__construct($column, $operator, ...$values);
-    }
-}
-
-
 class WhereGroup 
 {
     public $clauses = [];
@@ -674,7 +637,8 @@ class WhereGroup
 
     }
 
-    public function addWhereClause($clause) { 
+    public function addWhereClause($clause) 
+    { 
         return $this->addClause($clause);
     }
 
@@ -687,7 +651,7 @@ class WhereGroup
         $this->clauses[] = $group;
     }
 
-    public function getSQLForDataAccess($dataAccess, &$params) 
+    public function getSQLForSelectQuery($selectQuery, &$params) 
     {
         if (!is_array($this->clauses))
         {
@@ -695,10 +659,13 @@ class WhereGroup
         }
 
         $sqlParts = [];
+        
         foreach ($this->clauses as $clause) 
         {
-            $sqlParts[] = ($clause instanceof WhereGroup) ? '(' . $clause->getSQLForDataAccess($dataAccess, $params) . ')' : $clause->getSQLForDataAccess($dataAccess, $params);
+            $sqlParts[] = ($clause instanceof WhereGroup) ? '(' . $clause->getSQLForSelectQuery($selectQuery, $params) . ')' : $clause->getSQLForSelectQuery($selectQuery, $params);
         }
+
+
         return implode(" {$this->logicalOperator} ", $sqlParts);
     }
 
@@ -722,5 +689,23 @@ class WhereGroup
         $this->clauses[] = $whereClause;
 
         return $this;
+    }
+}
+
+class OrderBy
+{
+    public $column;
+    public $order;
+
+    public function __construct($column, $order = 'ASC')
+    {
+        $this->column = $column;
+        $this->order  = $order;
+    }
+
+    public function getSQLForSelectQuery($selectQuery, &$params) 
+    {
+        $columnName = $selectQuery->dbColumnNameForKey($this->column);
+        return "{$columnName} {$this->order}";
     }
 }
