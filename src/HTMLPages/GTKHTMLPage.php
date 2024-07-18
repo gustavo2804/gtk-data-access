@@ -180,6 +180,11 @@ class GTKHTMLPage
 
 	public function includeOrRenderPathOrIncludeDefault($toIncludeOrRender, $theDefaultPath)
 	{
+		if (is_callable($toIncludeOrRender))
+		{
+			return $toIncludeOrRender();
+		}
+
 		$classExists = class_exists($toIncludeOrRender);
 
 		if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
