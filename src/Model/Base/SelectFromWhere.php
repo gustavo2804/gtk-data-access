@@ -1,6 +1,7 @@
 <?php
 
 
+
 class SelectQuery
 {
     public $isCountQuery = false;
@@ -531,6 +532,28 @@ class WhereClause
 
         $pdoType = $selectQuery->getDriverName();
 
+        return $this->clauseForColumnNameParamsPDOType($columnName, $params, $pdoType);
+    }
+
+    public static function isOperator($operator)
+    {
+        $whereClause = new WhereClause("for_method", $operator, "value");
+        $params = [];
+        $clause = $whereClause->clauseForColumnNameParamsPDOType("column_name", $params, "mysql", false);
+        if ($clause)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public function clauseForColumnNameParamsPDOType($columnName, &$params, $pdoType, $throwException = true)
+    {
+        $debug = false;
+
         switch ($this->operator) 
         {
             case "NOT EMPTY":
@@ -619,7 +642,15 @@ class WhereClause
                 // return "{$columnName} {$this->operator} ?";
                 return "{$columnName} LIKE ?";
             default:
-                throw new Exception("Invalid operator: {$this->operator}");
+                if ($throwException)
+                {
+                    throw new Exception("Invalid operator: {$this->operator}");
+                }
+                else
+                {
+                    return null;
+                
+                }
         }
     }
 }

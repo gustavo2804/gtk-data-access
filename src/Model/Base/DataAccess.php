@@ -2214,10 +2214,22 @@ class DataAccess /* implements Serializable */
         }
     }
 
-
-    public function where($parameterName, $parameterValue)
+    public function where($parameterName, $maybeOperatorOrParameterValue, $maybeParameterValue = null)
     {
-        return $this->findByParameter($parameterName, $parameterValue);
+        $isOperator = WhereClause::isOperator($maybeOperatorOrParameterValue);
+
+        if ($isOperator)
+        {
+            $query = new SelectQuery($this);
+            $query->where(new WhereClause($parameterName, $maybeOperatorOrParameterValue, $maybeParameterValue));
+            return $query->executeAndReturnAll();
+        }
+        else
+        {
+            $query = new SelectQuery($this);
+            $query->where(new WhereClause($parameterName, "=", $maybeOperatorOrParameterValue));
+            return $query->executeAndReturnAll();
+        }
     }
 
     public function whereOne($parameterName, $parameterValue)
