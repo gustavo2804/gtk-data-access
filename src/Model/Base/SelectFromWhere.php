@@ -420,6 +420,7 @@ class SelectQuery
         $statement = $this->getPDOStatement($params);
         try
         {
+            // echo "<h1>"."Statement: ".$statement->queryString." Params: ".print_r($params, true)."</h1>";
             $statement->execute($params);
         }
         catch (Exception $e)

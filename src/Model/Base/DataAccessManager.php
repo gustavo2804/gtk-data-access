@@ -394,6 +394,7 @@ class DataAccessManager
         return self::getAccessor($name);
     }
 
+
 	public static function configureSystem()
 	{
 		$debug = false; 
@@ -513,6 +514,11 @@ class DataAccessManager
             return self::getSingleton()->getDataAccessor($name, $throwException);
         }
     }
+
+	public static function getDB($name)
+	{
+		return self::getSingleton()->getDatabaseInstance($name);
+	}
 
 
     public function __construct($databaseConfigurations, $dataAccessorConfigurations) 
