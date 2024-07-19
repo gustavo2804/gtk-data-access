@@ -391,7 +391,7 @@ function doOrCatchAndReport($function, $options = [])
 
     try
     {
-        $function();
+        return $function();
     }
     catch (Throwable  $e)
     {
@@ -423,6 +423,39 @@ function doOrCatchAndReport($function, $options = [])
         else
         {
             die($toPrintOnScreen);
+        }
+    }
+}
+
+
+
+function privateDoOrCatchAndReportAndErrorHandle($function, $errorHandle, $options = [])
+{
+    try
+    {
+        return $function();
+    }
+    catch (Throwable  $e)
+    {
+        $guid = uniqid();
+        error_log("=================================== $guid ===================================");
+        error_log(stonewoodApp_idxErrorLogFormatException($e));
+
+        try
+        {
+            DataAccessManager::get("email_queue")->reportError(
+                "STD Ex: ".$guid." - ".$e->getMessage(),
+                stonewoodApp_idxHTMLFormatException($e)."\n\n\n".stonewoodApp_idxErrorLogFormatException($e));
+            error_log("Reporting exception:".$e->getMessage());
+        }
+        catch (Throwable  $e)
+        {
+            error_log("XXXXXXXXXXX --- Failed to send email");
+        }
+
+        if ($errorHandle && is_callable($errorHandle))
+        {
+            $errorHandle($e);
         }
     }
 }

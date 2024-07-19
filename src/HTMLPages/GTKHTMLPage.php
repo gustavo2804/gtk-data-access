@@ -367,6 +367,11 @@ class GTKHTMLPage
 		// DO NOTHING
 	}
 
+	public function hiddenInput($name, $value)
+    {
+        return "<input type='hidden' name='".$name."' value='".$value."'>";
+    }
+
 
 	public function render($get, $post, $server, $cookie, $session, $files, $env)
 	{
