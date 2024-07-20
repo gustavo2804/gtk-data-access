@@ -9,19 +9,25 @@ class RequestPasswordResetController
 
     public function handleUserRequestPasswordResetLinkForUserID($userIdentifier, $delegate = null)
     {
-        $user   = $this->getPersonaDataAccess()->findUserByCedula($userIdentifier);
-		$userID = null;
+        $userID = null;
 
+        $user   = $this->getPersonaDataAccess()->findUserByCedula($userIdentifier);
+		
         if (!$user)
         {
             $user = $this->getPersonaDataAccess()->getOne("email", $userIdentifier);
-			$userID = $this->getPersonaDataAccess()->valueForKey("id", $user);
-        }
+            if ($user)
+            {
+                $userID = $this->getPersonaDataAccess()->valueForKey("id", $user);
+            }        }
 
 		if (!$user)
 		{
 			$user = $this->getPersonaDataAccess()->getOne("id", $userIdentifier);
-			$userID = $userIdentifier;
+            if ($user)
+            {
+			    $userID = $userIdentifier;
+            }
 		}
  
         if (!$user)
