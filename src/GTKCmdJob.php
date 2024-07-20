@@ -270,4 +270,10 @@ class GTKCmdJob
     {
         error_log("Running GTKCmdJob from Command Job.");
     }
+
+    public static function do()
+    {
+        $job = new static();
+        $job->main();
+    }
 }
