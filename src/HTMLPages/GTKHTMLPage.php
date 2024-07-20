@@ -10,6 +10,61 @@ class GTKHTMLFragment
 	}
 }
 
+class GTKMenuItemPair 
+{
+    public $menuText;
+    public $boxId;
+    public $boxContent;
+    public $accessRequirements;
+
+    function sanitizeForHtmlId($input) 
+    {
+        // Ensure the ID starts with a letter or underscore
+        if (!preg_match('/^[a-zA-Z_]/', $input)) {
+            $input = '_' . $input;
+        }
+        
+        // Replace invalid characters with underscores
+        $output = preg_replace('/[^a-zA-Z0-9\-_]/', '_', $input);
+        
+        return $output;
+    }
+    
+
+    public function __construct($menuText, $boxContent, $accessRequirements = null) {
+        $this->menuText           = $menuText;
+        $this->boxId              = 'nav_menu_box_'.$this->sanitizeForHtmlId($menuText);
+        $this->boxContent         = $boxContent;
+        $this->accessRequirements = $accessRequirements;
+    }
+
+    public function prepareHeaderItemsForUser($user, &$menuString, &$hiddenBoxString) {
+        if ($this->checkAccess($user)) 
+        {
+            $menuString      .= "<li><a onclick=\"showContent('{$this->boxId}')\">{$this->menuText}</a></li>\n";
+            $hiddenBoxString .= "<div id=\"{$this->boxId}\" class=\"box\">\n{$this->boxContent}\n</div>\n";
+        }
+    }
+
+    private function checkAccess($user) 
+    {
+        if (!$this->accessRequirements) 
+        {
+            return true;
+        }
+
+        $hasRequiredRole = empty($this->accessRequirements['roles']) || 
+                           DataAccessManager::get("session")->currentUserIsInGroups($this->accessRequirements['roles']);
+        
+        $hasRequiredPermission = empty($this->accessRequirements['permissions']) || 
+                                 array_reduce($this->accessRequirements['permissions'], function($carry, $permission) {
+                                     return $carry || DataAccessManager::get("session")->currentUserHasPermission($permission);
+                                 }, false);
+        
+        return $hasRequiredRole && $hasRequiredPermission;
+    }
+}
+
 class GTKHTMLPage
 {
 	public $get; 
