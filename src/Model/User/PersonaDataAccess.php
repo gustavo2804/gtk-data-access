@@ -1103,14 +1103,14 @@ class PersonaDataAccess extends DataAccess
             else if ($generatePassword)
             {
                 $generatedPassword = uniqid();
+				$password = $generatedPassword;
                 // $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
                 echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
             }
 
-            if ($generatedPassword)
+            if ($password)
             {
-                $password_hash = password_hash($generatedPassword, PASSWORD_DEFAULT);
-            
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
                 $user['password_hash'] = $password_hash;
             }
         
