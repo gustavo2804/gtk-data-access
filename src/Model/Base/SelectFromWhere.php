@@ -1,8 +1,34 @@
 <?php
 
+class GTKSelectQueryModifier
+{
+    public $extraClauses;
+    public $desiredPageNumber;
+    public $numberOfItemsPerPage;
 
+    public function applyToQuery($query)
+    {
+        if ($this->extraClauses)
+        {
+            foreach ($this->extraClauses as $extraClause)
+            {
+                $query->addClause($extraClause);
+            }
+        }
 
-class SelectQuery
+        if ($this->desiredPageNumber)
+        {
+            $query->desiredPageNumber = $this->desiredPageNumber;
+        }
+
+        if ($this->numberOfItemsPerPage)
+        {
+            $query->limit = $this->numberOfItemsPerPage;
+        }
+    }
+}
+
+class SelectQuery implements IteratorAggregate, Countable
 {
     public $isCountQuery = false;
     public $dataSource;
@@ -12,6 +38,9 @@ class SelectQuery
     public $orderBy;
     public $limit;
     public $offset;
+    public $desiredPageNumber;
+    public $generator;
+    public $queryModifier;
 
     public function setLimit($limit)
     {
@@ -21,6 +50,26 @@ class SelectQuery
     public function setOffset($offset)
     {
         $this->offset = $offset;
+    }
+
+    public function currentPage()
+    {
+        if (!$this->limit)
+        {
+            return 1;
+        }
+    
+        return (int) floor($this->offset / $this->limit) + 1;
+    }
+
+    public function numberOfPages()
+    {
+        if (!$this->limit)
+        {
+            return 0;
+        }
+
+        return $this->count() / $this->limit;
     }
 
     public function __construct($dataSource, $columns = null, $whereClauses = null, $queryOptions = [])
@@ -262,6 +311,12 @@ class SelectQuery
                 $didSetOrderBy = true;
             }
 
+            if ($this->desiredPageNumber)
+            {
+                $this->limit  = $this->limit ?? 100;
+                $this->offset = ($this->desiredPageNumber - 1) * $this->limit;
+            }
+
             if ($this->limit || $this->offset)
             {
                 $driverName = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -384,7 +439,7 @@ class SelectQuery
         return $this->count();
     }
 
-    public function count($debug = false)
+    public function count($debug = false) : int
     {
         $this->isCountQuery = true;
         $params = [];
@@ -414,9 +469,15 @@ class SelectQuery
         return $this->getSQLAndUpdateParams($params, $this->dataSource->getPDO());
     }
 
-    public function executeAndReturnStatement()
+    public function executeAndReturnStatement(GTKSelectQueryModifier &$queryModifier = null)
     {
         $params = [];
+        
+        if ($queryModifier)
+        {
+            $queryModifier->applyToQuery($this);
+        }
+
         $statement = $this->getPDOStatement($params);
         try
         {
@@ -431,9 +492,17 @@ class SelectQuery
         return $statement;
     }
 
-    public function executeAndYield()
+    public function getIterator(): Generator {
+        if (!$this->generator) 
+        {
+            $this->generator = $this->executeAndYield($this->queryModifier);
+        }
+        yield from $this->generator;
+    }
+
+    public function executeAndYield(GTKSelectQueryModifier &$queryModifier = null)
     {
-        $statement = $this->executeAndReturnStatement();
+        $statement = $this->executeAndReturnStatement($queryModifier);
     
         while ($row = $statement->fetch(PDO::FETCH_ASSOC)) 
         {
@@ -441,29 +510,50 @@ class SelectQuery
         }
     }
 
-    public function executeAndReturnCountableGenerator()
+    public function executeAndReturnCountableGenerator(GTKSelectQueryModifier &$queryModifier = null)
     {
-        $count = $this->count();
-        $generator = $this->executeAndYield();
+        $count = $this->count($queryModifier);
+        $generator = $this->executeAndYield($queryModifier);
         return new GTKCountableGenerator($generator, $count);
     }
 
-    public function executeAndReturnAll()
+    public function executeAndReturnAll(GTKSelectQueryModifier &$queryModifier = null)
     {
-        $statement = $this->executeAndReturnStatement();
+        $statement = $this->executeAndReturnStatement($queryModifier);
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function executeAndReturnOne()
+    public function executeAndReturnOne(GTKSelectQueryModifier &$queryModifier = null)
     {
-        $results = $this->executeAndReturnAll();
-        if (count($results) > 0)
+        $useLimitStyle = false; 
+
+        if ($useLimitStyle)
         {
-            return $results[0];
+            $this->limit = 1;
+            $statement = $this->executeAndReturnStatement($queryModifier);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            $this->limit = null;
+            
+            if ($row)
+            {
+                return $row;
+            }
+            else
+            {
+                return null;
+            }
         }
         else
         {
-            return [];
+            $results = $this->executeAndReturnAll($queryModifier);
+            if (count($results) > 0)
+            {
+                return $results[0];
+            }
+            else
+            {
+                return [];
+            }
         }
     }
 }

@@ -4752,7 +4752,7 @@ class DataAccess /* implements Serializable */
 				
 			}
 		}
-        else if ($itemsOrQueryObject instanceof GTKCountableGenerator)
+        else if (method_exists($itemsOrQueryObject, "count") && method_exists($itemsOrQueryObject, "getIterator"))
         {
             $count = $itemsOrQueryObject->count();
             $items = $itemsOrQueryObject->getIterator();
@@ -4816,7 +4816,7 @@ class DataAccess /* implements Serializable */
 			
 			<?php if ($count == 0): ?>
 			<tr>
-				<td colspan="<?php echo count($columnsToDisplay) + 1; ?>">
+				<td colspan="<?php echo gtk_count($columnsToDisplay) + 1; ?>">
 					No hay elementos que mostrar.
 				</td>
 			</tr>

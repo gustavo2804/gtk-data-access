@@ -228,7 +228,7 @@ function callNestedFuncArray($nestedArray)
 
     }
 
-    if (is_array($nestedArray) && count($nestedArray) == 2) 
+    if (is_array($nestedArray) && gtk_count($nestedArray) == 2) 
     {
         $callback = $nestedArray[0];
         $params = is_array($nestedArray[1]) ? $nestedArray[1] : [$nestedArray[1]];

@@ -388,7 +388,7 @@ class RolePersonRelationshipsDataAccess extends DataAccess
             error_log("Intersection: ".print_r($intersection, true));
         }
 
-        return count($intersection) > 0;
+        return gtk_count($intersection) > 0;
 
 
     }

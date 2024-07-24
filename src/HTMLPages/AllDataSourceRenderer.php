@@ -352,7 +352,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 	
 		if (is_array($itemsOrQueryObject))
 		{
-			$count = count($itemsOrQueryObject);
+			$count = gtk_count($itemsOrQueryObject);
 			$items = $itemsOrQueryObject;
 	
 			if ($debug)
@@ -427,7 +427,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			
 			<?php if ($count == 0): ?>
 			<tr>
-				<td colspan="<?php echo count($columnsToDisplay) + 1; ?>">
+				<td colspan="<?php echo gtk_count($columnsToDisplay) + 1; ?>">
 					No hay elementos que mostrar.
 				</td>
 			</tr>
