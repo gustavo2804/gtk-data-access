@@ -1,34 +1,23 @@
 <?php
 
-class GTKSelectQueryModifier
+
+
+class DataAccessorColumnKey
 {
-    public $extraClauses;
-    public $desiredPageNumber;
-    public $numberOfItemsPerPage;
+    public $dataAccessorName;
+    public $columnKey;
 
-    public function applyToQuery($query)
+    public function __construct($dataAccessorName, $columnKey)
     {
-        if ($this->extraClauses)
-        {
-            foreach ($this->extraClauses as $extraClause)
-            {
-                $query->addClause($extraClause);
-            }
-        }
-
-        if ($this->desiredPageNumber)
-        {
-            $query->desiredPageNumber = $this->desiredPageNumber;
-        }
-
-        if ($this->numberOfItemsPerPage)
-        {
-            $query->limit = $this->numberOfItemsPerPage;
-        }
+        $this->dataAccessorName = $dataAccessorName;
+        $this->columnKey = $columnKey;
     }
+
 }
 
-class SelectQuery implements IteratorAggregate, Countable
+class SelectQuery implements IteratorAggregate, 
+                            Countable, 
+                            SQLWhereInterface
 {
     public $isCountQuery = false;
     public $dataSource;
@@ -106,26 +95,53 @@ class SelectQuery implements IteratorAggregate, Countable
         $this->columns = $columns;
     }
 
-    public function dbColumnNameForKey($key)
+    public function getDataAccessorColumnKey($key)
     {
         if (strpos($key, '.') !== false) 
         {
-            list($dataAccessorName, $columnName) = explode('.', $key);
-            
-            $dataAccessor = DAM::get($dataAccessorName);
-            $dbColumnName = $dataAccessor->dbColumnNameForKey($columnName);
-
-            if (!$dbColumnName)
-            {
-                throw new Exception("Column not found: ".$key);
-            }
-
-            return $dbColumnName;
+            list($dataAccessorName, $columnKey) = explode('.', $key);
+            return new DataAccessorColumnKey($dataAccessorName, $columnKey);
         }
         else
         {
-            return $this->dataSource->dbColumnNameForKey($key);
+            return new DataAccessorColumnKey($this->dataSource->dataAccessorName, $key);
         }
+    }
+
+    public function dbColumnNameForKey($key)
+    {
+        $dataAccessorColumnKey = $this->getDataAccessorColumnKey($key);
+        $dataAccessorName = $dataAccessorColumnKey->dataAccessorName;
+        $columnKey = $dataAccessorColumnKey->columnKey;
+
+        $dataAccessor = DAM::get($dataAccessorName);
+
+        $dbColumnName = $dataAccessor->dbColumnNameForKey($columnKey);
+
+        if (!$dbColumnName)
+        {
+            throw new Exception("Column not found: ".$columnKey.' in '.$dataAccessorName);
+        }
+
+        return $dbColumnName;
+    }
+
+    public function columnMappingForKey($key)
+    {
+        $dataAccessorColumnKey = $this->getDataAccessorColumnKey($key);
+        $dataAccessorName = $dataAccessorColumnKey->dataAccessorName;
+        $columnKey = $dataAccessorColumnKey->columnKey;
+
+        $dataAccessor = DAM::get($dataAccessorName);
+
+        $toReturn = $dataAccessor->columnMappingForKey($columnKey);
+
+        if (!$toReturn)
+        {
+            throw new Exception("Column not found: ".$columnKey.' in '.$dataAccessorName);
+        }
+
+        return $toReturn;
     }
 
     public function addClause($whereClause)
@@ -441,18 +457,21 @@ class SelectQuery implements IteratorAggregate, Countable
 
     public function count($debug = false) : int
     {
+        $debug = true;
+
         $this->isCountQuery = true;
+
         $params = [];
         $pdoStatement = $this->getPDOStatement($params);
         if ($debug)
         {
-            error_log("COUNT Query: ".$pdoStatement->queryString);
+            gtk_log("COUNT Query: ".$pdoStatement->queryString);
         }
         $pdoStatement->execute($params);
         $result = $pdoStatement->fetch(PDO::FETCH_ASSOC);
         if ($debug)
         {
-            error_log("COUNT: ".print_r($result, true));
+            gtk_log("COUNT: ".print_r($result, true));
         }
         $this->isCountQuery = false;
         return $result['COUNT'];
@@ -556,278 +575,187 @@ class SelectQuery implements IteratorAggregate, Countable
             }
         }
     }
-}
 
-class RawWhereClause
-{
-    public $sql;
-    public $params;
-
-    public function __construct($sql, ...$params)
+    public function generatePagination(PaginationStyler $styler = null)
     {
-        $this->sql = $sql;
-        $this->params = $params;
-    }
+        $styler = $styler ?? new PaginationStyler();
 
-    public function getSQLForSelectQuery($selectQuery, &$params) 
-    {
-        $params = array_merge($params, $this->params);
-        return $this->sql;
-    }
-}
+        $urlBase                    = $styler->urlBase                ?? '';
+        $paginationDivClass         = $styler->paginationDivClass     ?? '';
+        $pageQueryParameterName     = $styler->pageQueryParameterName ?? 'page';
+        $paginationLinkClass        = $styler->paginationLinkClass    ?? 'page-link';
+        $paginationActiveLinkClass  = $styler->paginationActiveLinkClass ?? 'active';
+        $paginationLinkStyle        = $styler->paginationLinkStyle    ?? '';
+        $paginationActicveLinkStyle = $styler->paginationActiveLinkStyle ?? '';
 
-class WhereClause 
-{
-    public $column;
-    public $operator;
-    public $values;
 
-    public function __construct($column, $operator, ...$values) 
-    {
-        $debug = false;
+        $currentPage = $this->currentPage();
+        $totalPages  = $this->numberOfPages();
 
-        if ($debug)
-        {
-            error_log("Constructing column: ".$column);
-        }
+        ob_start();
+        ?>
+        <div class="<?php echo $paginationDivClass; ?>">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <?php
 
-        $this->column   = $column;
-        $this->operator = $operator;
-        $this->values   = $values;
-    }
+                $queryParameters =[];
+                $queryParameters[$pageQueryParameterName] = $i;
+                $queryParameters = array_merge($queryParameters, $styler->extraQueryParameters);
 
-    public function getSQLForSelectQuery($selectQuery, &$params) 
-    {
-        $debug = false;
-
-        // $dbType = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-        $columnName = null;
-
-        if ($this->column instanceof GTKColumnBase)
-        {
-            $columnName = $this->column->dbColumnName();
-        }
-        else
-        {
-            $columnName = $selectQuery->dbColumnNameForKey($this->column);
-        }
-
-        if ($debug)
-        {
-            error_log("SQL...");
-            error_log("Operator..: ".$this->operator);
-            error_log("VALUES....: ".print_r($this->values, true));
-            error_log("...END SQL");
-        }
-
-        $pdoType = $selectQuery->getDriverName();
-
-        return $this->clauseForColumnNameParamsPDOType($columnName, $params, $pdoType);
-    }
-
-    public static function isOperator($operator)
-    {
-        $whereClause = new WhereClause("for_method", $operator, "value");
-        $params = [];
-        $clause = $whereClause->clauseForColumnNameParamsPDOType("column_name", $params, "mysql", false);
-        if ($clause)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    public function clauseForColumnNameParamsPDOType($columnName, &$params, $pdoType, $throwException = true)
-    {
-        $debug = false;
-
-        switch ($this->operator) 
-        {
-            case "NOT EMPTY":
-                switch ($pdoType)
-                {
-                    case 'mysql':
-                        return "LENGTH({$columnName})";
-                    
-                    case 'pgsql':
-                        return "OCTET_LENGTH({$columnName}) > 0";
-                    
-                    case 'sqlite':
-                        return "LENGTH({$columnName}) > 0";
-                    
-                    case 'sqlsrv':
-                    case 'dblib':  // Sybase or MS SQL Server
-                    case 'mssql':
-                        return "DATALENGTH({$columnName}) > 0 ";
-                    
-                    case 'oci':    // Oracle
-                        return "LENGTH({$columnName}) > 0";
-                    
-                    case 'firebird':
-                        return "OCTET_LENGTH({$columnName}) > 0";
-        
-                }
-            case 'IN':
-            case 'NOT IN':
-                if ($debug)
-                {
-                    error_log("PRINTING IN");
-                }
-
+                $linkHref = $urlBase.'?'.http_build_query($queryParameters);
                 
-                $flatValues = array_reduce($this->values, function ($carry, $item) {
-                    return array_merge($carry, is_array($item) ? array_values($item) : [$item]);
-                }, []);
+                $linkClassTag = [
+                    $paginationLinkClass,
+                ];
 
-                $placeholders = implode(',', array_fill(0, count($flatValues), '?'));
+                $isActivePage = ($i == $currentPage);
 
-                $params = array_merge($params, $flatValues);
-
-                if ($debug)
+                if ($isActivePage)
                 {
-                    error_log("SERIALIZED: ".serialize($this->values));
-                    error_log("FLAT VALUES: ".serialize($flatValues));
-                    error_log("PLACEHOLDERS: ".$placeholders);
-                    error_log("PARAMS: ".print_r($params, true));
+                    $linkClassTag[] = $paginationActiveLinkClass;
                 }
 
-                return "{$columnName} {$this->operator} ({$placeholders})";
-            case 'IS NULL':
-            case 'IS NOT NULL':
-                return "{$columnName} {$this->operator}";
-            case 'BETWEEN':
-            case 'NOT BETWEEN':
-                $params[] = $this->values[0];
-                $params[] = $this->values[1];
-                return "{$columnName} {$this->operator} ? AND ?";
-            case '!=':
-                $this->operator = "<>";
-            case '=':
-            case '<>':
-            case '<':
-            case '>':
-            case '<=':
-            case '>=':
-                $params[] = $this->values[0];
-                return "{$columnName} {$this->operator} ?";
-            case 'LIKE':
-            case 'CONTAINS':
-                $params[] = '%'.$this->values[0].'%';
-                // return "{$columnName} {$this->operator} ?";
-                return "{$columnName} LIKE ?";
-            case 'NOT LIKE':
-            case 'NOT CONTAINS':
-                $params[] = $this->values[0];
-                // return "{$columnName} {$this->operator} ?";
-                return "{$columnName} NOT LIKE ?";
-            case 'HAS PREFIX':
-                $params[] = $this->values[0].'%'; 
-                // return "{$columnName} {$this->operator} ?";
-                return "{$columnName} LIKE ?";
-            case 'HAS SUFFIX':
-                $params[] = '%'.$this->values[0];
-                // return "{$columnName} {$this->operator} ?";
-                return "{$columnName} LIKE ?";
-            default:
-                if ($throwException)
+                $linkClassTag = implode(' ', $linkClassTag);
+
+                $linkStyleTag = $paginationLinkStyle;
+
+                if ($isActivePage)
                 {
-                    throw new Exception("Invalid operator: {$this->operator}");
+                    $linkStyleTag .= ' '.$paginationActicveLinkStyle;
                 }
-                else
-                {
-                    return null;
-                
-                }
-        }
+                ?>
+    
+                <a href  = "<?php echo $urlBase.'?'.http_build_query($queryParameters); ?>"
+                   class = "<?php echo $linkClassTag; ?>"
+                   style = "<?php echo $linkStyleTag; ?>"
+                >
+                    <?php echo $i; ?>
+                </a>
+            <?php endfor; ?>
+        </div>
+        <?php
+        return ob_get_clean();
     }
-}
-
-class WhereGroup 
-{
-    public $clauses = [];
-    public $logicalOperator;
-
-    public function __construct($logicalOperator = 'AND', $clauses = [])
+    
+    public function generateTableForUser($user, $columnsToDisplay = null, $options = null)
     {
-        $this->logicalOperator = $logicalOperator;
-        $this->clauses         = $clauses;
+        $debug = false;
+		$items = null;
+		$count = 0;
 
+        $rowStyleForItem = $options["rowStyleForItem"] ?? Closure::fromCallable([$this->dataSource, 'rowStyleForItem']);
 
-    }
+        $whileIterating = $options["whileIterating"] ?? null;
 
-    public function addWhereClause($clause) 
-    { 
-        return $this->addClause($clause);
-    }
+        $columnMappingsToDisplay = null;
 
-    public function addClause(/* WhereClause|WhereGroup */ $clause) 
-    {
-        $this->clauses[] = $clause;
-    }
-
-    public function addGroup(/* WhereGroup|WhereGroup */ $group) {
-        $this->clauses[] = $group;
-    }
-
-    public function getSQLForSelectQuery($selectQuery, &$params) 
-    {
-        if (!is_array($this->clauses))
+        if (!$columnsToDisplay)
         {
-            throw new Exception("Clauses must be an array on WhereGroup");
-        }
-
-        $sqlParts = [];
-        
-        foreach ($this->clauses as $clause) 
-        {
-            $sqlParts[] = ($clause instanceof WhereGroup) ? '(' . $clause->getSQLForSelectQuery($selectQuery, $params) . ')' : $clause->getSQLForSelectQuery($selectQuery, $params);
-        }
-
-
-        return implode(" {$this->logicalOperator} ", $sqlParts);
-    }
-
-    public function where($column, $operator = null, ...$values) 
-    {
-        $whereClause = null;
-
-        if ($column instanceof WhereClause)
-        {
-            $whereClause = $column;
-        }
-        else if ($column instanceof WhereGroup)
-        {
-            $whereClause = $column;
+            $columnMappingsToDisplay = $this->dataSource->dataMapping->ordered;
         }
         else
         {
-            $whereClause = new WhereClause($column, $operator, ...$values);
+            $columnMappingsToDisplay = [];
+
+            foreach ($columnsToDisplay as $maybeColumnMapping)
+            {
+                if (is_string($maybeColumnMapping))
+                {
+                    $columnMappingsToDisplay[] = $this->columnMappingForKey($maybeColumnMapping);
+                }
+                else if (($maybeColumnMapping instanceof GTKColumnBase) || ($maybeColumnMapping instanceof GTKItemCellContentPresenter))
+                {
+                    $columnMappingsToDisplay[] = $maybeColumnMapping;
+                }
+            }
         }
 
-        $this->clauses[] = $whereClause;
+        $count = $this->count();
+        $items = $this->getIterator();
+		$index = 0;
+	
+		ob_start(); // Start output buffering 
+		?>
+		<table>
+			<thead>
+				<tr>
+					<?php foreach ($columnMappingsToDisplay as $columnMapping): ?>
+						<?php
+                            echo "<th class='min-w-[75px]'>";
+							echo $columnMapping->getFormLabel();
+							echo "</th>";
+						?>
+					<?php endforeach; ?>
+				</tr>
+			</thead>
+			<tbody>
+			
+			<?php if ($count == 0): ?>
+			<tr>
+				<td colspan="<?php echo gtk_count($columnsToDisplay) + 1; ?>">
+					No hay elementos que mostrar.
+				</td>
+			</tr>
+			<?php else: ?>
+				<?php foreach ($items as $index => $currentItem): ?>
+						<?php 
+                            $itemIdentifier = $this->dataSource->valueForIdentifier($currentItem); 
+                            if ($whileIterating)
+                            {
+                                $whileIterating($currentItem, $index);
+                            }
+                        ?>
+                        <?php 
+                        $rowStyle = '';
 
-        return $this;
-    }
-}
+                        if (is_callable($rowStyleForItem)) 
+                        { 
+                            $rowStyle = $rowStyleForItem($currentItem, $index);
+                        }
+                        else if (is_string($rowStyleForItem))
+                        {
+                            $rowStyle = $rowStyleForItem;
+                        }
 
-class OrderBy
-{
-    public $column;
-    public $order;
+                        ?>
+						<tr class="border-b border-gray-200"
+							style=<?php echo '"'.$rowStyle.'"'; ?>
+							id=<?php echo '"cell-'.$itemIdentifier.'"'; ?>
+						>
+                        <?php 
+                        foreach ($columnMappingsToDisplay as $columnMapping)
+                        {
+                            $displayFunction = null;
 
-    public function __construct($column, $order = 'ASC')
-    {
-        $this->column = $column;
-        $this->order  = $order;
-    }
+                            $toDisplay = null;
 
-    public function getSQLForSelectQuery($selectQuery, &$params) 
-    {
-        $columnName = $selectQuery->dbColumnNameForKey($this->column);
-        return "{$columnName} {$this->order}";
-    }
+                            if ($displayFunction)
+                            {
+                                $argument = new GTKColumnMappingListDisplayArgument();
+
+                                $argument->user    = $user;
+                                $argument->item    = $currentItem;
+                                $argument->options = null;
+                                
+                                $toDisplay = $displayFunction($argument);
+                            }
+                            else
+                            {
+                                $toDisplay = $columnMapping->valueFromDatabase($currentItem);
+                            }
+
+                            echo "<td>".$toDisplay."</td>";
+                        } 
+                        ?>
+						</tr>
+						<?php $index++; ?>
+				<?php endforeach; ?>
+			<?php endif; ?>
+			</tbody>
+		</table>
+		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
+	}
+
+
+    
 }

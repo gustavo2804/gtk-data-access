@@ -1,7 +1,7 @@
 <?php
 
 
-class LimitClause
+class LimitClause implements SQLTextInterface
 {
     public $limit;
     public $offset;
