@@ -1,6 +1,6 @@
 <?php
 
-class OrderBy extends SQLTextInterface
+class OrderBy implements SQLTextInterface
 {
     public $column;
     public $order;

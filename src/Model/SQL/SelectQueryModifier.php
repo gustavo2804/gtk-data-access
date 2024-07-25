@@ -26,4 +26,25 @@ class GTKSelectQueryModifier
             $query->limit = $this->numberOfItemsPerPage;
         }
     }
+
+    public function serializeToQueryParameters(&$queryParameters)
+    {
+        if ($this->desiredPageNumber)
+        {
+            $queryParameters['page'] = $this->desiredPageNumber;
+        }
+
+        if ($this->numberOfItemsPerPage)
+        {
+            $queryParameters['itemsPerPage'] = $this->numberOfItemsPerPage;
+        }
+
+        if ($this->extraClauses)
+        {
+            foreach ($this->extraClauses as $extraClause)
+            {
+                $extraClause->serializeToQueryParameters($queryParameters);
+            }
+        }
+    }
 }

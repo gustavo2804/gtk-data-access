@@ -576,7 +576,7 @@ class SelectQuery implements IteratorAggregate,
         }
     }
 
-    public function generatePagination(PaginationStyler $styler = null)
+    public function generatePagination(GTKSelectQueryModifier $queryModifier = null, PaginationStyler $styler = null)
     {
         $styler = $styler ?? new PaginationStyler();
 
@@ -599,9 +599,15 @@ class SelectQuery implements IteratorAggregate,
                 <?php
 
                 $queryParameters =[];
+
+                if ($queryModifier)
+                {
+                    $queryModifier->serializeToQueryParameters($queryParameters);
+                }
+
                 $queryParameters[$pageQueryParameterName] = $i;
                 $queryParameters = array_merge($queryParameters, $styler->extraQueryParameters);
-
+                
                 $linkHref = $urlBase.'?'.http_build_query($queryParameters);
                 
                 $linkClassTag = [
@@ -625,7 +631,7 @@ class SelectQuery implements IteratorAggregate,
                 }
                 ?>
     
-                <a href  = "<?php echo $urlBase.'?'.http_build_query($queryParameters); ?>"
+                <a href  = "<?php echo $linkHref; ?>"
                    class = "<?php echo $linkClassTag; ?>"
                    style = "<?php echo $linkStyleTag; ?>"
                 >

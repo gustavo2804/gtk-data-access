@@ -84,6 +84,18 @@ class WhereClause implements SQLTextInterface
         }
     }
 
+    public function serializeToURLQueryParamaters(&$params)
+    {
+        $key = "where_clause_".uniqid();
+
+        $params[$key] = serialize($this);
+    }
+
+    public static function fromSerializedURLQueryParameter($params)
+    {
+        return unserialize($params);
+    }
+
     public function clauseForColumnNameParamsPDOType($columnName, &$params, $pdoType, $throwException = true)
     {
         $debug = false;
