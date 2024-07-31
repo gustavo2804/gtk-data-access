@@ -571,7 +571,7 @@ class SelectQuery implements IteratorAggregate,
             }
             else
             {
-                return [];
+                return null;
             }
         }
     }
