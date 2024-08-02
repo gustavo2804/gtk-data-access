@@ -12,6 +12,7 @@ class DataAccessInputSelectArgument
     public $objectID           = null;
     public $foreignColumnName  = null;
     public $foreignColumnValue = null;
+    public $idValue             = null;
     public $options            = [];
 }
 
@@ -4290,7 +4291,8 @@ class DataAccess /* implements Serializable */
         $dataAccessor       = $argument->dataAccessor;         
         $objectID           = $argument->objectID;             
         $foreignColumnName  = $argument->foreignColumnName;    
-        $foreignColumnValue = $argument->foreignColumnValue;   
+        $foreignColumnValue = $argument->foreignColumnValue;  
+        $idValue            = $argument->idValue; 
         $options            = $argument->options;
 
         if ($debug)
@@ -4359,7 +4361,14 @@ class DataAccess /* implements Serializable */
 
     	$language = isset($options['language']) ? $options['language'] : 'spanish';
 
-    	$select = '<select name="' . $foreignColumnName . '">';
+        if(isset($idValue))
+        {
+            $select = '<select name="' . $foreignColumnName . '" id="' . $idValue . '" >';
+        }
+        else
+        {
+            $select = '<select name="' . $foreignColumnName . '" >';
+        }
 
 		$addNullCase = true;
 

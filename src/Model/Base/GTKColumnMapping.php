@@ -28,9 +28,15 @@ class CustomInputFunctionArgument
     public $options;
     public $item;
     public $user;
+    public $idValue;
 
     public function __construct()
     {
+    }
+
+    public function getIdValue()
+    {
+        return $this->idValue;
     }
 
     public function getColumnName()
@@ -61,6 +67,8 @@ class GTKColumnMapping extends GTKColumnBase
     public $allowNulls;
     public $defaultValue;
     public $isAutoIncrement;
+
+    
 
     public function isUpdatable()
     {
