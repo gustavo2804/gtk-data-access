@@ -2120,6 +2120,11 @@ class DataAccess /* implements Serializable */
         }
     }
 
+    public function query()
+    {
+        return new SelectQuery($this);
+    }
+
     public function whereWhere($num, ...$args)
     {
         $debug = false;

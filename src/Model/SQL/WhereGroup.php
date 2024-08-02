@@ -19,7 +19,8 @@ class WhereGroup implements SQLTextInterface, SQLWhereInterface
         return $this->addClause($clause);
     }
 
-    public function addClause(/* WhereClause|WhereGroup */ $clause) 
+    /* RawWhereClasue|WhereClause|WhereGroup|BetweenClause */ 
+    public function addClause($clause) 
     {
         $this->clauses[] = $clause;
     }
