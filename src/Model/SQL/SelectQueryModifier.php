@@ -8,12 +8,20 @@ class GTKSelectQueryModifier
 
     public function applyToQuery($query)
     {
-        if ($this->extraClauses)
+        if (is_array($this->extraClauses))
         {
             foreach ($this->extraClauses as $extraClause)
             {
                 $query->addClause($extraClause);
             }
+        }
+        else if ( $this->extraClauses instanceof WhereClause)
+        {
+            $query->addClause($this->extraClauses);
+        }
+        else
+        {
+            throw new Exception('Este parametro solo acepta arreglos o instancias individuales de WhereClauses.');
         }
 
         if ($this->desiredPageNumber)
