@@ -9,7 +9,16 @@ class GTKSelectQueryModifier
     public function applyToQuery($query)
     {
         
-        
+        if ($this->desiredPageNumber)
+        {
+            $query->desiredPageNumber = $this->desiredPageNumber;
+        }
+
+        if ($this->numberOfItemsPerPage)
+        {
+            $query->limit = $this->numberOfItemsPerPage;
+        }
+
         if (is_array($this->extraClauses))
         {
             foreach ($this->extraClauses as $extraClause)
@@ -22,20 +31,6 @@ class GTKSelectQueryModifier
             $query->addClause($this->extraClauses);
         }
         
-        else if ($this->desiredPageNumber)
-        {
-            $query->desiredPageNumber = $this->desiredPageNumber;
-        }
-
-        else if ($this->numberOfItemsPerPage)
-        {
-            $query->limit = $this->numberOfItemsPerPage;
-        }
-
-        else
-        {
-            throw new Exception('Este parametro solo acepta arreglos o instancias individuales de WhereClauses.');
-        }
         
     }
 
@@ -51,12 +46,16 @@ class GTKSelectQueryModifier
             $queryParameters['itemsPerPage'] = $this->numberOfItemsPerPage;
         }
 
-        if ($this->extraClauses)
-        {
-            foreach ($this->extraClauses as $extraClause)
-            {
-                $extraClause->serializeToQueryParameters($queryParameters);
-            }
-        }
+         if (is_array($this->extraClauses))
+         {
+             foreach ($this->extraClauses as $extraClause)
+             {
+                 $extraClause->serializeToQueryParameters($queryParameters);
+             }
+         }
+         else if($this->extraClauses instanceof WhereClause)
+         {
+            $this->extraClauses->serializeToQueryParameters($queryParameters);
+         }
     }
 }
