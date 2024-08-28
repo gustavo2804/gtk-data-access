@@ -8,6 +8,8 @@ class GTKSelectQueryModifier
 
     public function applyToQuery($query)
     {
+        
+        
         if (is_array($this->extraClauses))
         {
             foreach ($this->extraClauses as $extraClause)
@@ -19,20 +21,22 @@ class GTKSelectQueryModifier
         {
             $query->addClause($this->extraClauses);
         }
-        else
-        {
-            throw new Exception('Este parametro solo acepta arreglos o instancias individuales de WhereClauses.');
-        }
-
-        if ($this->desiredPageNumber)
+        
+        else if ($this->desiredPageNumber)
         {
             $query->desiredPageNumber = $this->desiredPageNumber;
         }
 
-        if ($this->numberOfItemsPerPage)
+        else if ($this->numberOfItemsPerPage)
         {
             $query->limit = $this->numberOfItemsPerPage;
         }
+
+        else
+        {
+            throw new Exception('Este parametro solo acepta arreglos o instancias individuales de WhereClauses.');
+        }
+        
     }
 
     public function serializeToQueryParameters(&$queryParameters)
