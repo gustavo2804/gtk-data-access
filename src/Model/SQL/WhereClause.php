@@ -39,6 +39,10 @@ class WhereClause implements SQLTextInterface
         $this->values   = $values;
     }
 
+    public function serializeToQueryParameters(&$queryParameters)
+    {
+        $queryParameters['clauses'][]= serialize($this);
+    }
     public function getSQLForSelectQuery($selectQuery, &$params) 
     {
         $debug = false;

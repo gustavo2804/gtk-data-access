@@ -30,7 +30,7 @@ class GTKSelectQueryModifier
         {
             $query->addClause($this->extraClauses);
         }
-        
+      
         
     }
 
@@ -46,13 +46,13 @@ class GTKSelectQueryModifier
             $queryParameters['itemsPerPage'] = $this->numberOfItemsPerPage;
         }
 
-         if ($this->extraClauses)
-         {
-             foreach ($this->extraClauses as $extraClause)
-             {
-                 $extraClause->serializeToURLQueryParamaters($queryParameters);   
-             }
-         }
-        
+        if ($this->extraClauses)
+        {
+            foreach ($this->extraClauses as $extraClause)
+            {
+                $extraClause->serializeToQueryParameters($queryParameters);
+            }
+            
+        }
     }
 }
