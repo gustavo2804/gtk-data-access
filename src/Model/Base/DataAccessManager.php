@@ -1,6 +1,7 @@
 <?php
 
 use function Deployer\error;
+use function PHPUnit\Framework\isEmpty;
 
 function startsWith($lookFor, $string)
 {
@@ -457,7 +458,13 @@ class DataAccessManager
 				$envPath = $_GLOBALS["ENV_FILE_PATH"];
 			}
 			
-			if (!$envPath || !file_exists($envPath))
+			if (!$envPath or $envPath == '')
+			{
+				die(__CLASS__.': No se a declarado el $_GLOBALS["ENV_FILE_PATH"] como una variable global, o su valor es vacio o null
+				. ');
+			} 
+			
+			if (!file_exists($envPath))
 			{
 				die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
 			}
