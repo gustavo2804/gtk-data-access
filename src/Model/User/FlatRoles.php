@@ -244,8 +244,8 @@ class FlatRoleDataAccess extends DataAccess
                 "hideOnForms" => true, 
                 "hideOnLists" => true,
             ]),
-            new GTKColumnMapping($this, "canGrantRole"),
-            new GTKColumnMapping($this, "ownsRole"),
+            new GTKColumnMapping($this, "can_grant_role"),
+            new GTKColumnMapping($this, "owns_role"),
 			new GTKColumnMapping($this, "date_created"),
 			new GTKColumnMapping($this, "date_modified"),
 		];
@@ -302,7 +302,7 @@ class FlatRoleDataAccess extends DataAccess
         ));
 
         $query->addWhereClause(new WhereClause(
-            "can_grant", "=", DataAccessManager::get("persona")->valueForIdentifier($user)
+            "can_grant_role", "=", DataAccessManager::get("persona")->valueForIdentifier($user)
         ));
 
         $whereGroup = new WhereGroup("OR");

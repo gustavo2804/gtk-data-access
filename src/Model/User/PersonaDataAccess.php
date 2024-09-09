@@ -1069,6 +1069,61 @@ class PersonaDataAccess extends DataAccess
 		echo "----------------------------------------------------------------------------------------\n";
 	}
 
+	public function findUserByIdentifiable($cedulaOrUsername)
+	{
+		$debug = false;
+
+		$user = null;
+
+		if (verifyCedula($cedulaOrUsername))
+		{
+			$user = $this->findUserByCedula($cedulaOrUsername);
+		}
+		else
+		{
+			$user = $this->getOne("email", $cedulaOrUsername);
+		}
+
+		if (!$user)
+		{
+			$user = $this->getOne("id", $cedulaOrUsername);
+		}
+
+		if ($debug)
+		{
+			error_log("Found user by identifiable: ".print_r($user, true));
+		}
+
+		return $user;
+	}
+
+	public function updatePasswordOnUser($maybeUser, $password, &$outError = null)
+	{
+		$user = $maybeUser;
+
+		if (is_string($maybeUser) || is_numeric($maybeUser))
+		{
+			$user = $this->findUserByIdentifiable($maybeUser);
+		}
+
+		if (!$user)
+		{
+			$outError = "User not found";
+			return false;
+		}
+		
+
+		$password_hash = password_hash($password, PASSWORD_DEFAULT);
+		
+		$toUpdate = [
+			"id" 			=> $this->valueForKey("id", $user),
+			"password_hash" => $password_hash,
+		];
+
+		return $this->update($toUpdate);
+		
+	}
+
 	public function rawCreateOrManageUser($user)
 	{
 		$cedula       = $user['cedula'] ?? null;
