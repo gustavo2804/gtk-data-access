@@ -190,11 +190,23 @@ class SelectQuery implements IteratorAggregate,
         return $this;
     }
 
+    public function whereRaw($sql, ...$params)
+    {
+        $this->where(new RawWhereClause($sql, ...$params));
+        return $this;
+    }
+
+    public function between($column, $start, $end, $inclusive = true) 
+    {
+        $this->where(new BetweenClause($column, $start, $end, $inclusive));
+        return $this;
+    }
+
     public function where($column, $operator = null, ...$values) 
     {
         $whereClause = null;
 
-        if ($column instanceof WhereClause)
+        if (($column instanceof WhereClause) || ($column instanceof RawWhereClause) || ($column instanceof BetweenClause))
         {
             $whereClause = $column;
         }
