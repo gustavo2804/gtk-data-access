@@ -2,6 +2,7 @@
 
 use function Deployer\error;
 use function PHPUnit\Framework\isEmpty;
+use function PHPUnit\Framework\throwException;
 
 function startsWith($lookFor, $string)
 {
@@ -781,7 +782,10 @@ class DataAccessManager
 			}
         }
 
-        
+        if(!$this->dataAccessorConstructions or $this->dataAccessorConstructions == '')
+		{
+			throw new Exception(' no esta configurado la variable $_GLOBALS["DataAccessManager_dataAccessorConstructions"] de forma global o su valor es nulo');
+		}
         if (array_key_exists($name, $this->dataAccessorConstructions)) 
         {
 			if ($debug)
