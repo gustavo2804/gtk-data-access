@@ -1,6 +1,8 @@
 <?php
 
 use function Deployer\error;
+use function PHPUnit\Framework\isEmpty;
+use function PHPUnit\Framework\throwException;
 
 function startsWith($lookFor, $string)
 {
@@ -457,7 +459,13 @@ class DataAccessManager
 				$envPath = $_GLOBALS["ENV_FILE_PATH"];
 			}
 			
-			if (!$envPath || !file_exists($envPath))
+			if (!$envPath or $envPath == '')
+			{
+				die(__CLASS__.': No se a declarado el $_GLOBALS["ENV_FILE_PATH"] como una variable global, o su valor es vacio o null
+				. ');
+			} 
+			
+			if (!file_exists($envPath))
 			{
 				die(__CLASS__.": No se encontró el archivo de configuración de la red. Buscando en: ".$envPath);
 			}
@@ -774,7 +782,10 @@ class DataAccessManager
 			}
         }
 
-        
+        if(!$this->dataAccessorConstructions or $this->dataAccessorConstructions == '')
+		{
+			throw new Exception(' no esta configurado la variable $_GLOBALS["DataAccessManager_dataAccessorConstructions"] de forma global o su valor es nulo');
+		}
         if (array_key_exists($name, $this->dataAccessorConstructions)) 
         {
 			if ($debug)

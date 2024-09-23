@@ -2945,9 +2945,25 @@ class DataAccess /* implements Serializable */
         return $sql;
     }
 
+    public function isInvalidInsert($arrayToInsert)
+    {
+        return false;
+    }
+
     public function insertOrError($input, &$outError = '')
     {
         $debug = false;
+
+        $isInvalidInsert = false;
+
+        if(method_exists($this,'isInvalidInsert'))
+        {
+            if($this->isInvalidInsert($input))
+            {
+                $isInvalidInsert = true ;
+            }
+
+        }
 
         // $isDictionary = isDictionary($input);
 
@@ -2955,7 +2971,7 @@ class DataAccess /* implements Serializable */
             return is_string($key);
         })) > 0;
 
-        if ($isDictionary)
+        if ($isDictionary and !$isInvalidInsert)
         {
             if ($debug)
             {
