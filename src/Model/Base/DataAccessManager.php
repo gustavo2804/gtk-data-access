@@ -549,7 +549,7 @@ class DataAccessManager
         {
             if (!isset($this->databaseConfigurations[$dbName])) 
             {
-                throw new Exception("Database configuration for '{$dbName}' not found.");
+                throw new Exception("Database configuration for '{$dbName}' was not found. Please configure env.php and run seed.php.");
             }
 
             $config = $this->databaseConfigurations[$dbName];
