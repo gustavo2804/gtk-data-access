@@ -82,12 +82,16 @@ class SessionDataAccess extends DataAccess
 		static $currentUser = null;
 		static $didCheck    = false;
 
+		
 		if (!$didCheck)
 		{
 			$session = $this->getCurrentApacheSession();
 			if ($session)
-			{
+			{	
+				
 				$currentUser = $this->getUserFromSession($session);
+				
+		        
 			}
 			
 			if ($debug)
@@ -112,6 +116,7 @@ class SessionDataAccess extends DataAccess
 		if ($session)
 		{
 			$currentUser = $this->getUserFromSession($session);
+			
 		}
 
 		return $currentUser;
@@ -168,11 +173,28 @@ class SessionDataAccess extends DataAccess
 
 	public function getUserFromSession($session)
 	{
-		$user_id = $this->valueForKey("user_id", $session);
-
-		return DataAccessManager::get("persona")->getOne("id", $user_id);
+		if($session['apikey'])
+		{
+			return $session['user'];
+		}
+		else
+		{
+			$user_id = $this->valueForKey("user_id", $session);
+			
+			return DataAccessManager::get("persona")->getOne("id", $user_id);
+		}
 	}
  
+	public function getUserWithApiKey($apiKey)
+	{	
+		global $_GLOBALS;
+		$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
+			$email = $accessKeyArray[$apiKey];
+			 $session["user"] =  DataAccessManager::get('persona')->getOne("email", $email);
+
+			return $session;
+	}
+
 
 	public function getCurrentApacheSession($options = [
 		"requireValid"	    => false,
@@ -182,8 +204,29 @@ class SessionDataAccess extends DataAccess
 	{
 		$debug = false;
 
-		if (isset($_COOKIE['AuthCookie']))
+		global $_SERVER;
+
+		if(isset($_SERVER["HTTP_X_API_KEY"]))
+		{	
+			global $_GLOBALS;
+			$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
+			  $apiKey = $_SERVER["HTTP_X_API_KEY"];
+			
+			if( array_key_exists($apiKey,$accessKeyArray) )
+
+			 {
+				$defaultSessionLength = 60 * 60 * 24 * 30;
+				$email = $accessKeyArray[$apiKey];
+				$session["user"] =  DataAccessManager::get('persona')->getOne("email", $email);
+				$session['apikey'] = true;
+				$session['valid_until'] = time() + $defaultSessionLength;
+				return $session;
+			}
+		}
+
+		elseif (isset($_COOKIE['AuthCookie']))
 		{
+			
 			$authToken = $_COOKIE['AuthCookie'];
 
 			if ($debug)
