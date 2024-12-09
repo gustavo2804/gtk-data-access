@@ -58,7 +58,7 @@ class SelectQuery implements IteratorAggregate,
             return 0;
         }
 
-        return $this->count() / $this->limit;
+        return ceil($this->count() / $this->limit);
     }
 
     public function __construct($dataSource, $columns = null, $whereClauses = null, $queryOptions = [])

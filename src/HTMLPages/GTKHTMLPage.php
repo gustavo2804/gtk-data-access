@@ -380,7 +380,9 @@ class GTKHTMLPage
 			if (!$this->didSearchForCurrentUser)
 			{
 				$this->didSearchForCurrentUser = true;
+			
 				$this->user = DataAccessManager::get("session")->getCurrentUser();
+				
 			}
 		}
 
@@ -460,21 +462,29 @@ class GTKHTMLPage
 		$this->phpSession = $session;
 		$this->files      = $files;
 		$this->env 		  = $env;
+		
+
+		
 
 		if ($this->allowsCache)
 		{
+			
 			session_start();
 			header("Cache-Control: no-cache, must-revalidate");
 			header("Pragma: no-cache");
-	
+			
 		}
 		
 		if ($debug)
 		{
+			
+			
 			error_log("`render` : Got current user: ".print_r($this->currentUser(), true));
+			
+			
 			error_log("`render` : Got current session: ".print_r($this->currentSession(), true));
 		}
-
+		
 
 		if ($this->authenticationRequired && !$this->currentUser())
 		{
@@ -509,10 +519,19 @@ class GTKHTMLPage
 				break;
 		}
 
+		if (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] === 'application/json') 
+        {
+            if (method_exists($this, "renderAsJSON"))
+			{
+				return $this->renderAsJSON();
+			}
+        }
+
 		$text = "";
 		$text .= $this->gtk_renderHeader();
 		$text .= $this->gtk_renderBody();
 		$text .= $this->gtk_renderFooter();
+		
 		return $text;
 	}
 

@@ -12,6 +12,7 @@ class DataAccessInputSelectArgument
     public $objectID           = null;
     public $foreignColumnName  = null;
     public $foreignColumnValue = null;
+    public $idValue             = null;
     public $options            = [];
 }
 
@@ -2944,9 +2945,25 @@ class DataAccess /* implements Serializable */
         return $sql;
     }
 
+    public function isInvalidInsert($arrayToInsert)
+    {
+        return false;
+    }
+
     public function insertOrError($input, &$outError = '')
     {
         $debug = false;
+
+        $isInvalidInsert = false;
+
+        if(method_exists($this,'isInvalidInsert'))
+        {
+            if($this->isInvalidInsert($input))
+            {
+                $isInvalidInsert = true ;
+            }
+
+        }
 
         // $isDictionary = isDictionary($input);
 
@@ -2954,7 +2971,7 @@ class DataAccess /* implements Serializable */
             return is_string($key);
         })) > 0;
 
-        if ($isDictionary)
+        if ($isDictionary and !$isInvalidInsert)
         {
             if ($debug)
             {
@@ -4295,7 +4312,8 @@ class DataAccess /* implements Serializable */
         $dataAccessor       = $argument->dataAccessor;         
         $objectID           = $argument->objectID;             
         $foreignColumnName  = $argument->foreignColumnName;    
-        $foreignColumnValue = $argument->foreignColumnValue;   
+        $foreignColumnValue = $argument->foreignColumnValue;  
+        $idValue            = $argument->idValue; 
         $options            = $argument->options;
 
         if ($debug)
@@ -4364,7 +4382,14 @@ class DataAccess /* implements Serializable */
 
     	$language = isset($options['language']) ? $options['language'] : 'spanish';
 
-    	$select = '<select name="' . $foreignColumnName . '">';
+        if(isset($idValue))
+        {
+            $select = '<select name="' . $foreignColumnName . '" id="' . $idValue . '" >';
+        }
+        else
+        {
+            $select = '<select name="' . $foreignColumnName . '" >';
+        }
 
 		$addNullCase = true;
 
