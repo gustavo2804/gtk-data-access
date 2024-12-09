@@ -490,10 +490,19 @@ class GTKHTMLPage
 				break;
 		}
 
+		if (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] === 'application/json') 
+        {
+            if (method_exists($this, "renderAsJSON"))
+			{
+				return $this->renderAsJSON();
+			}
+        }
+
 		$text = "";
 		$text .= $this->gtk_renderHeader();
 		$text .= $this->gtk_renderBody();
 		$text .= $this->gtk_renderFooter();
+		
 		return $text;
 	}
 
