@@ -469,7 +469,7 @@ class SelectQuery implements IteratorAggregate,
 
     public function count($debug = false) : int
     {
-        $debug = true;
+        $debug = false;
 
         $this->isCountQuery = true;
 

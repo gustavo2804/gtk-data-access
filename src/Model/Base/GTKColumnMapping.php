@@ -149,6 +149,11 @@ class GTKColumnMapping extends GTKColumnBase
     ////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////
 
+    public function getColumnName()
+    {
+        return $this->phpKey;
+    }
+    
     public function dbColumnName()
     {
         return $this->getSqlColumnName();

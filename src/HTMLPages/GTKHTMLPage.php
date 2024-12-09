@@ -349,7 +349,16 @@ class GTKHTMLPage
 
 	public function handleNotAuthenticated()
 	{
-		redirectToURL("/auth/login.php", null, []);
+		if (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] === 'application/json') 
+		{
+			return json_encode([
+				"error" => "Not authenticated",
+			]);
+		}
+		else
+		{
+			redirectToURL("/auth/login.php", null, []);
+		}
 	}
 
 	public function handleNotAuthorized()
@@ -364,6 +373,7 @@ class GTKHTMLPage
 			if (!$this->didSearchForCurrentSession)
 			{
 				$this->didSearchForCurrentSession = true;
+
 				$this->session = DataAccessManager::get("session")->getCurrentApacheSession([
 					"requireValid" => true,
 				]);
@@ -462,9 +472,6 @@ class GTKHTMLPage
 		$this->phpSession = $session;
 		$this->files      = $files;
 		$this->env 		  = $env;
-		
-
-		
 
 		if ($this->allowsCache)
 		{
@@ -477,8 +484,6 @@ class GTKHTMLPage
 		
 		if ($debug)
 		{
-			
-			
 			error_log("`render` : Got current user: ".print_r($this->currentUser(), true));
 			
 			
@@ -519,11 +524,11 @@ class GTKHTMLPage
 				break;
 		}
 
-		if (isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] === 'application/json') 
+		if ($this->shouldRespondWithJSON())
         {
-            if (method_exists($this, "renderAsJSON"))
+            if (method_exists($this, "renderJSON"))
 			{
-				return $this->renderAsJSON();
+				return $this->renderJSON();
 			}
         }
 
@@ -533,6 +538,11 @@ class GTKHTMLPage
 		$text .= $this->gtk_renderFooter();
 		
 		return $text;
+	}
+
+	public function shouldRespondWithJSON()
+	{
+		return isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] === 'application/json';
 	}
 
 	function htmlEscape($string)

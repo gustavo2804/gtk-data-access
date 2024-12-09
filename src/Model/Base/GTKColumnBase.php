@@ -606,6 +606,11 @@ class GTKItemCellContentPresenter
         $this->presenterFunction = $presenterFunction;
     }
 
+    
+    public function getColumnName()
+    {
+        return $this->label;
+    }
 
     public function getFormLabel()
     {

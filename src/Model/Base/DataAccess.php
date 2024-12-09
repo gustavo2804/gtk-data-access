@@ -4689,6 +4689,85 @@ class DataAccess /* implements Serializable */
 
     }
 
+    public function generateJSONForUserItems($user, $itemsOrQueryObject, $columnsToDisplay = null, $options = null)
+{
+    $debug = false;
+    $items = null;
+    $count = 0;
+    $itemType = $this->dataAccessorName ?? 'unknown';
+
+    // Get column mappings
+    $columnMappingsToDisplay = null;
+    if (!$columnsToDisplay) {
+        $columnMappingsToDisplay = $this->dataMapping->ordered;
+    } else {
+        $columnMappingsToDisplay = [];
+        foreach ($columnsToDisplay as $maybeColumnMapping) {
+            if (is_string($maybeColumnMapping)) {
+                $columnMappingsToDisplay[] = $this->columnMappingForKey($maybeColumnMapping);
+            } else if (($maybeColumnMapping instanceof GTKColumnBase) || ($maybeColumnMapping instanceof GTKItemCellContentPresenter)) {
+                $columnMappingsToDisplay[] = $maybeColumnMapping;
+            }
+        }
+    }
+
+    // Process input items
+    if (is_array($itemsOrQueryObject)) {
+        $count = count($itemsOrQueryObject);
+        $items = $itemsOrQueryObject;
+    } else if (method_exists($itemsOrQueryObject, "count") && method_exists($itemsOrQueryObject, "getIterator")) {
+        $count = $itemsOrQueryObject->count();
+        $items = $itemsOrQueryObject->getIterator();
+    } else {
+        $count = $itemsOrQueryObject->count();
+        $items = $itemsOrQueryObject->executeAndYield();
+    }
+
+    $result = [
+        'count' => $count,
+        'data'  => []
+    ];
+
+    if ($count == 0) {
+        return json_encode($result);
+    }
+
+    // Process items
+    foreach ($items as $index => $currentItem) {
+        if ($options["whileIterating"] ?? null) {
+            $options["whileIterating"]($currentItem, $index);
+        }
+
+        $processedItem = [];
+        
+        // Process each field using column mappings
+        foreach ($columnMappingsToDisplay as $columnMapping) {
+            $displayFunction = null; // This would come from your column mapping
+            $fieldName = $columnMapping->getColumnName();
+            
+            if ($displayFunction) {
+                $argument = new GTKColumnMappingListDisplayArgument();
+                $argument->user = $user;
+                $argument->item = $currentItem;
+                $argument->options = null;
+                
+                $processedItem[$fieldName] = $displayFunction($argument);
+            } else {
+                $processedItem[$fieldName] = $columnMapping->valueFromDatabase($currentItem);
+            }
+        }
+
+        $itemData = [
+            'item_type' => $itemType,
+            'item' => $processedItem
+        ];
+
+        $result['data'][] = $itemData;
+    }
+
+    return json_encode($result, JSON_PRETTY_PRINT);
+}
+
     public function generateTableForUserItems($user, $itemsOrQueryObject, $columnsToDisplay = null, $options = null)
     {
         $debug = false;

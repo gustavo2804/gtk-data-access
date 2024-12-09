@@ -86,18 +86,28 @@ class SessionDataAccess extends DataAccess
 		if (!$didCheck)
 		{
 			$session = $this->getCurrentApacheSession();
+
+			if ($debug)
+			{
+				error_log("`getCurrentUser` - Got session: ".print_r($session, true));	
+			}
+
 			if ($session)
 			{	
 				
 				$currentUser = $this->getUserFromSession($session);
-				
-		        
-			}
 			
-			if ($debug)
+				if ($debug)
+				{
+					error_log("`getCurrentUser` - Got current user: ".print_r($currentUser, true));
+				}
+			}
+			else
 			{
-				error_log("`getCurrentUser` - Got current user: ".print_r($currentUser, true));
-				error_log("`getCurrentUser` - Got session: ".print_r($session, true));	
+				if ($debug)
+				{
+					error_log("`getCurrentUser` - No session found.");
+				}
 			}
 
 			$didCheck = true;
@@ -173,26 +183,28 @@ class SessionDataAccess extends DataAccess
 
 	public function getUserFromSession($session)
 	{
-		if($session['apikey'])
-		{
-			return $session['user'];
-		}
-		else
-		{
-			$user_id = $this->valueForKey("user_id", $session);
+		$user_id = $this->valueForKey("user_id", $session);
 			
-			return DataAccessManager::get("persona")->getOne("id", $user_id);
-		}
+		return DataAccessManager::get("persona")->getOne("id", $user_id);
 	}
  
 	public function getUserWithApiKey($apiKey)
 	{	
 		global $_GLOBALS;
-		$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
-			$email = $accessKeyArray[$apiKey];
-			 $session["user"] =  DataAccessManager::get('persona')->getOne("email", $email);
 
-			return $session;
+		$email = $_GLOBALS["API_KEY_ARRAY"][$apiKey];
+
+		static $cache = [];
+		if (array_key_exists($email, $cache))
+		{
+			return $cache[$email];
+		}
+
+		$user = DataAccessManager::get('persona')->getOne("email", $email);
+		
+		$cache[$email] = $user;
+
+		return $user;
 	}
 
 
@@ -206,24 +218,67 @@ class SessionDataAccess extends DataAccess
 
 		global $_SERVER;
 
-		if(isset($_SERVER["HTTP_X_API_KEY"]))
-		{	
+		if ($debug)
+		{
+			$headers = getallheaders();
+			error_log("Headers: ".print_r($headers, true));
+			// error_log("Server: ".print_r($_SERVER, true));
+		}
+
+		$httpTokenKey = "STONEWOOD_AUTH_TOKEN";
+
+		$apiKey = null;
+
+
+		if (isset($_SERVER[$httpTokenKey])) 
+		{
+    		$apiKey = $_SERVER[$httpTokenKey];
+		}
+		else if (isset($_GET[$httpTokenKey]))
+		{
+    		$apiKey = $_GET[$httpTokenKey];
+		}
+
+		if ($apiKey)
+		{
 			global $_GLOBALS;
 			$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
-			  $apiKey = $_SERVER["HTTP_X_API_KEY"];
-			
-			if( array_key_exists($apiKey,$accessKeyArray) )
+		
+			if (!$accessKeyArray) {
+				error_log("API Key array not found.");
+				return null;
+			}
 
-			 {
+			if ($debug)
+			{
+				error_log("API Key: ".$apiKey);
+			}
+			
+			if (array_key_exists($apiKey,$accessKeyArray))
+			{
 				$defaultSessionLength = 60 * 60 * 24 * 30;
 				$email = $accessKeyArray[$apiKey];
-				$session["user"] =  DataAccessManager::get('persona')->getOne("email", $email);
-				$session['apikey'] = true;
+				$user =  DataAccessManager::get('persona')->getOne("email", $email);
+
+				if ($debug)
+				{
+					error_log("API Key found: ".$apiKey);
+					error_log("User found: ".print_r($user, true));
+				}
+
+				$session = [];
+				$session['user']        = $user;
+				$session['user_id']     = DAM::get("persona")->identifierForItem($user);
+				$session['apikey']      = true;
 				$session['valid_until'] = time() + $defaultSessionLength;
 				return $session;
 			}
+			else
+			{
+				error_log("API Key not found: ".$apiKey);
+				return null;
+			}
 		}
-
 		elseif (isset($_COOKIE['AuthCookie']))
 		{
 			
@@ -273,6 +328,10 @@ class SessionDataAccess extends DataAccess
 		}
 		else
 		{
+			if ($debug)
+			{
+				error_log("`getCurrentApacheSession` - No auth token or http header for: ".$httpTokenKey);
+			}
 			return null;
 		}
 
