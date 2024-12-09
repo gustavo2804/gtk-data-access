@@ -358,40 +358,42 @@ function doOrCatchAndReport($function, $options = [])
     
     $supressErrorLogHeader = $options["SUPRRESS_ERROR_LOG_HEADER"] ?? false;
 
+    $toPrintOnScreen = "";
+
     if (($shouldPrintToScreen || $debug) && !$supressErrorLogHeader)
     {
-        echo "<div style='content:block;clear:both;width:100%; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;'>";
+        $toPrintOnScreen .= "<div style='content:block;clear:both;width:100%; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;'>";
         if ($debug)
         {
             echo "<h1>Debug Mode</h1>";
         }
-        echo 'Error Log Path: <a href="/debug/viewErrorLog.php">'.$errorLogPath.'</a>';
-        echo '&nbsp;&nbsp;&nbsp';
-        echo "<a href='/debug/clearErrorLog.php'>Clear Error Log</a>";
-        echo "<br/>";
-        echo "Request URI: ".$_SERVER["REQUEST_URI"];
-        echo "<br>";
-        echo "HTTP HOST: ".$_SERVER["HTTP_HOST"];
-        echo "<br>";
-        echo "Contains Local? ".($containsLocal ? "Yes" : "No")."<br>";
-        echo "</div>";
+        $toPrintOnScreen .= 'Error Log Path: <a href="/debug/viewErrorLog.php">'.$errorLogPath.'</a>';
+        $toPrintOnScreen .= '&nbsp;&nbsp;&nbsp';
+        $toPrintOnScreen .= "<a href='/debug/clearErrorLog.php'>Clear Error Log</a>";
+        $toPrintOnScreen .= "<br/>";
+        $toPrintOnScreen .= "Request URI: ".$_SERVER["REQUEST_URI"];
+        $toPrintOnScreen .= "<br>";
+        $toPrintOnScreen .= "HTTP HOST: ".$_SERVER["HTTP_HOST"];
+        $toPrintOnScreen .= "<br>";
+        $toPrintOnScreen .= "Contains Local? ".($containsLocal ? "Yes" : "No")."<br>";
+        $toPrintOnScreen .= "</div>";
     }
     
 
     $guid = uniqid();
 
-    $toPrintOnScreen = "";
-    $toPrintOnScreen = "<h1>";
-    $toPrintOnScreen .= "Ha occurido un error en el sistema.";
-    $toPrintOnScreen .= "El equipo de tecnologia ha sido notificado.";
-    $toPrintOnScreen .= "Favor darle este numero: ".$guid;
-    $toPrintOnScreen .= "</h1>";
-
-    
-
     try
     {
-        return $function();
+        ob_start();
+        $contents = $function();
+        if ($contents)
+        {
+            echo $contents;
+        }
+        $toPrintOnScreen .= ob_get_clean();
+
+        echo $toPrintOnScreen;
+
     }
     catch (Throwable  $e)
     {
@@ -422,6 +424,12 @@ function doOrCatchAndReport($function, $options = [])
         }
         else
         {
+            $toPrintOnScreenIfError = "";
+            $toPrintOnScreenIfError = "<h1>";
+            $toPrintOnScreenIfError .= "Ha occurido un error en el sistema.";
+            $toPrintOnScreenIfError .= "El equipo de tecnologia ha sido notificado.";
+            $toPrintOnScreenIfError .= "Favor darle este numero: ".$guid;
+            $toPrintOnScreenIfError .= "</h1>";
             die($toPrintOnScreen);
         }
     }

@@ -287,7 +287,17 @@ class GTKHTMLPage
 		$contentType = $this->server["CONTENT_TYPE"] ?? "text/html";
 
 		global $_GLOBALS;
-		$defaultHeader = $_GLOBALS["DEFAULT_HEADER"];
+
+		$defaultHeader = null;
+
+		if (isset($_GLOBALS["DEFAULT_HEADER"]))
+		{
+			$defaultHeader = $_GLOBALS["DEFAULT_HEADER"];
+		}
+		else
+		{
+			$defaultHeader = null;
+		}
 
 		// die("Header: ".$this->header . " Default: ".$defaultHeader);
 
@@ -311,7 +321,16 @@ class GTKHTMLPage
 		$contentType = $this->server["CONTENT_TYPE"] ?? "text/html";
 		global $_GLOBALS;
 
-		$defaultFooter = $_GLOBALS["DEFAULT_FOOTER"];
+		$defaultFooter = null;
+
+		if (isset($_GLOBALS["DEFAULT_FOOTER"]))
+		{
+			$defaultFooter = $_GLOBALS["DEFAULT_FOOTER"];
+		}
+		else
+		{
+			$defaultFooter = null;
+		}
 
 		switch($contentType)
 		{
