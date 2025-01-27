@@ -15,6 +15,8 @@ class DataAccessorColumnKey
 
 }
 
+
+
 class SelectQuery implements IteratorAggregate, 
                             Countable, 
                             SQLWhereInterface
@@ -30,6 +32,43 @@ class SelectQuery implements IteratorAggregate,
     public $desiredPageNumber;
     public $generator;
     public $queryModifier;
+    public $joins = [];
+    
+    /**
+     * Add an INNER JOIN to the query
+     * @param string|DataAccess $table Table name or DataAccess instance
+     * @param string $onCondition Join condition
+     * @return $this
+     */
+    public function innerJoin($table, $onCondition) 
+    {
+        $tableName = ($table instanceof DataAccess) ? $table->tableName() : $table;
+        $this->joins[] = [
+            'type' => 'INNER JOIN',
+            'table' => $tableName,
+            'condition' => $onCondition
+        ];
+        return $this;
+    }
+
+    /**
+     * Add a LEFT JOIN to the query
+     * @param string|DataAccess $table Table name or DataAccess instance
+     * @param string $onCondition Join condition
+     * @return $this
+     */
+    public function leftJoin($table, $onCondition) 
+    {
+        $tableName = ($table instanceof DataAccess) ? $table->tableName() : $table;
+        $this->joins[] = [
+            'type' => 'LEFT JOIN',
+            'table' => $tableName,
+            'condition' => $onCondition
+        ];
+        return $this;
+    }
+
+
 
     public function setLimit($limit)
     {
@@ -270,10 +309,22 @@ class SelectQuery implements IteratorAggregate,
         } 
         else 
         {
-            $sql .= '*';
+            // When selecting all columns, explicitly prefix with table names
+            $mainTable = $this->dataSource->tableName();
+            $sql .= $mainTable . '.*';
+            
+            // Optionally add columns from joined tables
+            foreach ($this->joins as $join) {
+                $sql .= ', ' . $join['table'] . '.*';
+            }
         }
 
         $sql .= " FROM ".$this->dataSource->tableName();
+
+        foreach ($this->joins as $join) 
+        {
+            $sql .= " {$join['type']} {$join['table']} ON {$join['condition']}";
+        }
         
         if ($this->whereGroup && (count($this->whereGroup->clauses) > 0))
         {

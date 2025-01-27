@@ -164,6 +164,8 @@ class OptionsAccessManager
 
 class_alias('OptionsAccessManager', 'OAM');
 
+
+
 class DataAccessManager 
 {
     private $dataAccessors             = [];
@@ -915,3 +917,4 @@ class DataAccessManager
 
 
 class_alias('DataAccessManager', 'DAM');
+class_alias('DataAccessManager', 'GET');

@@ -338,11 +338,14 @@ function doOrCatchAndReport($function, $options = [])
     ]);
     
     $errorLogPath = ini_get("error_log");
-    
-    if (!$containsLocal)
+
+    if (!isTruthy($options["not_override_error_log_path"]))
     {
-        error_log("Running `debug.php` - error log original path: ".$errorLogPath);
-        $errorLogPath = setPHPErrorLogPath();
+        if (!$containsLocal)
+        {
+            error_log("Running `debug.php` - error log original path: ".$errorLogPath);
+            $errorLogPath = setPHPErrorLogPath();
+        }
     }
     
     $shouldPrintToScreen = idx_containsKeywords($_SERVER["HTTP_HOST"], [
