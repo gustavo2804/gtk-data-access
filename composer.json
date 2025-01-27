@@ -59,6 +59,7 @@
 
     "autoload": {
         "files": [
+            "configure/functions/DataAccessManager-Functions.php",
             "configure/databases.php",
             "configure/functions/HasPermission.php",
             "configure/functions/www-Debug.php",

@@ -100,9 +100,17 @@ class SelectQuery implements IteratorAggregate,
         return ceil($this->count() / $this->limit);
     }
 
-    public function __construct($dataSource, $columns = null, $whereClauses = null, $queryOptions = [])
+    public function __construct($maybeDataSource, $columns = null, $whereClauses = null, $queryOptions = [])
     {
-        $this->dataSource = $dataSource;
+        if ($maybeDataSource instanceof DataAccess)
+        {
+            $this->dataSource = $maybeDataSource;
+        }
+        else
+        {
+            $this->dataSource = DAM::get($maybeDataSource);
+        }
+
         $this->columns    = $columns;
 
         if ($whereClauses)

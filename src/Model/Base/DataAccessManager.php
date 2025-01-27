@@ -4,91 +4,6 @@ use function Deployer\error;
 use function PHPUnit\Framework\isEmpty;
 use function PHPUnit\Framework\throwException;
 
-function startsWith($lookFor, $string)
-{
-	return strpos($string, $lookFor) === 0;
-}
-
-
-function snakeToSpaceCase($string) {
-    // Replace underscores with spaces
-    $stringWithSpaces = str_replace('_', ' ', $string);
-
-    // Capitalize the first letter of each word (optional)
-    $spaceCaseString = ucwords($stringWithSpaces);
-
-    return $spaceCaseString;
-}
-
-function LinkToAllPermissionIfExists($permission, $options = null)
-{
-	$currentUser = DataAccessManager::get("session")->getCurrentUser();
-
-	if (DataAccessManager::get("persona")->hasPermission($permission, $currentUser))
-	{
-		$dataSourceName = explode(".", $permission)[0];
-		return AllLinkTo($dataSourceName, $options);
-	}
-	else
-	{
-		return "";
-	}  
-}
-
-function LinkToEditItemPermissionIfExists($permission, $item, $options = null)
-{
-	$currentUser = DataAccessManager::get("session")->getCurrentUser();
-
-	if (DataAccessManager::get("persona")->hasPermission($permission, $currentUser))
-	{
-		return editLinkTo($permission, $item, $options);
-	}
-	else
-	{
-		return "";
-	}  
-}
-
-function linkTo($maybeHref, $options)
-{
-	$href = null;
-
-	if (startsWith("/", $maybeHref))
-	{
-		$href = $maybeHref;
-	}
-	else
-	{
-		$href = $maybeHref;
-	}
-
-	$id      = $options['class'] ?? '';
-	$class   = $options['class'] ?? '';
-	$style   = $options['style'] ?? '';
-	$label   = $options['label'] ?? $href;
-
-	$toReturn  = "";
-	$toReturn .= "<a id='$id' href='$href' class='$class' style='$style'>";
-	$toReturn .= $label;
-	$toReturn .= "</a>";
-	
-	return $toReturn;	
-}
-
-function ShowURLTo($dataSourceName, $identifier, $options = null)
-{
-	return DataAccessManager::showURLTo($dataSourceName, $identifier, $options);
-}
-
-function AllURLTo($dataSourceName, $options = null)
-{
-	return DataAccessManager::allURLTo($dataSourceName, $options);
-}
-
-function AllLinkTo($dataSourceName, $options = null)
-{
-	return DataAccessManager::allLinkTo($dataSourceName, $options);
-}
 
 if (!function_exists("gtk_log"))
 {
@@ -115,63 +30,15 @@ if (!function_exists("gtk_log"))
 
 }
 
-/*
-Accessed via Singleton.
-OptionsAccessManager::get($key);
-*/
-class OptionsAccessManager
-{
-	private static $instance;
-	private $options = [];
-
-	public static function get($key)
-	{
-		$instance = self::getSingleton();
-
-		if (isset($instance->options[$key])) 
-		{
-			return $instance->options[$key];
-		}
-		else 
-		{
-			return null;
-		}
-	}
-
-	public static function getSingleton()
-	{
-		if (self::$instance === null) 
-		{
-			global $_GLOBALS;
-			$options = $_GLOBALS["OPTIONS_ACCESS_MANAGER_OPTIONS"];
-			self::$instance = new self($options);
-		}
-
-		return self::$instance;
-	}
-
-	public function __construct($options = [])
-	{
-		$this->options = $options;
-	}
-
-	public function getOptions()
-	{
-		return $this->options;
-	}
-}
-
-
-class_alias('OptionsAccessManager', 'OAM');
-
-
-
 class DataAccessManager 
 {
     private $dataAccessors             = [];
     private $dataAccessorConstructions = [];
     private $databaseConfigurations    = [];
     private $databases                 = [];
+
+
+
 
 	public function getDefaultOptionsForSelectForUser($user)
     {
@@ -493,21 +360,49 @@ class DataAccessManager
 
 	}
 
-	public static function getSingleton()
-	{
+	public static function getSingleton(
+		$databaseConfigurations = null, 
+		$dataAccessorConstructions = null
+	){
 	    $debug = false;
 
 	    static $dataAccessManager = null;
 
-	    if ($dataAccessManager === null) 
+	    if (!$dataAccessManager)
 	    {
 			self::configureSystem();
 
             global $_GLOBALS;
+
+			// die(print_r($_GLOBALS, true));
+
+			if (!$databaseConfigurations)
+			{
+				$databaseConfigurations = $_GLOBALS["DataAccessManager_DB_CONFIG"];
+			}
+
+			if (!$databaseConfigurations)
+			{
+				throw new Exception("Database configurations not found");
+			}
+
+			// die(print_r($databaseConfigurations, true));
+
+			if (!$dataAccessorConstructions)
+			{
+				$dataAccessorConstructions = $_GLOBALS["DataAccessManager_dataAccessorConstructions"];
+			}
+
+			// die(print_r($dataAccessorConstructions, true));
+
+			if (!$dataAccessorConstructions)
+			{
+				throw new Exception("Data accessor constructions not found");
+			}
         
 		    $dataAccessManager = new DataAccessManager(
-                $_GLOBALS["DataAccessManager_DB_CONFIG"],
-                $_GLOBALS["DataAccessManager_dataAccessorConstructions"]);
+                $databaseConfigurations,
+                $dataAccessorConstructions);
 	    }
 
 		return $dataAccessManager;
@@ -533,7 +428,18 @@ class DataAccessManager
 
     public function __construct($databaseConfigurations, $dataAccessorConfigurations) 
     {
-        $this->databaseConfigurations = $databaseConfigurations;
+		if (!$databaseConfigurations)
+		{
+			throw new Exception("Database configurations not found");
+		}
+
+		if (!$dataAccessorConfigurations)
+		{
+			throw new Exception("Data accessor configurations not found");
+		}
+
+
+        $this->databaseConfigurations    = $databaseConfigurations;
         $this->dataAccessorConstructions = $dataAccessorConfigurations;
     }
 
@@ -683,10 +589,17 @@ class DataAccessManager
 
     public function getDataAccessor($name, $throwException = true) 
     {
-        $debug = false;
+        $debug = true;
+
+		// die(print_r($this->dataAccessors, true));
 		
 		if (!array_key_exists($name, $this->dataAccessors)) 
         {
+			if ($debug)
+			{
+				error_log("`getDataAccessor`: name: ".$name);
+			}
+
 			$key = $this->keyForDataAccessorConstructions($name);
 			
 			if($debug)
@@ -706,7 +619,7 @@ class DataAccessManager
 				}  
             }
 
-            $config     = $this->dataAccessorConstructions[$key];
+            $config = $this->dataAccessorConstructions[$key];
 
 			if (!isset($config["class"]))
 			{
@@ -784,9 +697,12 @@ class DataAccessManager
 			}
         }
 
-        if(!$this->dataAccessorConstructions or $this->dataAccessorConstructions == '')
+		// die(print_r($this->databaseConfigurations, true));
+		// die(print_r($this->dataAccessorConstructions, true));
+
+        if(!$this->dataAccessorConstructions or gtk_count($this->dataAccessorConstructions) == 0)
 		{
-			throw new Exception(' no esta configurado la variable $_GLOBALS["DataAccessManager_dataAccessorConstructions"] de forma global o su valor es nulo');
+			throw new Exception('DataAccessorConstructions is not set');
 		}
         if (array_key_exists($name, $this->dataAccessorConstructions)) 
         {
@@ -917,4 +833,3 @@ class DataAccessManager
 
 
 class_alias('DataAccessManager', 'DAM');
-class_alias('DataAccessManager', 'GET');
