@@ -692,6 +692,37 @@ class DataAccessManager
         return $this->databases[$dbName];
     }
 
+	public function internalRegisterAlias($key, $alias) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+
+        // Initialize synonyms array if it doesn't exist
+        if (!isset($this->dataAccessorConstructions[$key]['synonyms'])) {
+            $this->dataAccessorConstructions[$key]['synonyms'] = [];
+        }
+
+        // Check if alias is already used by any configuration
+        foreach ($this->dataAccessorConstructions as $existingKey => $config) {
+            if ($existingKey === $alias) {
+                throw new Exception("Cannot register alias: '{$alias}' is already a primary key.");
+            }
+            if (isset($config['synonyms']) && in_array($alias, $config['synonyms'])) {
+                throw new Exception("Cannot register alias: '{$alias}' is already an alias for '{$existingKey}'.");
+            }
+        }
+
+        // Add the new alias
+        $this->dataAccessorConstructions[$key]['synonyms'][] = $alias;
+    }
+
+
+	public static function registerAlias($key, $alias)
+	{
+		self::getSingleton()->registerAlias($key, $alias);
+	}
+
     public function getDataAccessor($name, $throwException = true) 
     {
         $debug = true;

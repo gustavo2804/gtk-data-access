@@ -1066,9 +1066,46 @@ class DataAccess /* implements Serializable */
         return $this->dataMapping->dbColumnNameForKey($key);
     }
 
-    public function dbColumnNameForKey($key)
+    public function dbColumnNameForKey($key, $includeTableName = false)
     {
-        return $this->dataMapping->dbColumnNameForKey($key);
+        $columnName = $this->dataMapping->dbColumnNameForKey($key);
+
+        if ($includeTableName)
+        {
+            $tableName = $this->tableName();
+            $columnName = $tableName.".".$columnName;
+        }
+
+        return $columnName;
+    }
+
+    public function joinConditionForKeyToKey($key, $otherTableKey)
+    {
+        return $this->joinConditionForKeyToTableKey($key, $otherTableKey);
+    }
+
+    public function joinConditionForKeyToTableKey($key, $tableNameWithKey, $tableKey = null)
+    {
+        $dbColumnName = $this->dbColumnNameForKey($key, true);
+
+        if ($tableKey)
+        {
+            $dbColumnNameToJoinOn = DAM::get($tableNameWithKey)->dbColumnNameForKey($tableKey, true);
+        }
+        else
+        {
+            if (strpos($tableNameWithKey, ".") == false)
+            {
+                throw new Exception("Invalid key name: ".$tableNameWithKey);
+            }
+
+            $array = explode(".", $tableNameWithKey);
+            $tableName = $array[0];
+            $otherTableKey = $array[1];
+            $dbColumnNameToJoinOn = DAM::get($tableName)->dbColumnNameForKey($otherTableKey, true);
+        }
+
+        return $dbColumnName." = ".$dbColumnNameToJoinOn;
     }
 
     public function getSearchableColumnsForUser($user, $groupName = null)
@@ -3330,6 +3367,39 @@ class DataAccess /* implements Serializable */
 
 
     */
+    function handleExceptions($e, $sql, $item, $isInvalid, $debug, $options)
+    {
+        if ($debug)
+        {
+            gtk_log("Did execute statement: $sql. Exception: ".$e->getMessage());
+        }
+
+        if (isset($options["exceptionsNotToHandle"]))
+        {
+            if (in_array("uniqueConstraint", $options["exceptionsNotToHandle"]))
+            {
+                if (QueryExceptionManager::isUniqueConstraintException($e))
+                {
+                    throw $e;
+                }
+            }
+
+        }
+
+
+        $result = QueryExceptionManager::manageQueryExceptionForDataSource(
+            $this, 
+            $e, 
+            $sql, 
+            $item, 
+            $isInvalid);
+        
+        if ($isInvalid != '')
+        {
+            return null;
+        }
+        throw $e;
+    }
     
 	public function insertAssociativeArray(
         &$item, 
@@ -3337,6 +3407,8 @@ class DataAccess /* implements Serializable */
         $options = null
     ){
         $debug = false;
+
+
 
 
         $ignoreErrors = null;
@@ -3359,7 +3431,19 @@ class DataAccess /* implements Serializable */
             gtk_log("Object: ".print_r($item, true));
         }
 
-        $stmt = $this->getDB()->prepare($sql);
+        $stmt = null;
+
+        try
+        {
+            $stmt = $this->getDB()->prepare($sql);
+        }
+        catch (Exception $e)
+        {
+            gtk_log("Error: ".$e->getMessage());
+            $this->handleExceptions($e, $sql, $item, $isInvalid, $debug, $options);
+        }
+        
+        
 
         if ($debug)
         {
@@ -3435,37 +3519,7 @@ class DataAccess /* implements Serializable */
         }
         catch (Exception $e)
         {
-            if ($debug)
-            {
-                gtk_log("Did execute statement: $sql. Exception: ".$e->getMessage());
-            }
-
-            if (isset($options["exceptionsNotToHandle"]))
-            {
-                if (in_array("uniqueConstraint", $options["exceptionsNotToHandle"]))
-                {
-                    if (QueryExceptionManager::isUniqueConstraintException($e))
-                    {
-                        throw $e;
-                    }
-                }
-
-            }
-
-
-            $result = QueryExceptionManager::manageQueryExceptionForDataSource(
-                $this, 
-                $e, 
-                $sql, 
-                $item, 
-                $isInvalid);
-            
-            if ($isInvalid != '')
-            {
-                return null;
-            }
-            throw $e;
-            
+            $this->handleExceptions($e, $sql, $item, $isInvalid, $debug, $options);
         }
 
         if ($debug)
