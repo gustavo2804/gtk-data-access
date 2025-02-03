@@ -642,7 +642,16 @@ class DataAccess /* implements Serializable */
         return $query->executeAndReturnAll();
     }
 
-	public function register(){}
+    public function getFreshColumnMappings()
+    {
+        throw new Exception("getFreshColumnMappings is not implemented for: ".get_class($this));
+    }
+
+	public function register()
+    {
+        $columnMappings = $this->getFreshColumnMappings();    
+        $this->dataMapping = new GTKDataSetMapping($this, $columnMappings);
+    }
 
     public function serialize() 
     {

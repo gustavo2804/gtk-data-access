@@ -443,6 +443,111 @@ class DataAccessManager
         $this->dataAccessorConstructions = $dataAccessorConfigurations;
     }
 
+	public static function registerAccessor($key, $configuration)
+	{
+		self::getSingleton()->internalRegisterAccessor($key,$configuration);
+	}
+
+    public function internalRegisterAccessor($key, $configuration) 
+    {
+		$debug = true;
+
+		if ($debug)
+		{
+			gtk_log("`internalRegisterAccessor`: key: ".$key);
+			gtk_log("`internalRegisterAccessor`: configuration: ".print_r($configuration, true));
+		}
+
+        if (!isset($configuration['class'])) {
+            throw new Exception("Invalid data accessor configuration. Required field: class");
+        }
+
+        // Use the class name as the key if no specific key is provided
+        // $key = $configuration['key'] ?? $configuration['class'];
+
+        if (isset($this->dataAccessorConstructions[$key])) 
+		{
+            throw new Exception("Data accessor configuration for '{$key}' already exists.");
+        }
+
+		if (!is_array($this->dataAccessorConstructions))
+		{
+			$this->dataAccessorConstructions = [];
+		}
+
+        $this->dataAccessorConstructions[$key] = $configuration;
+        
+		$this->resetAccessor($key);
+    }
+
+    /**
+     * Get all registered data accessor keys
+     */
+    public function getRegisteredKeys() 
+    {
+        return array_keys($this->dataAccessorConstructions);
+    }
+
+    /**
+     * Check if a data accessor configuration exists
+     */
+    public function hasConfiguration($key) 
+    {
+        return isset($this->dataAccessorConstructions[$key]);
+    }
+
+    /**
+     * Get configuration for a specific data accessor
+     */
+    public function getConfiguration($key) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+        return $this->dataAccessorConstructions[$key];
+    }
+
+    /**
+     * Remove a data accessor configuration
+     */
+    public function removeConfiguration($key) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+        
+        unset($this->dataAccessorConstructions[$key]);
+        $this->resetAccessor($key);
+    }
+
+// ... existing code ...
+
+	public static function updateConfigurationField($key, $field, $value)
+	{
+		self::getSingleton()->internalUpdateConfigurationField($key, $field, $value);
+	}
+
+    public function internalUpdateConfigurationField($key, $field, $value) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+
+        // Update the specific field
+        $this->dataAccessorConstructions[$key][$field] = $value;
+        
+        // Reset the accessor instance to ensure it gets recreated with new configuration
+        $this->resetAccessor($key);
+    }
+
+	public function resetAccessor($key)
+	{
+		if (isset($this->dataAccessors[$key]))
+		{
+			unset($this->dataAccessors[$key]);
+		}
+	}
+
     public function getDatabaseInstance($dbName) 
     {
 		// $debug = false;
@@ -829,6 +934,75 @@ class DataAccessManager
 		}
 	}
 
+	public static function createTables()
+	{
+		self::getSingleton()->internalCreateTables();
+	}
+
+	public function internalCreateTables()
+	{
+		$debug = true;
+
+		foreach ($this->dataAccessorConstructions as $key => $construction)
+		{
+			$dataAccessor = $this->getDataAccessor($key, false);
+    
+    		if (method_exists($dataAccessor, "createOrAnnounceTable"))
+    		{
+        		$dataAccessor->createOrAnnounceTable();
+    		}
+    		else
+    		{
+				if ($debug)
+				{
+					gtk_log("`createTables`: ".$key." - has no `createOrAnnounceTable` \n");
+				}
+    		}
+    
+		}
+	}
+
+	public static function createPermissions($PERMISSION_ARRAYS_TO_ADD)
+	{
+		self::getSingleton()->internalCreatePermissions($PERMISSION_ARRAYS_TO_ADD);
+	}
+
+	public function internalCreatePermissions($PERMISSION_ARRAYS_TO_ADD)
+	{
+		foreach ($this->dataAccessorConstructions as $key => $construction)
+		{
+			$accessor = DAM::get($key);
+		
+			if (method_exists($accessor, "createOrManagePermissionsWithKey"))
+			{
+				$accessor->createOrManagePermissionsWithKey($key);
+			}
+			else
+			{
+				echo $key." - has no `createOrManagePermissionsWithKey` \n";
+			}
+		}
+		
+		//-------------------------------------------------------------------------
+		//-------------------------------------------------------------------------
+		
+		foreach ($PERMISSION_ARRAYS_TO_ADD as $permissions)
+		{
+			foreach ($permissions as $permission)
+			{
+				$permission = [
+					"name"         => $permission,
+					"is_active"    => true,
+					"date_created" => date("Y-m-d H:i:s"),
+				];
+		
+				DAM::get("permissions")->insertIfNotExists($permission);
+		
+				echo "Creating permission: ".$permission["name"]."\n";
+			}
+		}
+	
+	}
 }
 
 
