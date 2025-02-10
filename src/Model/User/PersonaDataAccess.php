@@ -23,6 +23,7 @@ function validatePasswordIsSecure($password, $delegate = null)
 			error_log("`validatePasswordIsSecure` - No delegate.");
 		}
 	}
+	
 	global $_GLOBALS;
 	if (!isset($_GLOBALS["APP_PASSWORD_REQUIREMENTS"]))
 	{
@@ -193,9 +194,6 @@ class PersonaDataAccess extends DataAccess
 		$query->addWhereClause($whereGroup);
 	}
 
-	
-
-
 	public static function getCurrentUser()
 	{
 		return DataAccessManager::get("session")->getCurrentApacheUserOrSendToLoginWithRedirect("/auth/login.php");
@@ -226,12 +224,6 @@ class PersonaDataAccess extends DataAccess
 	{
 		$roles = DataAccessManager::get('role_person_relationships')->rolesForUser($user);
 		$user["roles"] = $roles;
-	}
-
-	public static function deleteCurrentSessionCookie()
-	{
-		unset($_COOKIE['AuthCookie']);
-		setcookie('AuthCookie', '', -1, '/'); 
 	}
 
 	public static function logout($returnToPath = null)
@@ -1234,73 +1226,3 @@ class PersonaDataAccess extends DataAccess
 		return $userFromDB;
 	}
 }
-
-
-/*
-
-	public static function getCurrentSessionAndAllowRedirectBack($redirectBack = false)
-	{
-		static $didLookForSession = false;
-		static $isAuthenticated   = null;
-		static $currentSession    = null;
-
-		if (!$didLookForSession)
-		{
-			$debug = false;
-
-			$authToken = $_COOKIE['AuthCookie'];
-	
-			if ($debug) 
-			{ 
-				error_log("Searching for current user with `authToken`: ".$authToken); 
-			}
-		
-			$currentSession = DataAccessManager::get("session")->getSessionById($authToken);
-
-			if ($currentSession)
-			{
-				$isAuthenticated = DataAccessManager::get("session")->verifySession($currentSession);
-
-				if (!$isAuthenticated)
-				{
-					self::logout();
-				}
-			}
-
-			$didLookForSession = true;
-		}
-
-		return $currentSession;
-	}
-
-
-	public static function isAuthenticatedSession()
-	{
-		$authToken = $_COOKIE['AuthCookie'];
-
-		return self::isAuthenticatedSession($authToken);
-	}
-
-	public function isAuthenticatedToken($authToken)
-	{
-		$debug = false;
-	
-		if ($debug) 
-		{ 
-			error_log("Searching for current user with `authToken`: ".$authToken); 
-		}
-	
-		$currentSession = DataAccessManager::get("session")->getSessionById($authToken);
-
-		if ($currentSession)
-		{
-			$isAuthenticated = DataAccessManager::get("session")->verifySession($currentSession);
-
-			if (!$isAuthenticated)
-			{
-				self::logout();
-			}
-		}
-	}
-
-*/

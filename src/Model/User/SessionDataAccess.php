@@ -31,11 +31,7 @@ class SessionDataAccess extends DataAccess
 	}
 	public function clearCurrentSessioAndRedirectTo($sendWithRedirect = "/auth/login.php")
 	{
-		// Loop through all cookies and unset them
-		foreach ($_COOKIE as $cookie_name => $cookie_value) 
-		{
-			setcookie($cookie_name, "", time() - 3600, "/");
-		}
+		GTKCookie::clearAuthCookie();
 		
 		header("Cache-Control: no-cache, must-revalidate"); // HTTP 1.1
 		header("Pragma: no-cache");                         // HTTP 1.0
@@ -43,7 +39,7 @@ class SessionDataAccess extends DataAccess
 
 
 		// Notify successful logout and redirect to the home page after 3 seconds
-		$message = 'Has cerrado sesión correctamente. En 3 segundos serás redirigido a la página de inicio.';
+		$message     = 'Has cerrado sesión correctamente. En 3 segundos serás redirigido a la página de inicio.';
 		$redirectURL = '/index.php'; // Change this to the URL of your home page
 		
 		echo "<!DOCTYPE html>
@@ -413,6 +409,8 @@ class SessionDataAccess extends DataAccess
 		
 		if ($result) 
 		{
+			GTKCookie::setAuthCookie($session_value);
+
 			return $session_value;
 		} 
 		else 

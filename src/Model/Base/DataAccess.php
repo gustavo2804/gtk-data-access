@@ -280,7 +280,14 @@ class DataAccess /* implements Serializable */
         }
         else
         {
-            return $this->primaryKeyMapping();
+            $primaryKeyMapping = $this->primaryKeyMapping();
+
+            if (!$primaryKeyMapping)
+            {
+                throw new Exception("No primary key mapping found for: ".$this->tableName());
+            }
+
+            return $primaryKeyMapping;
         }
     }
 
@@ -364,6 +371,11 @@ class DataAccess /* implements Serializable */
         if ($debug)
         {
             error_log("Will create or manage item: ".print_r($item, true));
+        }
+
+        if (!is_array($item))
+        {
+            throw new Exception("Item is not an array: ".print_r($item, true));
         }
 
         if (!$columnMappingKeyToSearchBy)
@@ -576,6 +588,20 @@ class DataAccess /* implements Serializable */
         if (!$this->dataMapping)
         {
             throw new Exception("DataMapping is not set for: ".get_class($this));
+        }
+
+        if (!$this->primaryKeyMapping())
+        {
+            $columnMapping = $this->dataMapping->columnMappingForKey("id");
+
+            if (!$columnMapping)
+            {
+                throw new Exception("Column mapping for id is not set for: ".get_class($this));
+            }
+            
+            $columnMapping->setAsPrimaryKey();
+            $columnMapping->setAsAutoIncrement();
+            $this->dataMapping->primaryKeyMapping = $columnMapping;
         }
         
         $this->dataMapping->setDataAccessor($this);

@@ -317,26 +317,8 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 			error_log("Did get successful match for user: ".print_r($user, true));
 		}
 		
-		// The SameSite attribute can have three possible values:
-		// 
-		// 	"Strict"  : Not sent in cross-site requests. It means the cookie is only sent if the request originates from the same site as the domain that set the cookie. This provides a high level of protection against CSRF attacks but may impact functionality in scenarios where legitimate cross-site requests are needed.
-		// 	"Lax"	  : Not sent in cross-site requests initiated by external websites through HTTP methods other than "GET". For example, cookies will be sent in cross-site requests that are triggered by clicking on links or loading images from external sites. This provides some protection against CSRF attacks while maintaining compatibility with common scenarios.
-		// 	"None"	  : Sent in all cross-site requests. This value is typically used in conjunction with the "Secure" attribute, indicating that the cookie should only be sent over HTTPS connections. This allows the cookie to be sent in cross-site requests that are essential for certain functionalities, such as embedded content or OAuth flows. However, it should be used with caution and proper security measures to prevent abuse.
+
 		$sessionGuid = DataAccessManager::get('session')->newSessionForUser($user);
-
-
-		// expires or options set to false - 3rd param
-		// http only set to false 		   - 5th param
-		setcookie('AuthCookie', $sessionGuid, [
-			'expires'   => time() + 86400 * 7,
-			'path' 	    => '/', 
-			'secure'    => isWindows() ? false : true,
-			'httponly'  => true,
-			'samesite'  => 'Strict'
-		]);
-		
-		// domain => null,
-		// header("Set-Cookie: ".self::SESSION_NAME."=".$session_id."; expires=".date('D, Y-M-d H:i:s', $expires)." GMT; path=/; HttpOnly; secure=true; SameSite=Strict");
 		redirectToPath('/', "Bienvenidos!");
 		die();
 	}
