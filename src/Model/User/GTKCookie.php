@@ -1,6 +1,7 @@
 <?php
 
-class GTKCookie {
+class GTKCookie 
+{
     // Time constants
     public const MINUTE = 60;
     public const HOUR = 3600;
@@ -56,8 +57,6 @@ class GTKCookie {
         $this->sameSite = $sameSite;
         return $this;
     }
-    
-    
 
     /**
      * Extract root domain from host
@@ -138,7 +137,6 @@ class GTKCookie {
 
         $expiry = $options["expires"] ?? time() + $this->defaultExpiry;
 
-
         $httponly = $options["httponly"] ?? $this->_canAccessWithJavascript;
 
         $samesite = $options["samesite"] ?? $this->sameSite;
@@ -188,15 +186,28 @@ class GTKCookie {
             gtk_log("GTKCookie::set - SameSite: $samesite");
         }
 
+        /*
         $success = setcookie(
             $name,
             $value,
             $expiry,
             $this->path,
             $domain,
-                $secure,
-                $httponly,
-            );
+            $secure,
+            $httponly
+            // $samesite missing in this type of call, must use other version
+        );
+        */
+
+        $success = setcookie($name, $value, [
+            'expires' => $expiry,
+            'path' => $this->path,
+            'domain' => $domain,
+            'secure' => $secure,
+            'httponly' => $httponly,
+            'samesite' => $samesite
+        ]);
+
         
 
         if (!$success)
@@ -268,8 +279,23 @@ class GTKCookie {
 
     public static function clearAuthCookie()
     {
+        // Remove the debug die statement
+        // die("Will clear AuthCookie");  // Remove this line
+
+        // First unset from $_COOKIE array
         unset($_COOKIE['AuthCookie']);
-		setcookie('AuthCookie', '', -1, '/'); 
+
+        // Create instance to get proper domain settings
+        $gtkCookie = new GTKCookie();
+        
+        // Use the set method with empty value and past expiry
+        return $gtkCookie->set('AuthCookie', '', [
+            'expires' => time() - 3600,  // Set to past time
+            'path' => '/',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
     }
 
     public static function clearAllCookies()

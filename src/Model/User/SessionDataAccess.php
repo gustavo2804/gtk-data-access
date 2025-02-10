@@ -568,6 +568,7 @@ class SessionDataAccess extends DataAccess
 			if ($user)
 			{
 				DataAccessManager::get("session")->clearCurrentSession();
+				die("Logged out");
 			}
 			else
 			{
