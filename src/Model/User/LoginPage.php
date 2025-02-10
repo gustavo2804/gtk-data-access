@@ -189,7 +189,7 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 		$this->setAuthenticate(false);
 	}
 
-	public function renderBody  ()
+	public function renderBody()
 	{
 
 		

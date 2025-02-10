@@ -896,6 +896,7 @@ class DataAccessManager
 		$potentialDataAccessorKey = $pathParts[0];
 		$toTryDataAccessorKey     = null;
 
+
 		if ($debug)
 		{
 			gtk_log("Potential data accessor key: ".$potentialDataAccessorKey);
@@ -954,9 +955,33 @@ class DataAccessManager
 	
 		if (!$user)
 		{
+
 			echo Glang::get("DataAccessManager/RequiresRedirect");
-			header("Refresh:3; url=/auth/login.php");
-			echo "Requires redirect. No user.";
+
+			if ($debug)
+			{
+				error_log("Requires redirect. No user.");
+			}
+
+			
+			
+			if (in_array($requestPath, [
+				"auth/login.php", 
+				"auth/login",
+				"login",
+				"login.php",
+			]))
+			{
+				$loginPage = new GTKDefaultLoginPageDelegate();
+				echo $loginPage->render();
+				return;
+			}
+			else
+			{
+				header("Refresh:3; url=/auth/login.php");
+			}
+
+
 			exit();
 		}
 		else

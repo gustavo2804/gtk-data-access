@@ -115,6 +115,22 @@ class GTKTableCellItemPresenter
     }
 }
 
+/*
+class MegaProject
+{
+    public int      $id;
+    public string   $name;
+    public string   $description;
+    public int      $organization_id;
+    public int      $owner_id;
+    public DateTime $deadline;
+    public int      $budgeted_time;
+    public DateTime $created_at;
+    public DateTime $updated_at;
+    public DateTime $deleted_at;
+}
+*/
+
 
 class DataAccess /* implements Serializable */
 {

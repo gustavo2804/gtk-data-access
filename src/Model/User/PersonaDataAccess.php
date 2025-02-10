@@ -861,13 +861,27 @@ class PersonaDataAccess extends DataAccess
 			throw new Exception("User ID not found in".print_r($user, true));
 		}
 
-		$toInsert = [
-			"role_id" => $roleID,
-			"user_id" => $userID,
-		];
-		
-		DataAccessManager::get("flat_roles")->insert($toInsert);
-		// DataAccessManager::get("role_person_relationships")->insert($toInsert);
+		$query = new SelectQuery(DataAccessManager::get("flat_roles"));
+
+		$query->addClause(new WhereClause("role_id", $roleID));
+		$query->addClause(new WhereClause("user_id", $userID));
+
+		$existingRole = $query->executeAndReturnOne();
+
+		if ($existingRole)
+		{
+			return;
+		}
+		else
+		{
+			$toInsert = [
+				"role_id" => $roleID,
+				"user_id" => $userID,
+			];
+			
+			DataAccessManager::get("flat_roles")->insert($toInsert);
+			// DataAccessManager::get("role_person_relationships")->insert($toInsert);
+		}
 	}
 
 	public function permissionsForUser($user)
@@ -1183,18 +1197,24 @@ class PersonaDataAccess extends DataAccess
 
             if ($email && $generatedPassword)
             {
-                DataAccessManager::get("email_queue")->addDictionaryToQueue([
+				if (method_exists($this, "sendWelcomeEmail"))
+				{
+					$this->sendWelcomeEmail($user, $generatedPassword);
+				}
+				else
+				{
+                	DataAccessManager::get("email_queue")->addDictionaryToQueue([
                     "to"      => $user["email"],
-                    "subject" => "Bienvenido a Stonewood",
-                    "body"    => "Bienvenido a App Stonewood, ".$user["nombres"]." ".$user["apellidos"].".\n\n".
+                    "subject" => "Bienvenido",
+                    "body"    => "Bienvenido ".$user["nombres"]." ".$user["apellidos"].".\n\n".
                                  "Su usuario es: ".$email."\n".
                                  "Su contraseña es: ".$generatedPassword."\n\n".
                                  "Gracias por confiar en nosotros.\n\n".
                                  "Saludos,\n".
-                                "El equipo de Stonewood.",
-                ]);
+								 "Equipo del App"                
+                	]);
+				}
             }
-
 	    }
         else
         {
