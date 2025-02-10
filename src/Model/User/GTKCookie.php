@@ -27,7 +27,7 @@ class GTKCookie {
     public const SAMESITE_NONE   = 'None';
 
     // Default values
-    private bool   $setForRootDomain         = true;
+    private bool   $_setForRootDomain         = true;
     private int    $defaultExpiry            = self::HOUR;
     private string $path                     = '/';
     private bool   $secure                   = true; // Secure means the cookie is only sent over HTTPS connections
@@ -37,7 +37,6 @@ class GTKCookie {
 
     public function __construct() 
     {
-        $this->rootDomain = $this->getRootDomain($_SERVER['HTTP_HOST']);
     }
 
     public function setSecure(bool $secure): self
@@ -64,6 +63,15 @@ class GTKCookie {
      * Extract root domain from host
      */
     private function getRootDomain(string $host): string {
+        // Remove port number if present
+        $host = preg_replace('/:\d+$/', '', $host);
+
+        // Special handling for .local domains
+        if (str_ends_with($host, '.local')) 
+        {
+            return '.' . $host;
+        }
+
         $parts = explode('.', $host);
         $count = count($parts);
         
@@ -125,8 +133,15 @@ class GTKCookie {
         return $this;
     }
 
-    public function set(string $name, string $value, ?int $expiry = null): bool {
-        $expiry = $expiry ?? time() + $this->defaultExpiry;
+    public function set(string $name, string $value, $options = []): bool {
+        $debug = true;
+
+        $expiry = $options["expires"] ?? time() + $this->defaultExpiry;
+
+
+        $httponly = $options["httponly"] ?? $this->_canAccessWithJavascript;
+
+        $samesite = $options["samesite"] ?? $this->sameSite;
 
         $domain = null;
 
@@ -147,29 +162,50 @@ class GTKCookie {
         {
             $httponly = true;
         }
-        if (PHP_VERSION_ID >= 70300) 
+
+        // Determine if connection is secure based on HTTPS or secure port
+        $isSecureConnection = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                (isset($_SERVER['SERVER_PORT']) && in_array($_SERVER['SERVER_PORT'], [443, 4433]));
+
+        $secure = $options["secure"] ?? $isSecureConnection;
+
+
+       // print_r($expiry);
+        //die();
+
+        $useOptions = false;
+        $success    = false;
+
+        if ($debug)
         {
-            return setcookie($name, $value, [
-                'expires'   => $expiry,
-                'path'      => $this->path,
-                'domain'    => $domain,
-                'secure'    => $this->secure,
-                'httponly'  => $httponly,
-                'samesite'  => $this->sameSite
-            ]);
-        } 
-        else 
-        {
-            return setcookie(
-                $name,
-                $value,
-                $expiry,
-                $this->path,
-                $domain,
-                $this->secure,
-                $httponly
-            );
+            gtk_log("GTKCookie::set - Setting cookie: $name");
+            gtk_log("GTKCookie::set - Value: $value");
+            gtk_log("GTKCookie::set - Expiry: $expiry");
+            gtk_log("GTKCookie::set - Path: $this->path");
+            gtk_log("GTKCookie::set - Domain: $domain");
+            gtk_log("GTKCookie::set - Secure: $secure");
+            gtk_log("GTKCookie::set - HttpOnly: $httponly");
+            gtk_log("GTKCookie::set - SameSite: $samesite");
         }
+
+        $success = setcookie(
+            $name,
+            $value,
+            $expiry,
+            $this->path,
+            $domain,
+                $secure,
+                $httponly,
+            );
+        
+
+        if (!$success)
+        {
+            error_log("GTKCookie::set - Failed to set cookie: $name");
+            throw new Exception("Failed to set cookie: $name");
+        }
+
+        return $success;
     }
 
     public function delete(string $name): bool {
@@ -216,7 +252,12 @@ class GTKCookie {
     {
         $expiry = $expiry ?? time() + 60 * 60 * 24 * 30; // 30 days
 
-        return self::set("AuthCookie", $session_value, [
+        $gtkCookie = new GTKCookie();
+
+        // print_r($expiry);
+        //die();
+
+        return $gtkCookie->set("AuthCookie", $value, [
             'expires'   => $expiry,
             'path' 	    => '/', 
             'secure'    => true, // consider not using secure cookies in development

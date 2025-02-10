@@ -450,7 +450,7 @@ class DataAccessManager
 
     public function internalRegisterAccessor($key, $configuration) 
     {
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{
@@ -973,7 +973,8 @@ class DataAccessManager
 			]))
 			{
 				$loginPage = new GTKDefaultLoginPageDelegate();
-				echo $loginPage->render();
+				global $GTK_SUPER_GLOBALS;
+				echo $loginPage->render(...$GTK_SUPER_GLOBALS);
 				return;
 			}
 			else
