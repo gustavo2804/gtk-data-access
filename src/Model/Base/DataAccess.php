@@ -1,4 +1,4 @@
-<?php
+x<?php
 
 function getFunctionArgumentCount($functionName) {
     $reflectionFunction = new ReflectionFunction($functionName);
@@ -527,11 +527,11 @@ class DataAccess /* implements Serializable */
     }
 
     
-	public function __construct($p_db, $options)
+	public function __construct(PDO $PDODBObject, $options)
     {
         $debug = false;
 
-		$this->db = $p_db;
+		$this->db = $PDODBObject;
 
         $this->dataAccessorName = $options["dataAccessorName"] ?? get_class($this);
         
