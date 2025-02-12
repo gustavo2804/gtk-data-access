@@ -1,38 +1,8 @@
-<?php
-
-use PHPUnit\Framework\TestCase;
-
-require_once(dirname(__FILE__, 2)."/vendor/autoload.php");
+<?php 
 
 
 
-function getTestableSqliteConnection()
-{
-    static $sqliteDBConnection = null;
-
-    if (!$sqliteDBConnection)
-    {
-        $sqliteDBConnection = new PDO("C:\AppStonewood\Test\dbForTestRunner.sqlite", SQLITE3_OPEN_READWRITE|SQLITE3_OPEN_CREATE);
-    } 
-
-    return $sqliteDBConnection;
-}
-
-function getTestableSqliteDataAccess()
-{
-    $sqliteDBConnection = getTestableSqliteConnection();
-
-    static $testableDataAccess = null;
-
-    if (!$testableDataAccess)
-    {
-        $testableDataAccess = new TestableDataAccess($sqliteDBConnection);
-    }
-
-    return $testableDataAccess;
-}
-
-final class TestDataAccess extends TestCase
+class TestDataAccessManager extends \PHPUnit\Framework\TestCase
 {
     public function testInsertUpdate()
     {
@@ -48,7 +18,19 @@ final class TestDataAccess extends TestCase
 
         $this->assertTrue(
             isset($obj["id"]),
-            "No se ha insertado un ID en este objeto."); 
+            "No se ha insertado un ID en este objeto.");
+                
+    }
+
+    public function testCreateSQLTableString()
+    {
+        $testableDataAccess = getTestableSqliteDataAccess();
+
+        $sql = $testableDataAccess->createSQLTableString();
+
+        $this->assertTrue(
+            strpos($sql, "CREATE TABLE") !== false,
+            "No se ha encontrado la cadena CREATE TABLE en la sentencia SQL.");
     }
     public function testGetOneReturns()
     {
