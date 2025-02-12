@@ -33,39 +33,95 @@ class SelectQuery implements IteratorAggregate,
     public $generator;
     public $queryModifier;
     public $joins = [];
-    
+
+
     /**
-     * Add an INNER JOIN to the query
-     * @param string|DataAccess $table Table name or DataAccess instance
-     * @param string $onCondition Join condition
+     * Join two tables using their column keys (e.g., 'users.id', 'posts.user_id')
+     * @param string $tableColumnOneKey First table and column (format: 'table.column')
+     * @param string $tableColumnTwoKey Second table and column (format: 'table.column')
+     * @param string $type Join type ('LEFT JOIN' or 'INNER JOIN')
      * @return $this
+     * @throws Exception If invalid join type or format
      */
-    public function innerJoin($table, $onCondition) 
+    public function join($tableColumnOneKey, $tableColumnTwoKey, $type = 'LEFT JOIN') 
     {
-        $tableName = ($table instanceof DataAccess) ? $table->tableName() : $table;
+        // Validate join type
+        $validTypes = ['INNER JOIN', 'LEFT JOIN'];
+        if (!in_array($type, $validTypes)) {
+            throw new Exception("Invalid join type: {$type}. Must be one of: " . implode(', ', $validTypes));
+        }
+
+        // Parse table.column format for both keys
+        list($daOneName, $daOneColumnName) = $this->parseTableColumnKey($tableColumnOneKey);
+        list($daTwoName, $daTwoColumnName) = $this->parseTableColumnKey($tableColumnTwoKey);
+
+        // Get data accessors
+        $accessorOne = DAM::get($daOneName);
+        $accessorTwo = DAM::get($daTwoName);
+
+        // Determine which accessor is the data source and which should be joined
+        $sourceAccessorName = $this->dataSource->dataAccessorName;
+        
+        if ($accessorOne === $this->dataSource) {
+            $joinAccessor = $accessorTwo;
+            $joinColumn = $daTwoColumnName;
+            $sourceColumn = $daOneColumnName;
+            $sourceAccessor = $accessorOne;
+        } else if ($accessorTwo === $this->dataSource) {
+            $joinAccessor = $accessorOne;
+            $joinColumn = $daOneColumnName;
+            $sourceColumn = $daTwoColumnName;
+            $sourceAccessor = $accessorTwo;
+            // Swap the columns since we're reversing the join order
+            list($tableColumnOneKey, $tableColumnTwoKey) = [$tableColumnTwoKey, $tableColumnOneKey];
+        } 
+        else 
+        {
+            throw new Exception("Neither table matches the query's data source");
+        }
+
+        // Build the ON condition
+        $dbColumnNameSource = $sourceAccessor->dbColumnNameForKey($sourceColumn, true);
+        $dbColumnNameJoin = $joinAccessor->dbColumnNameForKey($joinColumn, true);
+
+        $onCondition = "{$dbColumnNameSource} = {$dbColumnNameJoin}";
+
+        // Add the join
         $this->joins[] = [
-            'type' => 'INNER JOIN',
-            'table' => $tableName,
+            'type' => $type,
+            'table' => $joinAccessor->tableName(),
             'condition' => $onCondition
         ];
+
         return $this;
     }
 
-    /**
-     * Add a LEFT JOIN to the query
-     * @param string|DataAccess $table Table name or DataAccess instance
-     * @param string $onCondition Join condition
-     * @return $this
-     */
-    public function leftJoin($table, $onCondition) 
+    public function innerJoin($tableColumnOneKey, $tableColumnTwoKey)
     {
-        $tableName = ($table instanceof DataAccess) ? $table->tableName() : $table;
-        $this->joins[] = [
-            'type' => 'LEFT JOIN',
-            'table' => $tableName,
-            'condition' => $onCondition
-        ];
-        return $this;
+        return $this->join($tableColumnOneKey, $tableColumnTwoKey, 'INNER JOIN');
+    }
+
+    public function leftJoin($tableColumnOneKey, $tableColumnTwoKey)
+    {
+        return $this->join($tableColumnOneKey, $tableColumnTwoKey, 'LEFT JOIN');
+    }
+    
+
+    /**
+     * Parse a table.column key into its components
+     * @param string $tableColumnKey Format: 'table.column'
+     * @return array [tableName, columnName]
+     * @throws Exception If invalid format
+     */
+    private function parseTableColumnKey($tableColumnKey) 
+    {
+        $parts = explode('.', $tableColumnKey);
+        
+        if (count($parts) !== 2) {
+            throw new Exception("Invalid table.column format: {$tableColumnKey}. Expected format: 'table.column'");
+        }
+
+        return $parts;
     }
 
 

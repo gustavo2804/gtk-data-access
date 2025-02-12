@@ -1,5 +1,7 @@
 <?php
 
+
+
 function gtk_log($toLog)
 {
     echo $toLog."\n";

@@ -115,6 +115,22 @@ class GTKTableCellItemPresenter
     }
 }
 
+/*
+class MegaProject
+{
+    public int      $id;
+    public string   $name;
+    public string   $description;
+    public int      $organization_id;
+    public int      $owner_id;
+    public DateTime $deadline;
+    public int      $budgeted_time;
+    public DateTime $created_at;
+    public DateTime $updated_at;
+    public DateTime $deleted_at;
+}
+*/
+
 
 class DataAccess /* implements Serializable */
 {
@@ -264,7 +280,14 @@ class DataAccess /* implements Serializable */
         }
         else
         {
-            return $this->primaryKeyMapping();
+            $primaryKeyMapping = $this->primaryKeyMapping();
+
+            if (!$primaryKeyMapping)
+            {
+                throw new Exception("No primary key mapping found for: ".$this->tableName());
+            }
+
+            return $primaryKeyMapping;
         }
     }
 
@@ -348,6 +371,11 @@ class DataAccess /* implements Serializable */
         if ($debug)
         {
             error_log("Will create or manage item: ".print_r($item, true));
+        }
+
+        if (!is_array($item))
+        {
+            throw new Exception("Item is not an array: ".print_r($item, true));
         }
 
         if (!$columnMappingKeyToSearchBy)
@@ -561,6 +589,20 @@ class DataAccess /* implements Serializable */
         {
             throw new Exception("DataMapping is not set for: ".get_class($this));
         }
+
+        if (!$this->primaryKeyMapping())
+        {
+            $columnMapping = $this->dataMapping->columnMappingForKey("id");
+
+            if (!$columnMapping)
+            {
+                throw new Exception("Column mapping for id is not set for: ".get_class($this));
+            }
+            
+            $columnMapping->setAsPrimaryKey();
+            $columnMapping->setAsAutoIncrement();
+            $this->dataMapping->primaryKeyMapping = $columnMapping;
+        }
         
         $this->dataMapping->setDataAccessor($this);
 
@@ -642,7 +684,16 @@ class DataAccess /* implements Serializable */
         return $query->executeAndReturnAll();
     }
 
-	public function register(){}
+    public function getFreshColumnMappings()
+    {
+        throw new Exception("getFreshColumnMappings is not implemented for: ".get_class($this));
+    }
+
+	public function register()
+    {
+        $columnMappings = $this->getFreshColumnMappings();    
+        $this->dataMapping = new GTKDataSetMapping($this, $columnMappings);
+    }
 
     public function serialize() 
     {
@@ -1057,9 +1108,46 @@ class DataAccess /* implements Serializable */
         return $this->dataMapping->dbColumnNameForKey($key);
     }
 
-    public function dbColumnNameForKey($key)
+    public function dbColumnNameForKey($key, $includeTableName = false)
     {
-        return $this->dataMapping->dbColumnNameForKey($key);
+        $columnName = $this->dataMapping->dbColumnNameForKey($key);
+
+        if ($includeTableName)
+        {
+            $tableName = $this->tableName();
+            $columnName = $tableName.".".$columnName;
+        }
+
+        return $columnName;
+    }
+
+    public function joinConditionForKeyToKey($key, $otherTableKey)
+    {
+        return $this->joinConditionForKeyToTableKey($key, $otherTableKey);
+    }
+
+    public function joinConditionForKeyToTableKey($key, $tableNameWithKey, $tableKey = null)
+    {
+        $dbColumnName = $this->dbColumnNameForKey($key, true);
+
+        if ($tableKey)
+        {
+            $dbColumnNameToJoinOn = DAM::get($tableNameWithKey)->dbColumnNameForKey($tableKey, true);
+        }
+        else
+        {
+            if (strpos($tableNameWithKey, ".") == false)
+            {
+                throw new Exception("Invalid key name: ".$tableNameWithKey);
+            }
+
+            $array = explode(".", $tableNameWithKey);
+            $tableName = $array[0];
+            $otherTableKey = $array[1];
+            $dbColumnNameToJoinOn = DAM::get($tableName)->dbColumnNameForKey($otherTableKey, true);
+        }
+
+        return $dbColumnName." = ".$dbColumnNameToJoinOn;
     }
 
     public function getSearchableColumnsForUser($user, $groupName = null)
@@ -3321,6 +3409,39 @@ class DataAccess /* implements Serializable */
 
 
     */
+    function handleExceptions($e, $sql, $item, $isInvalid, $debug, $options)
+    {
+        if ($debug)
+        {
+            gtk_log("Did execute statement: $sql. Exception: ".$e->getMessage());
+        }
+
+        if (isset($options["exceptionsNotToHandle"]))
+        {
+            if (in_array("uniqueConstraint", $options["exceptionsNotToHandle"]))
+            {
+                if (QueryExceptionManager::isUniqueConstraintException($e))
+                {
+                    throw $e;
+                }
+            }
+
+        }
+
+
+        $result = QueryExceptionManager::manageQueryExceptionForDataSource(
+            $this, 
+            $e, 
+            $sql, 
+            $item, 
+            $isInvalid);
+        
+        if ($isInvalid != '')
+        {
+            return null;
+        }
+        throw $e;
+    }
     
 	public function insertAssociativeArray(
         &$item, 
@@ -3328,6 +3449,8 @@ class DataAccess /* implements Serializable */
         $options = null
     ){
         $debug = false;
+
+
 
 
         $ignoreErrors = null;
@@ -3350,7 +3473,19 @@ class DataAccess /* implements Serializable */
             gtk_log("Object: ".print_r($item, true));
         }
 
-        $stmt = $this->getDB()->prepare($sql);
+        $stmt = null;
+
+        try
+        {
+            $stmt = $this->getDB()->prepare($sql);
+        }
+        catch (Exception $e)
+        {
+            gtk_log("Error: ".$e->getMessage());
+            $this->handleExceptions($e, $sql, $item, $isInvalid, $debug, $options);
+        }
+        
+        
 
         if ($debug)
         {
@@ -3426,37 +3561,7 @@ class DataAccess /* implements Serializable */
         }
         catch (Exception $e)
         {
-            if ($debug)
-            {
-                gtk_log("Did execute statement: $sql. Exception: ".$e->getMessage());
-            }
-
-            if (isset($options["exceptionsNotToHandle"]))
-            {
-                if (in_array("uniqueConstraint", $options["exceptionsNotToHandle"]))
-                {
-                    if (QueryExceptionManager::isUniqueConstraintException($e))
-                    {
-                        throw $e;
-                    }
-                }
-
-            }
-
-
-            $result = QueryExceptionManager::manageQueryExceptionForDataSource(
-                $this, 
-                $e, 
-                $sql, 
-                $item, 
-                $isInvalid);
-            
-            if ($isInvalid != '')
-            {
-                return null;
-            }
-            throw $e;
-            
+            $this->handleExceptions($e, $sql, $item, $isInvalid, $debug, $options);
         }
 
         if ($debug)
