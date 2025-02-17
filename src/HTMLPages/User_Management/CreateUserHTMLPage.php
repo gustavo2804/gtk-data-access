@@ -1,9 +1,6 @@
 <?php
-
 class CreateUserHTMLPage extends GTKHTMLPage
 {
-   
-
     public function processPost()
     {
         $cedula = $_POST['cedula'];
@@ -25,9 +22,9 @@ class CreateUserHTMLPage extends GTKHTMLPage
         $result = $personaDataAccess->createUserIfNotExists($user);
 
         if ($result) {
-            $this->messages[] = 'Usuario creado exitosamente.';
+            $this->messages[] = json_encode(['success' => true, 'message' => 'Usuario Creado exitosamente.']);
         } else {
-            $this->messages[] = 'Error al crear el usuario o el usuario ya existe.';
+            $this->messages[] = json_encode(['success' => false, 'message' => 'Error al Crear el Usuario.']);
         }
     }
 
@@ -41,16 +38,19 @@ class CreateUserHTMLPage extends GTKHTMLPage
             $toReturn .= "<div>";
             foreach ($this->messages as $message)
             {
-                $toReturn .= "<div>";
                 if (is_string($message))
                 {
-                    $toReturn .= htmlspecialchars($message);
+                    $decodedMessage = json_decode($message, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $toReturn .= "<div>" . htmlspecialchars($decodedMessage['message']) . "</div>";
+                    } else {
+                        $toReturn .= "<div>" . htmlspecialchars($message) . "</div>";
+                    }
                 }
                 else
                 {
-                    $toReturn .= print_r($message, true);
+                    $toReturn .= "<div>" . print_r($message, true) . "</div>";
                 }
-                $toReturn .= "</div>";
             }
             $toReturn .= "</div>";
         }
@@ -68,7 +68,9 @@ class CreateUserHTMLPage extends GTKHTMLPage
         echo $this->renderMessages();
         ?>
 
-        <form action="/auth/create_user.php" method="post">
+
+        <form action="<?php echo $_SERVER['REQUEST_URI'] ?? ''; ?>" method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+
             <label for="cedula">Cédula:</label>
             <input type="text" id="cedula" name="cedula" required class="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
             <br>
@@ -91,4 +93,3 @@ class CreateUserHTMLPage extends GTKHTMLPage
         <?php return ob_get_clean();
     }
 }
-?>
