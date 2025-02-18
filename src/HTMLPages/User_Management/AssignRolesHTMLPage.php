@@ -1,6 +1,4 @@
 <?php
-
-
 use GTKHTMLPage;
 use DataAccessManager;
 
@@ -11,24 +9,13 @@ class AssignRolesHTMLPage extends GTKHTMLPage
         $user = $_POST['user'];
         $roles = $_POST['roles'];
 
-        
         if (is_string($roles)) {
             $roles = explode(',', $roles);
         }
 
-        
-        $flatRoleDataAccess = DataAccessManager::get('flat_role');
+        $flatRoleDataAccess = DataAccessManager::get('flat_roles');
 
-       
-        $assignableRoles = $flatRoleDataAccess->rolesUserCanAddTo($user);
-
-        
-        $filteredRoles = array_filter($roles, function($role) use ($assignableRoles) {
-            return in_array($role, array_column($assignableRoles, 'id'));
-        });
-
-        
-        $result = $flatRoleDataAccess->assignRolesToUser($user, $filteredRoles);
+        $result = $flatRoleDataAccess->assignRolesToUser($user, $roles);
 
         if ($result) {
             $this->messages[] = json_encode(['success' => true, 'message' => 'Roles asignados exitosamente.']);
@@ -66,6 +53,12 @@ class AssignRolesHTMLPage extends GTKHTMLPage
 
     public function renderBody()
     {
+        $userDataAccess = DataAccessManager::get('persona');
+        $roleDataAccess = DataAccessManager::get('roles');
+
+        $users = $userDataAccess->selectAll();
+        $roles = $roleDataAccess->selectAll();
+
         ob_start(); ?>
     
         <h1>Asignar Roles a Usuario</h1>
@@ -74,12 +67,20 @@ class AssignRolesHTMLPage extends GTKHTMLPage
         echo $this->renderMessages();
         ?>
 
-        <form action="/auth/assign_roles.php" method="post">
+        <form action="<?php echo $_SERVER['REQUEST_URI'] ?? ''; ?>" method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             <label for="user">Usuario:</label>
-            <input type="text" id="user" name="user" required class="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            <select id="user" name="user" required class="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <?php foreach ($users as $user): ?>
+                    <option value="<?php echo htmlspecialchars($user['id']); ?>"><?php echo htmlspecialchars($user['email']); ?></option>
+                <?php endforeach; ?>
+            </select>
             <br>
             <label for="roles">Roles:</label>
-            <input type="text" id="roles" name="roles" required class="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            <select id="roles" name="roles[]" multiple required class="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <?php foreach ($roles as $role): ?>
+                    <option value="<?php echo htmlspecialchars($role['id']); ?>"><?php echo htmlspecialchars($role['name']); ?></option>
+                <?php endforeach; ?>
+            </select>
             <br>
             <br>
             <input type="submit" value="Asignar Roles" class="px-8 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 rounded">
@@ -88,4 +89,3 @@ class AssignRolesHTMLPage extends GTKHTMLPage
         <?php return ob_get_clean();
     }
 }
-?>
