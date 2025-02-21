@@ -1,6 +1,6 @@
 <?php
 
-require_once dirname(__FILE__, 2).'/vendor/autoload.php';
+
 
 if (!function_exists("gtk_log"))
 {
@@ -32,7 +32,7 @@ if (!function_exists("gtk_log"))
     */
 }
 
-class TestSelectFromWhere extends PHPUnit\Framework\TestCase
+class TestSelectFromWhere extends \PHPUnit\Framework\TestCase
 {
     private $dataAccess;
     private $pdo;
