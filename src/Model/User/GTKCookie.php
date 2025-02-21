@@ -203,14 +203,31 @@ class GTKCookie
         );
         */
 
-        $success = setcookie($name, $value, [
-            'expires' => $expiry,
-            'path' => $this->path,
-            'domain' => $domain,
-            'secure' => $secure,
-            'httponly' => $httponly,
-            'samesite' => $samesite
-        ]);
+       
+
+        if (str_ends_with($this->path, '.local')) {
+            $success = setcookie($name, $value, [
+                'expires' => $expiry,
+                'path' => $this->path,
+                'domain' => $domain,
+    
+            ]);
+        }
+        else
+        {
+            $success = setcookie($name, $value, [
+                'expires' => $expiry,
+                'path' => $this->path,
+                'domain' => $domain,
+                'secure' => $secure,
+                'httponly' => $httponly,
+                'samesite' => $samesite
+            ]);
+
+        }
+        
+    
+        
 
         
 
@@ -219,7 +236,7 @@ class GTKCookie
             error_log("GTKCookie::set - Failed to set cookie: $name");
             throw new Exception("Failed to set cookie: $name");
         }
-
+       
         return $success;
     }
 
@@ -269,6 +286,7 @@ class GTKCookie
 
     public static function setAuthCookie(string $value, ?int $expiry = null)
     {
+        
         $expiry = $expiry ?? time() + 60 * 60 * 24 * 30; // 30 days
 
         $gtkCookie = new GTKCookie();
@@ -283,6 +301,13 @@ class GTKCookie
             'httponly'  => true,
             'samesite'  => 'Strict'
         ]);
+        
+       
+        
+     
+        // Remove the debug die statement
+        // die("Will clear AuthCookie");  // Remove this line
+        
     }
 
     public static function clearAuthCookie()
