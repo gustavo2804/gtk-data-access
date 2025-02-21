@@ -1,0 +1,33 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  DEBUG: true
+  LOG_DRIVER: file
+
+jobs:
+  MySQL:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          
+      - uses: ./.github/actions/setup-php
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          
+      - name: Unit tests with MySQL
+        run: ./vendor/bin/phpunit -c tests/units.mysql.xml
+        env:
+          DB_HOSTNAME: 127.0.0.1
+          DB_USERNAME: kanboard
+          DB_PASSWORD: kanboard
+          DB_NAME: kanboard

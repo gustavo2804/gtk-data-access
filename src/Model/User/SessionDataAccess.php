@@ -31,11 +31,7 @@ class SessionDataAccess extends DataAccess
 	}
 	public function clearCurrentSessioAndRedirectTo($sendWithRedirect = "/auth/login.php")
 	{
-		// Loop through all cookies and unset them
-		foreach ($_COOKIE as $cookie_name => $cookie_value) 
-		{
-			setcookie($cookie_name, "", time() - 3600, "/");
-		}
+		GTKCookie::clearAuthCookie();
 		
 		header("Cache-Control: no-cache, must-revalidate"); // HTTP 1.1
 		header("Pragma: no-cache");                         // HTTP 1.0
@@ -43,7 +39,7 @@ class SessionDataAccess extends DataAccess
 
 
 		// Notify successful logout and redirect to the home page after 3 seconds
-		$message = 'Has cerrado sesión correctamente. En 3 segundos serás redirigido a la página de inicio.';
+		$message     = 'Has cerrado sesión correctamente. En 3 segundos serás redirigido a la página de inicio.';
 		$redirectURL = '/index.php'; // Change this to the URL of your home page
 		
 		echo "<!DOCTYPE html>
@@ -229,7 +225,8 @@ class SessionDataAccess extends DataAccess
 
 		$apiKey = null;
 
-
+		global $_COOKIE;
+		
 		if (isset($_SERVER[$httpTokenKey])) 
 		{
     		$apiKey = $_SERVER[$httpTokenKey];
@@ -413,6 +410,8 @@ class SessionDataAccess extends DataAccess
 		
 		if ($result) 
 		{
+			GTKCookie::setAuthCookie($session_value);
+
 			return $session_value;
 		} 
 		else 
@@ -527,6 +526,71 @@ class SessionDataAccess extends DataAccess
 			// Handle the error
 			// echo 'INSERT FAILED';
 			return false;
+		}
+	}
+
+	public static function routeToPage($requestPath, $get, $post, $server, $cookie, $session, $files, $env)
+	{
+		$user = DataAccessManager::get("persona")->getCurrentUser();
+
+		$isLoginPath = in_array($requestPath, [
+			"/auth/login.php", 
+			"/auth/login",
+			"/login",
+			"/login.php",
+		]);
+
+		$isLogoutPath = in_array($requestPath, [
+			"/auth/logout.php",
+			"/auth/logout",
+			"/logout",
+			"/logout.php",
+		]);
+
+		if ($isLoginPath)
+		{
+			if ($user)
+			{
+				header("Location: /");
+				exit();
+			}
+			else
+			{
+				global $_GTK_SUPER_GLOBALS;
+				$loginPage = new GTKDefaultLoginPageDelegate();
+				echo $loginPage->render(...$_GTK_SUPER_GLOBALS);
+				return;
+			}
+		}
+
+
+		if ($isLogoutPath)
+		{
+			if ($user)
+			{
+				DataAccessManager::get("session")->clearCurrentSession();
+				die("Logged out");
+			}
+			else
+			{
+				header("Location: /auth/login.php");
+				exit();
+			}
+		}
+
+		$cleanPath = substr($requestPath, 1);
+
+		$dataAccessManager = DataAccessManager::getSingleton();
+
+		$toRender = $dataAccessManager->toRenderForPath($cleanPath, DataAccessManager::get("session")->getCurrentUser());
+
+		if ($toRender)
+		{
+		  renderPage($toRender);
+		}
+		else
+		{
+		  echo "<h1>404 - Not Found - ".$cleanPath."</h1>";
 		}
 	}
 }

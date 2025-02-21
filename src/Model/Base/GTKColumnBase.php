@@ -265,6 +265,16 @@ class GTKColumnBase
         return isset($this->_isPrimaryKey) ? $this->_isPrimaryKey : false;
     }
 
+    public function setAsPrimaryKey()
+    {
+        $this->_isPrimaryKey = true;
+    }
+
+    public function setAsAutoIncrement()
+    {
+        $this->_isAutoIncrement = true;
+    }
+
     public function isUnique()
     {
         if ($this->isPrimaryKey())

@@ -443,6 +443,111 @@ class DataAccessManager
         $this->dataAccessorConstructions = $dataAccessorConfigurations;
     }
 
+	public static function registerAccessor($key, $configuration)
+	{
+		self::getSingleton()->internalRegisterAccessor($key,$configuration);
+	}
+
+    public function internalRegisterAccessor($key, $configuration) 
+    {
+		$debug = false;
+
+		if ($debug)
+		{
+			gtk_log("`internalRegisterAccessor`: key: ".$key);
+			gtk_log("`internalRegisterAccessor`: configuration: ".print_r($configuration, true));
+		}
+
+        if (!isset($configuration['class'])) {
+            throw new Exception("Invalid data accessor configuration. Required field: class");
+        }
+
+        // Use the class name as the key if no specific key is provided
+        // $key = $configuration['key'] ?? $configuration['class'];
+
+        if (isset($this->dataAccessorConstructions[$key])) 
+		{
+            throw new Exception("Data accessor configuration for '{$key}' already exists.");
+        }
+
+		if (!is_array($this->dataAccessorConstructions))
+		{
+			$this->dataAccessorConstructions = [];
+		}
+
+        $this->dataAccessorConstructions[$key] = $configuration;
+        
+		$this->resetAccessor($key);
+    }
+
+    /**
+     * Get all registered data accessor keys
+     */
+    public function getRegisteredKeys() 
+    {
+        return array_keys($this->dataAccessorConstructions);
+    }
+
+    /**
+     * Check if a data accessor configuration exists
+     */
+    public function hasConfiguration($key) 
+    {
+        return isset($this->dataAccessorConstructions[$key]);
+    }
+
+    /**
+     * Get configuration for a specific data accessor
+     */
+    public function getConfiguration($key) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+        return $this->dataAccessorConstructions[$key];
+    }
+
+    /**
+     * Remove a data accessor configuration
+     */
+    public function removeConfiguration($key) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+        
+        unset($this->dataAccessorConstructions[$key]);
+        $this->resetAccessor($key);
+    }
+
+// ... existing code ...
+
+	public static function updateConfigurationField($key, $field, $value)
+	{
+		self::getSingleton()->internalUpdateConfigurationField($key, $field, $value);
+	}
+
+    public function internalUpdateConfigurationField($key, $field, $value) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+
+        // Update the specific field
+        $this->dataAccessorConstructions[$key][$field] = $value;
+        
+        // Reset the accessor instance to ensure it gets recreated with new configuration
+        $this->resetAccessor($key);
+    }
+
+	public function resetAccessor($key)
+	{
+		if (isset($this->dataAccessors[$key]))
+		{
+			unset($this->dataAccessors[$key]);
+		}
+	}
+
     public function getDatabaseInstance($dbName) 
     {
 		// $debug = false;
@@ -586,6 +691,37 @@ class DataAccessManager
         }
         return $this->databases[$dbName];
     }
+
+	public function internalRegisterAlias($key, $alias) 
+    {
+        if (!isset($this->dataAccessorConstructions[$key])) {
+            throw new Exception("Data accessor configuration for '{$key}' not found.");
+        }
+
+        // Initialize synonyms array if it doesn't exist
+        if (!isset($this->dataAccessorConstructions[$key]['synonyms'])) {
+            $this->dataAccessorConstructions[$key]['synonyms'] = [];
+        }
+
+        // Check if alias is already used by any configuration
+        foreach ($this->dataAccessorConstructions as $existingKey => $config) {
+            if ($existingKey === $alias) {
+                throw new Exception("Cannot register alias: '{$alias}' is already a primary key.");
+            }
+            if (isset($config['synonyms']) && in_array($alias, $config['synonyms'])) {
+                throw new Exception("Cannot register alias: '{$alias}' is already an alias for '{$existingKey}'.");
+            }
+        }
+
+        // Add the new alias
+        $this->dataAccessorConstructions[$key]['synonyms'][] = $alias;
+    }
+
+
+	public static function registerAlias($key, $alias)
+	{
+		self::getSingleton()->registerAlias($key, $alias);
+	}
 
     public function getDataAccessor($name, $throwException = true) 
     {
@@ -760,6 +896,7 @@ class DataAccessManager
 		$potentialDataAccessorKey = $pathParts[0];
 		$toTryDataAccessorKey     = null;
 
+
 		if ($debug)
 		{
 			gtk_log("Potential data accessor key: ".$potentialDataAccessorKey);
@@ -818,9 +955,34 @@ class DataAccessManager
 	
 		if (!$user)
 		{
+
 			echo Glang::get("DataAccessManager/RequiresRedirect");
-			header("Refresh:3; url=/auth/login.php");
-			echo "Requires redirect. No user.";
+
+			if ($debug)
+			{
+				error_log("Requires redirect. No user.");
+			}
+
+			
+			
+			if (in_array($requestPath, [
+				"auth/login.php", 
+				"auth/login",
+				"login",
+				"login.php",
+			]))
+			{
+				$loginPage = new GTKDefaultLoginPageDelegate();
+				global $GTK_SUPER_GLOBALS;
+				echo $loginPage->render(...$GTK_SUPER_GLOBALS);
+				return;
+			}
+			else
+			{
+				header("Refresh:3; url=/auth/login.php");
+			}
+
+
 			exit();
 		}
 		else
@@ -829,6 +991,75 @@ class DataAccessManager
 		}
 	}
 
+	public static function createTables()
+	{
+		self::getSingleton()->internalCreateTables();
+	}
+
+	public function internalCreateTables()
+	{
+		$debug = true;
+
+		foreach ($this->dataAccessorConstructions as $key => $construction)
+		{
+			$dataAccessor = $this->getDataAccessor($key, false);
+    
+    		if (method_exists($dataAccessor, "createOrAnnounceTable"))
+    		{
+        		$dataAccessor->createOrAnnounceTable();
+    		}
+    		else
+    		{
+				if ($debug)
+				{
+					gtk_log("`createTables`: ".$key." - has no `createOrAnnounceTable` \n");
+				}
+    		}
+    
+		}
+	}
+
+	public static function createPermissions($PERMISSION_ARRAYS_TO_ADD)
+	{
+		self::getSingleton()->internalCreatePermissions($PERMISSION_ARRAYS_TO_ADD);
+	}
+
+	public function internalCreatePermissions($PERMISSION_ARRAYS_TO_ADD)
+	{
+		foreach ($this->dataAccessorConstructions as $key => $construction)
+		{
+			$accessor = DAM::get($key);
+		
+			if (method_exists($accessor, "createOrManagePermissionsWithKey"))
+			{
+				$accessor->createOrManagePermissionsWithKey($key);
+			}
+			else
+			{
+				echo $key." - has no `createOrManagePermissionsWithKey` \n";
+			}
+		}
+		
+		//-------------------------------------------------------------------------
+		//-------------------------------------------------------------------------
+		
+		foreach ($PERMISSION_ARRAYS_TO_ADD as $permissions)
+		{
+			foreach ($permissions as $permission)
+			{
+				$permission = [
+					"name"         => $permission,
+					"is_active"    => true,
+					"date_created" => date("Y-m-d H:i:s"),
+				];
+		
+				DAM::get("permissions")->insertIfNotExists($permission);
+		
+				echo "Creating permission: ".$permission["name"]."\n";
+			}
+		}
+	
+	}
 }
 
 
