@@ -205,16 +205,7 @@ class GTKCookie
 
        
 
-        if (str_ends_with($this->path, '.local')) {
-            $success = setcookie($name, $value, [
-                'expires' => $expiry,
-                'path' => $this->path,
-                'domain' => $domain,
-    
-            ]);
-        }
-        else
-        {
+        
             $success = setcookie($name, $value, [
                 'expires' => $expiry,
                 'path' => $this->path,
@@ -224,7 +215,7 @@ class GTKCookie
                 'samesite' => $samesite
             ]);
 
-        }
+       
         
     
         
@@ -323,6 +314,10 @@ class GTKCookie
         $gtkCookie = new GTKCookie();
         
         // Use the set method with empty value and past expiry
+
+        
+
+
         return $gtkCookie->set('AuthCookie', '', [
             'expires' => time() - 3600,  // Set to past time
             'path' => '/',
