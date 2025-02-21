@@ -33,10 +33,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/setup-php
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup document root
         run: |
           sudo rm -rf /var/www/html
