@@ -26,13 +26,14 @@ class SelectQuery implements IteratorAggregate,
     public $columns;
     public $queryOptions = [];
     public $whereGroup;
-    public $orderBy;
+    public $_orderBy;
     public $limit;
     public $offset;
     public $desiredPageNumber;
     public $generator;
     public $queryModifier;
     public $joins = [];
+    public $isDistinct = false;
 
 
     /**
@@ -255,7 +256,7 @@ class SelectQuery implements IteratorAggregate,
         }
         else if ($whereClause instanceof OrderBy)
         {
-            $this->orderBy = $whereClause;
+            $this->_orderBy = $whereClause;
         }
         else if ($whereClause instanceof LimitClause)
         {
@@ -347,6 +348,10 @@ class SelectQuery implements IteratorAggregate,
 
         $sql = "";
         $sql .= "SELECT ";
+        
+        if ($this->isDistinct) {
+            $sql .= "DISTINCT ";
+        }
 
         if ($this->isCountQuery)
         {
@@ -399,12 +404,12 @@ class SelectQuery implements IteratorAggregate,
         {
             $didSetOrderBy = false;
 
-            if (is_array($this->orderBy) && (count($this->orderBy) > 0))
+            if (is_array($this->_orderBy) && (count($this->_orderBy) > 0))
             {
                 $sql .= ' ORDER BY ';
                 $isFirst = true;
                 $isEven  = false;
-                foreach ($this->orderBy as $orderBy) 
+                foreach ($this->_orderBy as $orderBy) 
                 {
                     if ($debug)
                     {
@@ -440,13 +445,21 @@ class SelectQuery implements IteratorAggregate,
     
                 $didSetOrderBy = true;
             }
-            else if (is_string($this->orderBy))
+            else if (is_string($this->_orderBy))
             {
-    
+                // if string contains ASC or DESC, use it as is, otherwise default to DESC
+                if (strpos($this->_orderBy, 'ASC') !== false || strpos($this->_orderBy, 'DESC') !== false)
+                {
+                    $sql .= ' ORDER BY '.$this->_orderBy;
+                }
+                else
+                {
+                    $sql .= ' ORDER BY '.$this->_orderBy." DESC";
+                }
             }
-            else if ($this->orderBy instanceof OrderBy)
+            else if ($this->_orderBy instanceof OrderBy)
             {
-                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->orderBy->column)." ".$this->orderBy->order;
+                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy->column)." ".$this->_orderBy->order;
             }
             else if ($this->dataSource->defaultOrderByColumnKey)
             {
@@ -496,9 +509,13 @@ class SelectQuery implements IteratorAggregate,
         return $sql;
     }
 
+    public function orderBy($toOrderBy)
+    {
+        return $this->setOrderBy($toOrderBy);
+    }
     public function setOrderBy($toOrderBy)
     {
-        $this->orderBy = $toOrderBy;
+        $this->_orderBy = $toOrderBy;
     }
 
     public function sqlForLimitOffset($limit, $offset, $pdo)
@@ -663,10 +680,29 @@ class SelectQuery implements IteratorAggregate,
         return new GTKCountableGenerator($generator, $count);
     }
 
+    public function getAll(GTKSelectQueryModifier &$queryModifier = null)
+    {
+        return $this->executeAndReturnAll($this->queryModifier);
+    }
+    
     public function executeAndReturnAll(GTKSelectQueryModifier &$queryModifier = null)
     {
         $statement = $this->executeAndReturnStatement($queryModifier);
         return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getOne(GTKSelectQueryModifier &$queryModifier = null)
+    {
+        $results = $this->executeAndReturnAll($queryModifier);
+        
+        if (count($results) > 0)
+        {
+            return $results[0];
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public function executeAndReturnOne(GTKSelectQueryModifier &$queryModifier = null)
@@ -889,6 +925,10 @@ class SelectQuery implements IteratorAggregate,
 		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
 	}
 
+    public function distinct()
+    {
+        $this->isDistinct = true;
+        return $this;
+    }
 
-    
 }

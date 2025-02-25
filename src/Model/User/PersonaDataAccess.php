@@ -320,9 +320,10 @@ class PersonaDataAccess extends DataAccess
 			]),
 		];
 
-		$this->dataMapping		    = new GTKDataSetMapping($this, $columnMappings);
-		$this->defaultOrderByColumnKey = "fecha_creado";
-		$this->defaultOrderByOrder  = "DESC";	
+		$this->dataMapping		        = new GTKDataSetMapping($this, $columnMappings);
+		$this->defaultOrderByColumnKey  = "fecha_creado";
+		$this->defaultOrderByOrder      = "DESC";	
+		$this->defaultSearchByColumnKey = "email";
 		
 		///
 		///

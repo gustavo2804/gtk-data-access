@@ -18,8 +18,6 @@ class TestableDataAccess extends DataAccess
 
 
         $this->dataMapping = new GTKDataSetMapping($this, $columns);
-
-        $this->tableName = 'TestableTable_'.$this->generateMicroTimeUUID();
     }
  
 
@@ -33,35 +31,3 @@ class TestableDataAccess extends DataAccess
     }
 }
 
-function getTestableSqliteConnection()
-{
-    static $sqliteDBConnection = null;
-
-    if (!$sqliteDBConnection)
-    {
-        $filePath = dirname(__DIR__)."/.secret/test.sqlite";
-
-        if (file_exists($filePath))
-        {
-            unlink($filePath);
-        }
-
-        $sqliteDBConnection = new PDO($filePath, SQLITE3_OPEN_READWRITE|SQLITE3_OPEN_CREATE);
-    } 
-
-    return $sqliteDBConnection;
-}
-
-function getTestableSqliteDataAccess()
-{
-    $sqliteDBConnection = getTestableSqliteConnection();
-
-    static $testableDataAccess = null;
-
-    if (!$testableDataAccess)
-    {
-        $testableDataAccess = new TestableDataAccess($sqliteDBConnection);
-    }
-
-    return $testableDataAccess;
-}

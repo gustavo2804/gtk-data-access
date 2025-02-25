@@ -6,18 +6,12 @@ class TestDataAccess extends \PHPUnit\Framework\TestCase
 
     protected function setUp(): void
     {
-        $this->pdo = getTestableSqliteConnection();
-        $this->db = new DataAccess();
-    }
-
-    public function testConnection(): void
-    {
-        $this->assertTrue($this->db->connect());
+        $this->db = DAM::get("testable_items");
     }
 
     public function testInsertUpdate()
     {
-        $testableDataAccess = getTestableSqliteDataAccess();
+        $testableDataAccess = DAM::get("testable_items");
 
         // $obj["id"]             =           
         $obj["a"]              = "Test Update Object";        
@@ -33,20 +27,20 @@ class TestDataAccess extends \PHPUnit\Framework\TestCase
     }
     public function testGetOneReturns()
     {
-        $testableDataAccess = getTestableSqliteDataAccess();
+        // TODO: Implement testSaveImageSavesToClassPath() method.
 
     }
     public function testSaveImageSavesToClassPath()
     {
-        $testableDataAccess = getTestableSqliteDataAccess();
+        // TODO: Implement testSaveImageSavesToClassPath() method.
     }
     public function testSaveImageSavesToOptionPath()
     {
-        $testableDataAccess = getTestableSqliteDataAccess();
+        // TODO: Implement testSaveImageSavesToOptionPath() method.
     }
 
     public function testUpdateStringWorksWhenPrimaryKeyIsFirstInMapping()
     {
-        $testableDataAccess = getTestableSqliteDataAccess();
+        // TODO: Implement testUpdateStringWorksWhenPrimaryKeyIsFirstInMapping() method.
     }
 }

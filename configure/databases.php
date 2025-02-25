@@ -110,4 +110,8 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"defaultOrderByColumnKey" => "fecha_creado",
 		"defaultOrderByOrder"  => "DESC",
 	],
+	"data_access_audit_trail" => [
+        "class" => "DataAccessAuditTrail",
+		"db" => "appDB"
+	],
 ];
