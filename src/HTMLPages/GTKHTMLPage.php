@@ -46,7 +46,7 @@ class GTKMenuItemPair
         }
     }
 
-    private function checkAccess($user) 
+    public function checkAccess($user) 
     {
         if (!$this->accessRequirements) 
         {
