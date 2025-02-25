@@ -1131,6 +1131,11 @@ class PersonaDataAccess extends DataAccess
 		
 	}
 
+	public function createOrManage($user, $searchColumnKey = null)
+	{
+		return $this->rawCreateOrManageUser($user, $searchColumnKey);
+	}
+
 	public function rawCreateOrManageUser($user)
 	{
 		$cedula       = $user['cedula'] ?? null;
