@@ -34,6 +34,7 @@ class SelectQuery implements IteratorAggregate,
     public $queryModifier;
     public $joins = [];
     public $isDistinct = false;
+    public $groupByColumns = [];
 
 
     /**
@@ -132,6 +133,17 @@ class SelectQuery implements IteratorAggregate,
         $this->limit = $limit;
     }
 
+    /**
+     * Set the LIMIT clause for the query
+     * @param int $limit Maximum number of rows to return
+     * @return $this For method chaining
+     */
+    public function limit($limit)
+    {
+        $this->limit = $limit;
+        return $this;
+    }
+
     public function setOffset($offset)
     {
         $this->offset = $offset;
@@ -199,6 +211,19 @@ class SelectQuery implements IteratorAggregate,
         $this->columns = $columns;
     }
 
+    /**
+     * Set the columns to be selected in the query
+     * @param array $columns Array of column names to select
+     *                      Can include raw SQL expressions like "COUNT(*) as count"
+     *                      or column names like "id" or "table.column"
+     * @return $this For method chaining
+     */
+    public function select($columns)
+    {
+        $this->columns = $columns;
+        return $this;
+    }
+
     public function getDataAccessorColumnKey($key)
     {
         if (strpos($key, '.') !== false) 
@@ -225,6 +250,13 @@ class SelectQuery implements IteratorAggregate,
         if (!$dbColumnName)
         {
             throw new Exception("Column not found: ".$columnKey.' in '.$dataAccessorName);
+        }
+
+        // If we have joins and the column name doesn't already include a table qualifier,
+        // prefix it with the table name to avoid ambiguous column references
+        if (!empty($this->joins) && strpos($dbColumnName, '.') === false) {
+            $tableName = $dataAccessor->tableName();
+            return $tableName . '.' . $dbColumnName;
         }
 
         return $dbColumnName;
@@ -365,7 +397,12 @@ class SelectQuery implements IteratorAggregate,
             {
                 if (is_string($column))
                 {
-                    $toQueryColumns[] = $this->dbColumnNameForKey($column);
+                    // Check if this is a raw SQL expression (like COUNT(*) as count)
+                    if (strpos($column, ' as ') !== false || strpos($column, '(') !== false) {
+                        $toQueryColumns[] = $column;
+                    } else {
+                        $toQueryColumns[] = $this->dbColumnNameForKey($column);
+                    }
                 }
                 else 
                 {
@@ -399,6 +436,25 @@ class SelectQuery implements IteratorAggregate,
         {
             $sql .= ' WHERE ' . $this->whereGroup->getSQLForSelectQuery($this, $params);
         }          
+        
+        // Add GROUP BY clause if specified
+        if (!empty($this->groupByColumns)) {
+            $sql .= ' GROUP BY ';
+            $groupByColumns = [];
+            
+            foreach ($this->groupByColumns as $column) {
+                if (is_string($column)) {
+                    // Check if this is a raw SQL expression
+                    if (strpos($column, '(') !== false) {
+                        $groupByColumns[] = $column;
+                    } else {
+                        $groupByColumns[] = $this->dbColumnNameForKey($column);
+                    }
+                }
+            }
+            
+            $sql .= implode(', ', $groupByColumns);
+        }
         
         if (!$this->isCountQuery)
         {
@@ -516,6 +572,17 @@ class SelectQuery implements IteratorAggregate,
     public function setOrderBy($toOrderBy)
     {
         $this->_orderBy = $toOrderBy;
+    }
+
+    /**
+     * Add GROUP BY clause to the query
+     * @param array|string $columns Column(s) to group by
+     * @return $this For method chaining
+     */
+    public function groupBy($columns)
+    {
+        $this->groupByColumns = is_array($columns) ? $columns : [$columns];
+        return $this;
     }
 
     public function sqlForLimitOffset($limit, $offset, $pdo)

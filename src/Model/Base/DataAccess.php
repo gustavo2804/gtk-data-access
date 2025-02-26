@@ -1704,6 +1704,11 @@ abstract class DataAccess /* implements Serializable */
             return get_class($this);
 		}
 	}
+
+    public function getTableName()
+    {
+        return $this->tableName();
+    }
 	
 
     public function getPDO()
@@ -2478,8 +2483,12 @@ abstract class DataAccess /* implements Serializable */
 		return $result;
 	}
 
-
-
+    public function executeRawQuery($sql, $params = [])
+    {
+        $stmt = $this->getDB()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }   
 
 
     function addWhereClausesToSql($sql, $whereOptions)
