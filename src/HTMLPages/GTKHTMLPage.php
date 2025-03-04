@@ -147,6 +147,25 @@ class GTKHTMLPage
 		return $ipAddress;
 	}
 
+	public function getCurrentUser()
+	{
+		return $this->currentUser();
+	}
+
+	public function getUserID()
+	{
+		$user = $this->getCurrentUser();
+
+		if (!$user)
+		{
+			return null;
+		}
+
+		return DAM::get("persona")->valueForIdentifier($user);
+	}
+	
+	
+
 
 
 	//--- Process GET, POST, PUT, PATCH, renderBODY - Overidable Methods
@@ -223,6 +242,19 @@ class GTKHTMLPage
 		}
 
 		return $toReturn;
+	}
+
+	/**
+	 * Add a message to be displayed on the page
+	 * @param string $type The type of message (error, success, warning, info)
+	 * @param string $text The message text
+	 */
+	public function addMessage($type, $text)
+	{
+		$this->messages[] = [
+			'type' => $type,
+			'text' => $text
+		];
 	}
 
 	public function processPUT(){}

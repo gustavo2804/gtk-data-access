@@ -1088,7 +1088,16 @@ class PersonaDataAccess extends DataAccess
 		}
 		else
 		{
+			// First try to find by primary email in the persona table
 			$user = $this->getOne("email", $cedulaOrUsername);
+			
+			// If not found, check for email aliases
+			if (!$user && DAM::get("person_email_aliases")) {
+				$personId = DAM::get("person_email_aliases")->findPersonByEmail($cedulaOrUsername);
+				if ($personId) {
+					$user = $this->getOne("id", $personId);
+				}
+			}
 		}
 
 		if (!$user)
@@ -1139,96 +1148,184 @@ class PersonaDataAccess extends DataAccess
 	public function rawCreateOrManageUser($user)
 	{
 		$cedula       = $user['cedula'] ?? null;
-        $email        = $user['email']  ?? null;
-        $toIdentifyBy = $email ?? $cedula;
+		$email        = $user['email']  ?? null;
+		$toIdentifyBy = $email ?? $cedula;
+		$emailAliases = $user['email_aliases'] ?? [];
 
+		echo "Looking for user with names: ".$user['nombres']." ".$user['apellidos']." - ID: ".$toIdentifyBy."\n";
+		
+		$userFromDB = null;
+		
+		if ($cedula)
+		{
+			$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
+		}
+		else if ($email)
+		{
+			$userFromDB = DataAccessManager::get("persona")->getOne("email", $email);
+			
+			// If not found by primary email, check aliases
+			if (!$userFromDB && DAM::get("person_email_aliases")) {
+				$personId = DAM::get("person_email_aliases")->findPersonByEmail($email);
+				if ($personId) {
+					$userFromDB = DataAccessManager::get("persona")->getOne("id", $personId);
+				}
+			}
+		}
 
-        echo "Looking for user with names: ".$user['nombres']." ".$user['apellidos']." - ID: ".$toIdentifyBy."\n";
-        
-        
-        if ($cedula)
-        {
-            $userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-        }
-        else
-        {
-            $userFromDB = DataAccessManager::get("persona")->getOne("email", $email);
-        }
-
-	    if (!$userFromDB)
-	    {
-            echo "Creating user: ".$user['nombres']." ".$user['apellidos']." - Cedula: ".($cedula ?? "NA")."\n";                    
-           
-            $password          = null;
-            $generatePassword  = true;
+		if (!$userFromDB)
+		{
+			echo "Creating user: ".$user['nombres']." ".$user['apellidos']." - Cedula: ".($cedula ?? "NA")."\n";                    
+		
+			$password          = null;
+			$generatePassword  = true;
 			$generatedPassword = null;
-            
-            if (isset($user['password']))
-            {
-                $password = $user['password'];
-            }
-            else if ($generatePassword)
-            {
-                $generatedPassword = uniqid();
+			
+			if (isset($user['password']))
+			{
+				$password = $user['password'];
+			}
+			else if ($generatePassword)
+			{
+				$generatedPassword = uniqid();
 				$password = $generatedPassword;
-                // $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
-                echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
-            }
+				// $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
+				echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
+			}
 
-            if ($password)
-            {
-                $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                $user['password_hash'] = $password_hash;
-            }
-        
-	    	DataAccessManager::get("persona")->createUser($user);	
+			if ($password)
+			{
+				$password_hash = password_hash($password, PASSWORD_DEFAULT);
+				$user['password_hash'] = $password_hash;
+			}
+		
+			DataAccessManager::get("persona")->createUser($user);	
 
-            
-            if ($cedula)
-            {
-                $userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-            }
-            else
-            {
-                $userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
-            }
+		
+			if ($cedula)
+			{
+				$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
+			}
+			else
+			{
+				$userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
+			}
 
-            if ($email && $generatedPassword)
-            {
+			if ($email && $generatedPassword)
+			{
 				if (method_exists($this, "sendWelcomeEmail"))
 				{
 					$this->sendWelcomeEmail($user, $generatedPassword);
 				}
-				else
-				{
-                	DataAccessManager::get("email_queue")->addDictionaryToQueue([
-                    "to"      => $user["email"],
-                    "subject" => "Bienvenido",
-                    "body"    => "Bienvenido ".$user["nombres"]." ".$user["apellidos"].".\n\n".
-                                 "Su usuario es: ".$email."\n".
-                                 "Su contraseña es: ".$generatedPassword."\n\n".
-                                 "Gracias por confiar en nosotros.\n\n".
-                                 "Saludos,\n".
-								 "Equipo del App"                
-                	]);
+			}
+			
+			// Add email aliases if provided
+			if ($userFromDB && !empty($emailAliases) && DAM::get("person_email_aliases")) {
+				foreach ($emailAliases as $alias) {
+					DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $alias, false);
 				}
-            }
-	    }
-        else
-        {
-            echo "User exists!\n";
-        }
-        
-        $roles = $user['roles'] ?? [];
-        
-        echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
+			}
+			
+			// Add the primary email as an alias too
+			if ($userFromDB && $email && DAM::get("person_email_aliases")) {
+				DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
+			}
+		}
+		else
+		{
+			// User already exists, add any new email aliases
+			if (!empty($emailAliases) && DAM::get("person_email_aliases")) {
+				foreach ($emailAliases as $alias) {
+					DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $alias, false);
+				}
+			}
+			
+			// Ensure the primary email is in the aliases table
+			if ($email && DAM::get("person_email_aliases")) {
+				$existingAlias = DAM::get("person_email_aliases")->getOne("email", $email);
+				if (!$existingAlias) {
+					DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
+				}
+			}
+		}
+		
+		$roles = $user['roles'] ?? [];
+		
+		echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
 
-        foreach ($roles as $role)
-        {
-            DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
-            echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
-        }
+		foreach ($roles as $role)
+		{
+			DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
+			echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
+		}
 
 		return $userFromDB;
+	}
+
+	/**
+	 * Get all email addresses for a user
+	 * 
+	 * @param array|int $user The user array or user ID
+	 * @return array List of email addresses
+	 */
+	public function getAllEmailsForUser($user)
+	{
+		$userId = is_array($user) ? $user['id'] : $user;
+		$emails = [];
+		
+		// Get the primary email from the persona table
+		$userRecord = $this->getOne("id", $userId);
+		if ($userRecord && !empty($userRecord['email'])) {
+			$emails[] = $userRecord['email'];
+		}
+		
+		// Get all email aliases
+		if (DAM::get("person_email_aliases")) {
+			$aliases = DAM::get("person_email_aliases")->getEmailsForPerson($userId);
+			foreach ($aliases as $alias) {
+				if (!in_array($alias['email'], $emails)) {
+					$emails[] = $alias['email'];
+				}
+			}
+		}
+		
+		return $emails;
+	}
+
+	/**
+	 * Add an email alias to a user
+	 * 
+	 * @param array|int $user The user array or user ID
+	 * @param string $email The email to add
+	 * @param bool $isPrimary Whether this should be the primary email
+	 * @return bool Success status
+	 */
+	public function addEmailToUser($user, $email, $isPrimary = false)
+	{
+		$userId = is_array($user) ? $user['id'] : $user;
+		
+		if (!DAM::get("person_email_aliases")) {
+			return false;
+		}
+		
+		// Check if email already exists for another user
+		$existingPersonId = DAM::get("person_email_aliases")->findPersonByEmail($email);
+		if ($existingPersonId && $existingPersonId != $userId) {
+			return false;
+		}
+		
+		// If setting as primary, update the user record
+		if ($isPrimary) {
+			$userRecord = $this->getOne("id", $userId);
+			if ($userRecord) {
+				$userRecord['email'] = $email;
+				$this->update($userRecord);
+			}
+		}
+		
+		// Add to aliases
+		DAM::get("person_email_aliases")->addEmailForPerson($userId, $email, $isPrimary);
+		
+		return true;
 	}
 }
