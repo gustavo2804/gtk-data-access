@@ -30,9 +30,16 @@ require_once __DIR__ . '/Support/Functions/functions.php';
 // Clean up old test runs
 // $testEnv->cleanup();
 
+DataAccessManager::registerAccessor("testable_items", [
+    "class" => "TestableDataAccess",
+    "db"    => "appDB",
+]);
+
 // Initialize the database
 DataAccessManager::configureSystem();
 DataAccessManager::createTables();
+
+
 
 // Automatically include all files in Support directory
 $supportDir = __DIR__ . '/Support';
