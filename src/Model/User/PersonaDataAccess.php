@@ -1154,24 +1154,7 @@ class PersonaDataAccess extends DataAccess
 
 		echo "Looking for user with names: ".$user['nombres']." ".$user['apellidos']." - ID: ".$toIdentifyBy."\n";
 		
-		$userFromDB = null;
-		
-		if ($cedula)
-		{
-			$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-		}
-		else if ($email)
-		{
-			$userFromDB = DataAccessManager::get("persona")->getOne("email", $email);
-			
-			// If not found by primary email, check aliases
-			if (!$userFromDB && DAM::get("person_email_aliases")) {
-				$personId = DAM::get("person_email_aliases")->findPersonByEmail($email);
-				if ($personId) {
-					$userFromDB = DataAccessManager::get("persona")->getOne("id", $personId);
-				}
-			}
-		}
+		$userFromDB = $this->findUserByIdentifiable($toIdentifyBy);
 
 		if (!$userFromDB)
 		{
@@ -1189,9 +1172,9 @@ class PersonaDataAccess extends DataAccess
 			{
 				$generatedPassword = uniqid();
 				$password = $generatedPassword;
-        // $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
-        echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
-       }
+        		// $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
+        		echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
+       		}
 
             if ($password)
             {
@@ -1201,75 +1184,19 @@ class PersonaDataAccess extends DataAccess
         
 	    	DataAccessManager::get("persona")->createUser($user);	
 
-            
-            if ($cedula)
-            {
-                $userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-            }
-            else
-            {
-                $userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
-            }
+            $userFromDB = $this->findUserByIdentifiable($toIdentifyBy);
 
             if ($email && $generatedPassword)
             {
-                DataAccessManager::get("email_queue")->addDictionaryToQueue([
-                    "to"      => $user["email"],
-                    "subject" => "Bienvenido a Stonewood",
-                    "body"    => "Bienvenido a App Stonewood, ".$user["nombres"]." ".$user["apellidos"].".\n\n".
-                                 "Su usuario es: ".$email."\n".
-                                 "Su contraseña es: ".$generatedPassword."\n\n".
-                                 "Gracias por confiar en nosotros.\n\n".
-                                 "Saludos,\n".
-                                "El equipo de Stonewood.",
-                ]);
+				if ($email && $generatedPassword)
+				{
+					if (method_exists($this, "sendWelcomeEmail"))
+					{
+						$this->sendWelcomeEmail($user, $generatedPassword);
+					}
+				}
             }
 
-	    }
-        else
-        {
-            echo "User exists!\n";
-        }
-        
-        $roles = $user['roles'] ?? [];
-        
-        echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
-
-        foreach ($roles as $role)
-        {
-            DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
-            echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
-        }
-				// $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
-				echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
-			}
-
-			if ($password)
-			{
-				$password_hash = password_hash($password, PASSWORD_DEFAULT);
-				$user['password_hash'] = $password_hash;
-			}
-		
-			DataAccessManager::get("persona")->createUser($user);	
-
-		
-			if ($cedula)
-			{
-				$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-			}
-			else
-			{
-				$userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
-			}
-
-			if ($email && $generatedPassword)
-			{
-				if (method_exists($this, "sendWelcomeEmail"))
-				{
-					$this->sendWelcomeEmail($user, $generatedPassword);
-				}
-			}
-			
 			// Add email aliases if provided
 			if ($userFromDB && !empty($emailAliases) && DAM::get("person_email_aliases")) {
 				foreach ($emailAliases as $alias) {
@@ -1281,9 +1208,11 @@ class PersonaDataAccess extends DataAccess
 			if ($userFromDB && $email && DAM::get("person_email_aliases")) {
 				DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
 			}
-		}
-		else
-		{
+	    }
+        else
+        {
+            echo "User exists!\n";
+
 			// User already exists, add any new email aliases
 			if (!empty($emailAliases) && DAM::get("person_email_aliases")) {
 				foreach ($emailAliases as $alias) {
@@ -1298,8 +1227,17 @@ class PersonaDataAccess extends DataAccess
 					DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
 				}
 			}
-		}
+        }
+        
+        $roles = $user['roles'] ?? [];
+        
+        echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
 
+        foreach ($roles as $role)
+        {
+            DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
+            echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
+        }
 
 		return $userFromDB;
 	}
