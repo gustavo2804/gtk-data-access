@@ -1,4 +1,4 @@
-x<?php
+<?php
 
 function getFunctionArgumentCount($functionName) {
     $reflectionFunction = new ReflectionFunction($functionName);
@@ -5152,5 +5152,3 @@ abstract class DataAccess /* implements Serializable */
 		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
 	}
 }
-
-
