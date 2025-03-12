@@ -505,6 +505,8 @@ class GTKHTMLPage
 	{
 		$debug = true;
 
+		$html = null;
+
 		$this->setCustomLogFile();
 
 		$this->get 		  = $get;
