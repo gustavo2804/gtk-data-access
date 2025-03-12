@@ -285,10 +285,29 @@ class GTKCookie
         // print_r($expiry);
         //die();
 
+        // Code should check if the hostname ends in ".local"
+        // and if it is, will allow non secure cookies
+
+        $secureCookie = true;
+
+        $hostName = $_SERVER['HTTP_HOST'];
+
+        $isSecureConnection = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+
+        $hostEndsWithLocal = str_ends_with($hostName, '.local');
+        
+        if (!$isSecureConnection)
+        {
+            if ($hostEndsWithLocal)
+            {
+                $secureCookie = false;
+            }
+        }
+
         return $gtkCookie->set("AuthCookie", $value, [
             'expires'   => $expiry,
             'path' 	    => '/', 
-            'secure'    => true, // consider not using secure cookies in development
+            'secure'    => $secureCookie, // consider not using secure cookies in development
             'httponly'  => true,
             'samesite'  => 'Strict'
         ]);
