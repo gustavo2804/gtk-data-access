@@ -131,7 +131,7 @@ class PersonaDataAccess extends DataAccess
     {
 		$debug = false;
 		
-        $flatRoleDataAccess = DataAccessManager::get("flat_roles");
+        $flatRoleDataAccess = DataAccessManager::get("role_person_relationships");
 
 		$isDev              = $flatRoleDataAccess->isUserInRoleNamed("DEV",             $user);
         $isAdminAdmin       = $flatRoleDataAccess->isUserInRoleNamed("SOFTWARE_ADMIN",  $user);
@@ -427,17 +427,17 @@ class PersonaDataAccess extends DataAccess
 				error_log("Not an ADMIM or a dev");
 			}
 			
-			$isUserInAgency     = DataAccessManager::get("flat_roles")->isUserInRoleNamed("AGENCY", $user);
-			$isUserAdminForRole = DataAccessManager::get("flat_roles")->valueForKey("is_admin_for_role", $isUserInAgency);
+			$isUserInAgency     = DataAccessManager::get("role_person_relationships")->isUserInRoleNamed("AGENCY", $user);
+			$isUserAdminForRole = DataAccessManager::get("role_person_relationships")->valueForKey("is_admin_for_role", $isUserInAgency);
 
 			if ($isUserInAgency && $isUserAdminForRole)
 			{
-				$isItemInAgency = DataAccessManager::get("flat_roles")->isUserInRoleNamed("AGENCY", $item);
+				$isItemInAgency = DataAccessManager::get("role_person_relationships")->isUserInRoleNamed("AGENCY", $item);
 				
 				if ($isItemInAgency)
 				{
-					$userQualifier = DataAccessManager::get("flat_roles")->valueForKey("qualifier", $isUserInAgency);
-					$itemQualifier = DataAccessManager::get("flat_roles")->valueForKey("qualifier", $isItemInAgency);
+					$userQualifier = DataAccessManager::get("role_person_relationships")->valueForKey("qualifier", $isUserInAgency);
+					$itemQualifier = DataAccessManager::get("role_person_relationships")->valueForKey("qualifier", $isItemInAgency);
 
 					if ($userQualifier == $itemQualifier)
 					{
@@ -726,16 +726,16 @@ class PersonaDataAccess extends DataAccess
 
 		$roleRelations = null;
 
-		if (!isset($user["flat_roles"]))
+		if (!isset($user["role_person_relationships"]))
 		{
 			if ($debug)
 			{
 				error_log("Searching for roles...");
 			}
-			$user["flat_roles"] = DataAccessManager::get("flat_roles")->where("user_id", $this->valueForKey("id", $user));
+			$user["role_person_relationships"] = DataAccessManager::get("role_person_relationships")->where("user_id", $this->valueForKey("id", $user));
 		}
 
-		$roleRelations = $user["flat_roles"];
+		$roleRelations = $user["role_person_relationships"];
 
 		if ($debug)
 		{
@@ -838,7 +838,7 @@ class PersonaDataAccess extends DataAccess
 		$userID = $this->valueForKey("id", $user);
 
 		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
-		// $rolePersonRelationships = DataAccessManager::get("flat_roles");
+		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
 
 		if (DataAccessManager::get("roles")->isQualifiedRole($role))
 		{
@@ -864,25 +864,39 @@ class PersonaDataAccess extends DataAccess
 		{
 			throw new Exception("User ID not found in".print_r($user, true));
 		}
+    
+		$query = new SelectQuery(DataAccessManager::get("role_person_relationships"));
 
-		$toInsert = [
-			"role_id" => $roleID,
-			"user_id" => $userID,
-		];
-		
-		DataAccessManager::get("flat_roles")->insert($toInsert);
-		// DataAccessManager::get("role_person_relationships")->insert($toInsert);
+		$query->addClause(new WhereClause("role_id", $roleID));
+		$query->addClause(new WhereClause("user_id", $userID));
+
+		$existingRole = $query->executeAndReturnOne();
+
+		if ($existingRole)
+		{
+			return;
+		}
+		else
+		{
+			$toInsert = [
+				"role_id" => $roleID,
+				"user_id" => $userID,
+			];
+			
+			DataAccessManager::get("role_person_relationships")->insert($toInsert);
+			// DataAccessManager::get("role_person_relationships")->insert($toInsert);
+		}
 	}
 
 	public function permissionsForUser($user)
 {
     $debug = false;
-
+    
     if ($user === null) {
         return [];
     }
-
-    $roles = DataAccessManager::get("flat_roles")->rolesForUser($user);
+    
+    $roles = DataAccessManager::get("role_person_relationships")->rolesForUser($user);
 
     $permissions = [];
 
