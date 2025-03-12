@@ -628,11 +628,11 @@ abstract class DataAccess /* implements Serializable */
     }
 
     
-	public function __construct($p_db, $options)
+	public function __construct(PDO $PDODBObject, $options)
     {
         $debug = false;
 
-		$this->db = $p_db;
+		$this->db = $PDODBObject;
 
         $this->dataAccessorName = $options["dataAccessorName"] ?? get_class($this);
         
@@ -5152,5 +5152,3 @@ abstract class DataAccess /* implements Serializable */
 		<?php return ob_get_clean(); // End output buffering and get the buffered content as a string
 	}
 }
-
-

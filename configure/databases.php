@@ -93,6 +93,16 @@ $_GLOBALS["GTK_DATA_ACCESS_CONSTRUCTIONS"] = [
 		"defaultOrderByColumnKey" => "name",
 		"defaultOrderByOrder"  => "DESC",
 	],
+	"person_email_aliases" => [
+		"class" 	=> "PersonaEmailAliasDA",
+		"db" 		=> "db",
+		"tableName" => "person_email_aliases",
+		"synonyms"  => [
+			"person_email_aliases",
+			"email_aliases",
+			"email_alias",
+		]
+	],
     "SetPasswordTokenDataAccess" => [
 		"class"                 => "SetPasswordTokenDataAccess",
 		"db"                    => "appDB",
