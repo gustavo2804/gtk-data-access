@@ -506,11 +506,14 @@ class SelectQuery implements IteratorAggregate,
                 // if string contains ASC or DESC, use it as is, otherwise default to DESC
                 if (strpos($this->_orderBy, 'ASC') !== false || strpos($this->_orderBy, 'DESC') !== false)
                 {
-                    $sql .= ' ORDER BY '.$this->_orderBy;
+                    $orderByColumn = str_split($this->_orderBy, ' ')[0];
+                    $orderByOrder  = str_split($this->_orderBy, ' ')[1];
+
+                    $sql .= ' ORDER BY '.$this->dbColumnNameForKey($orderByColumn)." ".$orderByOrder;
                 }
                 else
                 {
-                    $sql .= ' ORDER BY '.$this->_orderBy." DESC";
+                    $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy)." DESC";
                 }
             }
             else if ($this->_orderBy instanceof OrderBy)
@@ -668,24 +671,31 @@ class SelectQuery implements IteratorAggregate,
 
     public function count($debug = false) : int
     {
-        $debug = false;
-
-        $this->isCountQuery = true;
-
-        $params = [];
-        $pdoStatement = $this->getPDOStatement($params);
-        if ($debug)
+        try
         {
-            gtk_log("COUNT Query: ".$pdoStatement->queryString);
+            $debug = false;
+
+            $this->isCountQuery = true;
+    
+            $params = [];
+            $pdoStatement = $this->getPDOStatement($params);
+            if ($debug)
+            {
+                gtk_log("COUNT Query: ".$pdoStatement->queryString);
+            }
+            $pdoStatement->execute($params);
+            $result = $pdoStatement->fetch(PDO::FETCH_ASSOC);
+            if ($debug)
+            {
+                gtk_log("COUNT: ".print_r($result, true));
+            }
+            $this->isCountQuery = false;
+            return $result['COUNT'];
         }
-        $pdoStatement->execute($params);
-        $result = $pdoStatement->fetch(PDO::FETCH_ASSOC);
-        if ($debug)
+        catch (Exception $e)
         {
-            gtk_log("COUNT: ".print_r($result, true));
+            return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $sql, $params, $outError);
         }
-        $this->isCountQuery = false;
-        return $result['COUNT'];
     }
 
     public function sql()
