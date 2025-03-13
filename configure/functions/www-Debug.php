@@ -339,7 +339,15 @@ function doOrCatchAndReport($function, $options = [])
     
     $errorLogPath = ini_get("error_log");
 
-    if (isset($options["not_override_error_log_path"]))
+    $fromEnv = getenv('GTK_ERROR_LOG_PATH');
+
+    // die("From ENV: ".$fromEnv);
+
+    if ($fromEnv) 
+    {
+        $errorLogPath = $fromEnv;
+    } 
+    else if (isset($options["not_override_error_log_path"]))
     {
         if (!isTruthy($options["not_override_error_log_path"]))
         {
