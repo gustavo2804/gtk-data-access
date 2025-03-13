@@ -157,6 +157,7 @@ class QueryExceptionManager
         {
             return null;
         }
+        else
         {
             throw $this->exception;
         }

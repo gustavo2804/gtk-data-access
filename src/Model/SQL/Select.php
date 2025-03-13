@@ -650,14 +650,12 @@ class SelectQuery implements IteratorAggregate,
         }
         catch (Exception $e)
         {
-            if ($this->isCountQuery)
-            {
-                throw $e;
-            }
-            else
-            {
-                return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $sql, $params, $outError);
-            }
+            $outError = '';
+
+            QueryExceptionManager::manageQueryExceptionForDataSource(
+                $this->dataSource, $e, $sql, $params, $outError);
+
+            throw $e;
         }
 
         return $pdoStatement;
@@ -694,7 +692,10 @@ class SelectQuery implements IteratorAggregate,
         }
         catch (Exception $e)
         {
-            return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $sql, $params, $outError);
+            QueryExceptionManager::manageQueryExceptionForDataSource(
+                $this->dataSource, $e, $pdoStatement->queryString, $params, $outError);
+
+            throw $e;
         }
     }
 
@@ -726,7 +727,8 @@ class SelectQuery implements IteratorAggregate,
         }
         catch (Exception $e)
         {
-            return QueryExceptionManager::manageQueryExceptionForDataSource($this->dataSource, $e, $statement->queryString, $params, $outError);
+            QueryExceptionManager::manageQueryExceptionForDataSource(
+                $this->dataSource, $e, $statement->queryString, $params, $outError);
         }
         // $statement->execute($params);
         return $statement;
