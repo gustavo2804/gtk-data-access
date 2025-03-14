@@ -251,7 +251,7 @@ abstract class DataAccess /* implements Serializable */
 
     public function currentUser()
     {
-        return DataAccessManager::get("persona")->getCurrentUser();
+        return DAM::get("session")->getCurrentUser();
     }
 
     public function currentUserHasRoles($arrayOfRows)
@@ -3519,7 +3519,7 @@ abstract class DataAccess /* implements Serializable */
 
         if (!$user)
         {
-            $user = DataAccessManager::get("persona")->getCurrentUser();
+            $user = DAM::get("session")->getCurrentUser();
         }
 
                         $processOnInsertForUser = $columnMapping->processOnInsertForUser($user);

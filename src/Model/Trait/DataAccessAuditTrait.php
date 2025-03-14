@@ -8,7 +8,7 @@ trait DataAccessAuditTrait
         
         // Get current user if available
         $user = null;
-        $user = DAM::get("persona")->getCurrentUser();
+        $user = DAM::get("session")->getCurrentUser();
         if (method_exists($this, 'getCurrentUser')) {
             $user = $this->getCurrentUser();
         }

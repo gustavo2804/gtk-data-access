@@ -308,7 +308,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 		if ($this->_items)
 		{
 			echo generateTableForUser(
-				DataAccessManager::get("persona")->getCurrentUser(),
+				DAM::get("session")->getCurrentUser(),
 				$this->columnsToDisplay,
 				$this->_items, 
 				$this->dataSource, 

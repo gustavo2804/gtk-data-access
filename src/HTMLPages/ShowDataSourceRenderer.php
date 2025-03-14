@@ -115,7 +115,7 @@ class ShowDataSourceRenderer extends GTKHTMLPage
     {
         $debug = false;
 
-		$user = DataAccessManager::get("persona")->getCurrentUser();
+		$user = DAM::get("session")->getCurrentUser();
 
 		if ($debug)
 		{
