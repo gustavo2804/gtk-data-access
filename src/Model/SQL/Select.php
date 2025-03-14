@@ -458,76 +458,7 @@ class SelectQuery implements IteratorAggregate,
         
         if (!$this->isCountQuery)
         {
-            $didSetOrderBy = false;
-
-            if (is_array($this->_orderBy) && (count($this->_orderBy) > 0))
-            {
-                $didSetOrderBy = true;
-                $sql .= ' ORDER BY ';
-                $isFirst = true;
-                $isEven  = false;
-                foreach ($this->_orderBy as $orderBy) 
-                {
-                    if ($debug)
-                    {
-                        error_log("Handling order by case: ".print_r($orderBy,true));
-                    }
-                    if (!$isFirst)
-                    {
-                        $sql .= ', ';
-                    }
-                    $isFirst = false;
-    
-                    if (is_string($orderBy))
-                    {
-                        $sql .= $this->dbColumnNameForKey($orderBy)." ASC";
-                    }
-                    else if (is_array($orderBy) && (count($orderBy) == 2))
-                    {
-    
-                        $sql .= $this->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
-                    }
-                    else if ($orderBy instanceof OrderBy)
-                    {
-                        $sql .= $this->dbColumnNameForKey($orderBy->column)." ".$orderBy->order;
-                    }
-                    else
-                    {
-                        throw new Exception("Don't know how to handle ORDER BY object of gtype: ".get_class($orderBy));
-                    }
-                    
-    
-                    $isEven = !$isEven;
-                }
-    
-                $didSetOrderBy = true;
-            }
-            else if (is_string($this->_orderBy))
-            {
-                // if string contains ASC or DESC, use it as is, otherwise default to DESC
-                if (strpos($this->_orderBy, 'ASC') !== false || strpos($this->_orderBy, 'DESC') !== false)
-                {
-                    $orderByColumn = str_split($this->_orderBy, ' ')[0];
-                    $orderByOrder  = str_split($this->_orderBy, ' ')[1];
-
-                    $sql .= ' ORDER BY '.$this->dbColumnNameForKey($orderByColumn)." ".$orderByOrder;
-                }
-                else
-                {
-                    $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy)." DESC";
-                }
-                $didSetOrderBy = true;
-            }
-            else if ($this->_orderBy instanceof OrderBy)
-            {
-                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy->column)." ".$this->_orderBy->order;
-                $didSetOrderBy = true;
-            }
-            else if ($this->dataSource->defaultOrderByColumnKey)
-            {
-                $sql .= " ORDER BY ".$this->dataSource->defaultOrderByColumnKey." ".($this->dataSource->defaultOrderByOrder ?? "DESC");
-                $didSetOrderBy = true;
-            }
+            $didSetOrderBy = $this->didAddOrderByToSQL($sql);
 
             if ($this->desiredPageNumber)
             {
@@ -541,7 +472,7 @@ class SelectQuery implements IteratorAggregate,
 
                 if (!$didSetOrderBy && ($driverName == "sqlsrv"))
                 {
-                    $orderByColumn = $this->dataSource->defaultOrderByColumnKey;
+                    $orderByColumn = $this->dataSource->defaultOrderByColumnKey ?? $this->dataSource->primaryKeyMapping()->databaseKey();
                     $orderByOrder  = $this->dataSource->defaultOrderByOrder ?? "DESC";
                 
                     if (!$orderByColumn)
@@ -552,13 +483,7 @@ class SelectQuery implements IteratorAggregate,
                     $sql .= " ORDER BY ".$orderByColumn." ".$orderByOrder;
                 }
 
-                if ($this->limit instanceof LimitClause)
-                {
-                    $this->limit  = $this->limit->limit;
-                    $this->offset = $this->limit->offset;
-                }
-                
-                $sql .= $this->sqlForLimitOffset($this->limit, $this->offset, $pdo);
+                $this->addLimitToSQL($sql, $pdo);
             }
 
         }
@@ -571,6 +496,17 @@ class SelectQuery implements IteratorAggregate,
         return $sql;
     }
 
+    public function addLimitToSQL(&$sql, $pdo)
+    {
+        if ($this->limit instanceof LimitClause)
+        {
+            $this->limit  = $this->limit->limit;
+            $this->offset = $this->limit->offset;
+        }
+        
+        $sql .= $this->sqlForLimitOffset($this->limit, $this->offset, $pdo);
+    }
+
     public function orderBy($toOrderBy)
     {
         return $this->setOrderBy($toOrderBy);
@@ -578,6 +514,85 @@ class SelectQuery implements IteratorAggregate,
     public function setOrderBy($toOrderBy)
     {
         $this->_orderBy = $toOrderBy;
+    }
+
+    public function didAddOrderByToSQL(&$sql)
+    {
+        $debug = false;
+
+        if (is_array($this->_orderBy) && (count($this->_orderBy) > 0))
+        {
+            $sql .= ' ORDER BY ';
+            $isFirst = true;
+            $isEven  = false;
+            foreach ($this->_orderBy as $orderBy) 
+            {
+                if ($debug)
+                {
+                    error_log("Handling order by case: ".print_r($orderBy,true));
+                }
+                if (!$isFirst)
+                {
+                    $sql .= ', ';
+                }
+                $isFirst = false;
+
+                if (is_string($orderBy))
+                {
+                    $sql .= $this->dbColumnNameForKey($orderBy)." ASC";
+                }
+                else if (is_array($orderBy) && (count($orderBy) == 2))
+                {
+
+                    $sql .= $this->dbColumnNameForKey($orderBy[0])." ".$orderBy[1];
+                }
+                else if ($orderBy instanceof OrderBy)
+                {
+                    $sql .= $this->dbColumnNameForKey($orderBy->column)." ".$orderBy->order;
+                }
+                else
+                {
+                    throw new Exception("Don't know how to handle ORDER BY object of gtype: ".get_class($orderBy));
+                }
+                
+
+                $isEven = !$isEven;
+            }
+
+            return true;
+        }
+        else if (is_string($this->_orderBy))
+        {
+            // if string contains ASC or DESC, use it as is, otherwise default to DESC
+            if (strpos($this->_orderBy, 'ASC') !== false || strpos($this->_orderBy, 'DESC') !== false)
+            {
+                $orderByColumn = str_split($this->_orderBy, ' ')[0];
+                $orderByOrder  = str_split($this->_orderBy, ' ')[1];
+
+                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($orderByColumn)." ".$orderByOrder;
+            }
+            else
+            {
+                $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy)." DESC";
+            }
+            
+            return true;
+        }
+        else if ($this->_orderBy instanceof OrderBy)
+        {
+            $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy->column)." ".$this->_orderBy->order;
+            
+            return true;
+        }
+        else if ($this->dataSource->defaultOrderByColumnKey)
+        {
+            $sql .= " ORDER BY ".$this->dataSource->defaultOrderByColumnKey." ".($this->dataSource->defaultOrderByOrder ?? "DESC");
+            
+            return true;
+        }
+
+
+        return false;
     }
 
     /**
@@ -730,6 +745,12 @@ class SelectQuery implements IteratorAggregate,
         }
         catch (Exception $e)
         {
+            error_log("Error executing statement: ".$statement->queryString);
+            error_log("Params: ".print_r($params, true));
+            error_log("SQL: ".$this->getSQL());
+            error_log("Error: ".$e->getMessage());
+            error_log("Trace: ".$e->getTraceAsString());
+
             QueryExceptionManager::manageQueryExceptionForDataSource(
                 $this->dataSource, $e, $statement->queryString, $params, $outError);
         }
@@ -789,7 +810,7 @@ class SelectQuery implements IteratorAggregate,
 
     public function executeAndReturnOne(GTKSelectQueryModifier &$queryModifier = null)
     {
-        $useLimitStyle = false; 
+        $useLimitStyle = true;
 
         if ($useLimitStyle)
         {
@@ -810,6 +831,7 @@ class SelectQuery implements IteratorAggregate,
         else
         {
             $results = $this->executeAndReturnAll($queryModifier);
+
             if (count($results) > 0)
             {
                 return $results[0];
