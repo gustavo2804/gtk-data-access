@@ -258,9 +258,14 @@ abstract class DataAccess /* implements Serializable */
     {
         $currentUser = $this->currentUser();
 
-        return DataAccessManager::get("persona")->isInGroups(
-            $currentUser, 
-            $arrayOfRows);
+        if ($currentUser)
+        {
+            return DataAccessManager::get("persona")->isInGroups(
+                $currentUser, 
+                $arrayOfRows);
+        }
+
+        return false;
     }
 
     public function getDataSource($name)
@@ -303,6 +308,11 @@ abstract class DataAccess /* implements Serializable */
     {
         $debug = false;
 
+        if ($configName == "conduce")
+        {
+            $debug = false;
+        }
+
         if (isset($config['db']))
         {
             $dbName = $config['db'];
@@ -312,18 +322,24 @@ abstract class DataAccess /* implements Serializable */
             throw new Exception("Cannot instanitate class of name: with configName: ".$configName);
         }
 
+        if ($debug)
+        {
+            error_log("Will get DB for DB Name: ".$dbName);
+        }
+
         $db = $dataAccessManager->getDatabaseInstance($dbName);
 
         if ($debug)
         {
             error_log("Got DB for DB Name: ".$dbName);
         }
-
-
         // $instance = new self($db, $config);
         $instance = new static($db, $config);
 
-
+        if ($debug)
+        {
+            error_log("Did create instance for: ".$configName);
+        }
 
 
         return $instance;
@@ -632,6 +648,12 @@ abstract class DataAccess /* implements Serializable */
     {
         $debug = false;
 
+        // if the class name is StoneConduce...I want to set debug to true
+        if (strpos(get_class($this), "StoneConduce") !== false)
+        {
+            $debug = false;
+        }
+
 		$this->db = $PDODBObject;
 
         $this->dataAccessorName = $options["dataAccessorName"] ?? get_class($this);
@@ -640,6 +662,7 @@ abstract class DataAccess /* implements Serializable */
         {
             error_log("esto es dataAccessorName: ".$this->dataAccessorName);
         }
+
         $this->_actions = [];
 
         $this->_allowsCreation = true;
@@ -656,8 +679,18 @@ abstract class DataAccess /* implements Serializable */
         $this->defaultOrderByOrder      = $options["defaultOrderByOrder"] ?? "ASC";
         $this->defaultSearchByColumnKey = $options["defaultSearchByColumnKey"] ?? null;
         
+        if ($debug)
+        {
+            error_log("Will register for: ".get_class($this));
+        }
+
         $this->register();//no hace nada en DataAccess
 
+        if ($debug)
+        {
+            error_log("Did register for: ".get_class($this));
+        }
+        
         if (!$this->dataMapping)
         {
             throw new Exception("DataMapping is not set for: ".get_class($this));

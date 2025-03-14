@@ -198,7 +198,8 @@ class PersonaDataAccess extends DataAccess
 
 	public static function getCurrentUser()
 	{
-		return DataAccessManager::get("session")->getCurrentApacheUserOrSendToLoginWithRedirect("/auth/login.php");
+		throw new Exception("Deprecated");
+		return DataAccessManager::get("seddion")->getCurrentApacheUserOrSendToLoginWithRedirect("/auth/login.php");
 	}
 
 	public function getUserFromToken($token)
@@ -699,6 +700,17 @@ class PersonaDataAccess extends DataAccess
 
 	public function isInGroup(&$user, $group)
 	{
+		$debug = false;
+
+		if (!$user)
+		{
+			if ($debug)
+			{
+				error_log("User is null");
+			}
+			return false;
+		}
+
 		if (is_array($group))
 		{
 			return $this->isInGroups($user, $group);
@@ -707,12 +719,18 @@ class PersonaDataAccess extends DataAccess
 		{
 			return $this->isInGroups($user, [ $group ]);
 		}
+		else
+		{
+			throw new Exception("Invalid group type");
+		}
 		
 	}
 
 	public function isInGroups(&$user, $groups)
 	{
 		$debug = false;
+
+		// die("isInGroups: ".print_r($user, true));
 
 		if (!$user)
 		{
@@ -739,7 +757,7 @@ class PersonaDataAccess extends DataAccess
 
 		if ($debug)
 		{
-			error_log("Got roles...: ".print_r($roles, true));
+			error_log("Got roles...: ".print_r($roleRelations, true));
 		}
 
 		$userRoles = null;
@@ -793,10 +811,6 @@ class PersonaDataAccess extends DataAccess
 
 	public function isDeveloper($user = null) 
 	{
-		if (!$user)
-		{
-			$user = $this->getCurrentUser();
-		}
 		return $this->isInGroup($user, "DEV");
 	}
 	public function isAdmin($user = null) 
@@ -884,15 +898,12 @@ class PersonaDataAccess extends DataAccess
 {
     $debug = false;
     
-    if ($user === null) {
+    if (!$user)
+	{
         return [];
     }
 
-
-
     $roles = DataAccessManager::get("role_person_relationships")->rolesForUser($user);
-
-
 
     $permissions = [];
 

@@ -12,7 +12,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 		$debug = false;
 		try
 		{
-			$user =  DataAccessManager::get("persona")->getCurrentUser();
+			$user =  DataAccessManager::get("session")->getCurrentUser();
 			
 			$isInvalid = null;
 			
@@ -71,7 +71,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
     {
         $debug = false;
 
-		$user = DataAccessManager::get("persona")->getCurrentUser();
+		$user = DataAccessManager::get("session")->getCurrentUser();
 
         $this->itemIdentifier = $this->dataSource->dataMapping->valueForIdentifier($this->item);
 

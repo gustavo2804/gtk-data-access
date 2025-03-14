@@ -175,7 +175,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 				}
 				
 		
-				if ($columnMapping->hideOnListsForUser(DataAccessManager::get("persona")->getCurrentUser()))
+				if ($columnMapping->hideOnListsForUser(DataAccessManager::get("session")->getCurrentUser()))
 				{
 					if ($debug) { error_log("Hiding column {$columnMapping->phpKey}"); }
 					continue;
@@ -193,7 +193,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
         if (!$this->searchableColumns)
         {
         	$this->searchableColumns = $this->dataSource->getSearchableColumnsForUser(
-				DataAccessManager::get("persona")->getCurrentUser()
+				DataAccessManager::get("session")->getCurrentUser()
 			);
         }
         
@@ -324,7 +324,7 @@ class AllDataSourceRenderer extends GTKHTMLPage
 			}
 
 			echo $this->generateTableForUser(
-				DataAccessManager::get("persona")->getCurrentUser(),
+				DataAccessManager::get("session")->getCurrentUser(),
 				$this->columnsToDisplay,
 				$this->queryObject(), 
 				$this->dataSource, 

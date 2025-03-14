@@ -200,7 +200,25 @@ class DataAccessManager
 	{
 		$debug = false;
 
+		if (false && ($dataSourceName == "conduce"))
+		{
+			$debug = false;
+		}
+
+		if ($debug)
+		{
+			error_log("Got data source name: ".$dataSourceName);
+			// die("Will get data source name: ".$dataSourceName);
+		}
+
 		$dataSource = self::get($dataSourceName);
+
+		if ($debug)
+		{
+			error_log("Got data source: ".$dataSourceName);
+			// die("`allLinkTo` Got data source: ".$dataSourceName);
+		}
+
 		$href       = self::allURLTo($dataSourceName, $options);
 
 		if ($debug)
@@ -477,13 +495,18 @@ class DataAccessManager
 
     public static function getAccessor($name, $throwException = true)
     {
+		$singleton = self::getSingleton();
+
 	    if ($name === "DataAccessManager")
 	    {
-	    	return self::getSingleton();
+	    	return $singleton;
 	    }
         else
         {
-            return self::getSingleton()->getDataAccessor($name, $throwException);
+			// die("Getting name: ".$name."\n".print_r($singleton, true));
+            $dataAccessor = $singleton->getDataAccessor($name, $throwException);
+			// die("Data accessor: ".$name."\n".print_r($dataAccessor, true));
+			return $dataAccessor;
         }
     }
 
@@ -792,7 +815,12 @@ class DataAccessManager
 
     public function getDataAccessor($name, $throwException = true) 
     {
-        $debug = true;
+		$debug = false;
+
+		if (false && ($name=="conduce"))
+		{
+			$debug = false;
+		}
 
 		// die(print_r($this->dataAccessors, true));
 		
@@ -824,6 +852,12 @@ class DataAccessManager
 
             $config = $this->dataAccessorConstructions[$key];
 
+			if ($debug)
+			{
+				error_log("Got config: ".print_r($config, true));
+				// die("Got config: ".$key);
+			}
+
 			if (!isset($config["class"]))
 			{
 				throw new Exception("Must set class to start up object");
@@ -839,10 +873,20 @@ class DataAccessManager
 			
 			if (method_exists($className, $initFromDataAccessManager))
 			{
+				if ($debug)
+				{
+					error_log("Calling initFromDataAccessManager: ".$className);
+				}
+
 				$instance = $className::$initFromDataAccessManager(
 					$this,
 					$key,
 					$config);
+
+				if ($debug)
+				{
+					error_log("Instance: ".print_r($instance, true));
+				}
 			}
 			else
 			{
@@ -858,6 +902,12 @@ class DataAccessManager
 				{
 					$dbInstance = $this->getDatabaseInstance($dbName);
 				}
+
+				if ($debug)
+				{
+					error_log("DB Instance: ".print_r($dbInstance, true));
+				}
+
 				$instanceOptions = null;
 				if (isset($config['instanceOptions']))
 				{
@@ -1065,7 +1115,7 @@ class DataAccessManager
 
 	public function internalCreateTables()
 	{
-		$debug = true;
+		$debug = false;
 
 		foreach ($this->dataAccessorConstructions as $key => $construction)
 		{

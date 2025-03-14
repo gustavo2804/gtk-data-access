@@ -137,7 +137,7 @@ class GTKCookie
     }
 
     public function set(string $name, string $value, $options = []): bool {
-        $debug = true;
+        $debug = false;
 
         $expiry = $options["expires"] ?? time() + $this->defaultExpiry;
 

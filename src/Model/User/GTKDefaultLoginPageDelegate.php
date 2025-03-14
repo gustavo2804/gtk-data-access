@@ -13,8 +13,11 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 	public function __construct($options = [])
 	{
 		parent::__construct($options);
+		
 		$this->setAuthenticate(false);
-	}
+		$this->authenticationRequired = false;
+		$this->permissionRequired     = "public";
+	}	
 
 	public function processPost()
 	{
@@ -142,7 +145,7 @@ class GTKDefaultLoginPageDelegate extends GTKHTMLPage
 	}
 	public function successfulMatchForUser($user)
 	{
-		$debug = true;
+		$debug = false;
 
 		if ($debug)
 		{
