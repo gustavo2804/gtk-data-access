@@ -462,6 +462,7 @@ class SelectQuery implements IteratorAggregate,
 
             if (is_array($this->_orderBy) && (count($this->_orderBy) > 0))
             {
+                $didSetOrderBy = true;
                 $sql .= ' ORDER BY ';
                 $isFirst = true;
                 $isEven  = false;
@@ -515,10 +516,12 @@ class SelectQuery implements IteratorAggregate,
                 {
                     $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy)." DESC";
                 }
+                $didSetOrderBy = true;
             }
             else if ($this->_orderBy instanceof OrderBy)
             {
                 $sql .= ' ORDER BY '.$this->dbColumnNameForKey($this->_orderBy->column)." ".$this->_orderBy->order;
+                $didSetOrderBy = true;
             }
             else if ($this->dataSource->defaultOrderByColumnKey)
             {
