@@ -73,7 +73,7 @@ class OneToManyRelation
             // Log the conditions
             error_log("removeRelation: conditions = " . print_r($conditions, true));
 
-            $this->dataAccessManager->deleterelation($conditions);
+            $this->dataAccessManager->deleteRelation($conditions);
             return true;
         } catch (Exception $e) {
             error_log("Error en removeRelation: " . $e->getMessage());

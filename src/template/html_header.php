@@ -66,13 +66,15 @@
 </head>
 
 
-<?php  $isDeveloper = (DataAccessManager::get("session")->getCurrentUser() && DataAccessManager::get("persona")->isDeveloper(DataAccessManager::get("session")->getCurrentUser())); ?>
+<?php  
 
-<?php  if ($isDeveloper): ?>
+$isDeveloper = DataAccessManager::get("session")->isDeveloper();
+
+if ($isDeveloper):
+ ?>
 <script>
     <?php require_once $main_dir."/src_data_access/JS/gtk_testing_init.js"; ?>
 </script>
-
 <?php endif; ?>
 
 <body>

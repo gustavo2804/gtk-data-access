@@ -333,6 +333,26 @@ function doOrCatchAndReport($function, $options = [])
 {
     $debug = false;
 
+    // Set the maximum execution time...
+
+    if ($options["max_execution_time"])
+    {
+        set_time_limit($options["max_execution_time"]);
+
+        // Register a shutdown function to capture the last error
+        register_shutdown_function(function() {
+            $error = error_get_last();
+
+            if ($error) 
+            {
+                echo "Error occurred: " . $error['message'] . "\n";
+                echo "Error Type: " . $error['type'] . "\n";
+                echo "Error File: " . $error['file'] . "\n";
+                echo "Error Line: " . $error['line'] . "\n";
+            }
+        });
+    }
+
     $containsLocal = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
     ]);

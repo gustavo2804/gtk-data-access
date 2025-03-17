@@ -195,13 +195,6 @@ class PersonaDataAccess extends DataAccess
 
 	
 
-
-	public static function getCurrentUser()
-	{
-		throw new Exception("Deprecated");
-		return DataAccessManager::get("seddion")->getCurrentApacheUserOrSendToLoginWithRedirect("/auth/login.php");
-	}
-
 	public function getUserFromToken($token)
 	{
 		$debug = false;

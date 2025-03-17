@@ -387,35 +387,41 @@ class GTKHTMLPage
 		$toDieWith .= " The default path: ".print_r($theDefaultPath, true);
 		die($toDieWith);
 		*/
-		if (is_callable($toIncludeOrRender))
+		if ($toIncludeOrRender)
 		{
-			return $toIncludeOrRender();
+			if (is_callable($toIncludeOrRender))
+			{
+				return $toIncludeOrRender();
+			}
+
+			$classExists = class_exists($toIncludeOrRender);
+
+			if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
+			{
+				$instance = new $toIncludeOrRender();
+				return $instance->renderForUser($this->currentUser());
+			}
+			else if ($classExists && method_exists($toIncludeOrRender, "render"))
+			{
+				$instance = new $toIncludeOrRender();
+				return $instance->render();
+			}
 		}
 
-		$classExists = class_exists($toIncludeOrRender);
+		if ($theDefaultPath)
+		{
+			$classExists = class_exists($theDefaultPath);
 
-		if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
-		{
-			$instance = new $toIncludeOrRender();
-			return $instance->renderForUser($this->currentUser());
-		}
-		else if ($classExists && method_exists($toIncludeOrRender, "render"))
-		{
-			$instance = new $toIncludeOrRender();
-			return $instance->render();
-		}
-
-		$classExists = class_exists($theDefaultPath);
-
-		if ($classExists && method_exists($theDefaultPath, "renderForUser"))
-		{
-			$instance = new $theDefaultPath();
-			return $instance->renderForUser($this->currentUser());
-		}
-		else if ($classExists && method_exists($theDefaultPath, "render"))
-		{
-			$instance = new $theDefaultPath();
-			return $instance->render();
+			if ($classExists && method_exists($theDefaultPath, "renderForUser"))
+			{
+				$instance = new $theDefaultPath();
+				return $instance->renderForUser($this->currentUser());
+			}
+			else if ($classExists && method_exists($theDefaultPath, "render"))
+			{
+				$instance = new $theDefaultPath();
+				return $instance->render();
+			}
 		}
 
 		return "";
