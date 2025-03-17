@@ -336,27 +336,7 @@ function doOrCatchAndReport($function, $options = [])
     // Set the maximum execution time...
     $maxExecutionTime = $options["max_execution_time"] ?? false;
 
-    if ($maxExecutionTime)
-    {
-        set_time_limit($maxExecutionTime);
 
-        // Register a shutdown function to capture the last error
-        register_shutdown_function(function() use ($maxExecutionTime) {
-            $error = error_get_last();
-
-            if (strpos($error['message'], 'maximum execution time') !== false)
-            {
-                $message = "Error occurred: " . $error['message'] . "\n";
-                $message .= "Error Type: " . $error['type'] . "\n";
-                $message .= "Error File: " . $error['file'] . "\n";
-                $message .= "Error Line: " . $error['line'] . "\n";
-
-                $subject = "Max Execution Time: ".$maxExecutionTime;
-
-                DataAccessManager::get("email_queue")->reportError($subject, $message);
-            }
-        });
-    }
 
     $containsLocal = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
@@ -387,7 +367,29 @@ function doOrCatchAndReport($function, $options = [])
     $shouldPrintToScreen = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
         "prueba",
-    ]);
+    ]) || (getenv("GTK_DEBUG") == "true");
+
+    if ($maxExecutionTime)
+    {
+        set_time_limit($maxExecutionTime);
+
+        // Register a shutdown function to capture the last error
+        register_shutdown_function(function() use ($maxExecutionTime, $shouldPrintToScreen) {
+            $error = error_get_last();
+
+            if ($shouldPrintToScreen || strpos($error['message'], 'time') !== false)
+            {
+                $message = "Error occurred: " . $error['message'] . "\n";
+                $message .= "Error Type: " . $error['type'] . "\n";
+                $message .= "Error File: " . $error['file'] . "\n";
+                $message .= "Error Line: " . $error['line'] . "\n";
+
+                $subject = "Max Execution Time: ".$maxExecutionTime;
+
+                DataAccessManager::get("email_queue")->reportError($subject, $message);
+            }
+        });
+    }
     
     
     if (str_ends_with($_SERVER["REQUEST_URI"], ".js"))
