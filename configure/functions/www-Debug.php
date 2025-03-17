@@ -344,7 +344,7 @@ function doOrCatchAndReport($function, $options = [])
         register_shutdown_function(function() use ($maxExecutionTime) {
             $error = error_get_last();
 
-            if ($error) 
+            if (strpos($error['message'], 'maximum execution time') !== false)
             {
                 $message = "Error occurred: " . $error['message'] . "\n";
                 $message .= "Error Type: " . $error['type'] . "\n";
