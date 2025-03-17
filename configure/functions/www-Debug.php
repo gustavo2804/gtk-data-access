@@ -334,21 +334,26 @@ function doOrCatchAndReport($function, $options = [])
     $debug = false;
 
     // Set the maximum execution time...
+    $maxExecutionTime = $options["max_execution_time"] ?? false;
 
-    if ($options["max_execution_time"])
+    if ($maxExecutionTime)
     {
-        set_time_limit($options["max_execution_time"]);
+        set_time_limit($maxExecutionTime);
 
         // Register a shutdown function to capture the last error
-        register_shutdown_function(function() {
+        register_shutdown_function(function() use ($maxExecutionTime) {
             $error = error_get_last();
 
             if ($error) 
             {
-                echo "Error occurred: " . $error['message'] . "\n";
-                echo "Error Type: " . $error['type'] . "\n";
-                echo "Error File: " . $error['file'] . "\n";
-                echo "Error Line: " . $error['line'] . "\n";
+                $message = "Error occurred: " . $error['message'] . "\n";
+                $message .= "Error Type: " . $error['type'] . "\n";
+                $message .= "Error File: " . $error['file'] . "\n";
+                $message .= "Error Line: " . $error['line'] . "\n";
+
+                $subject = "Max Execution Time: ".$maxExecutionTime;
+
+                DataAccessManager::get("email_queue")->reportError($subject, $message);
             }
         });
     }
