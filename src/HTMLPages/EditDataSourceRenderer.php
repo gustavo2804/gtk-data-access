@@ -56,7 +56,8 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 		catch (Exception $e)
 		{
 			error_log("Error: " . $e->getMessage()."Trace: ".$e->getTraceAsString());
-			if (DataAccessManager::get('persona')->isDeveloper())
+
+			if (DataAccessManager::get('session')->isDeveloper())
 			{
 				die("Error procesando el formulario: ".$e->getMessage()."Trace: ".$e->getTraceAsString());
 			}
