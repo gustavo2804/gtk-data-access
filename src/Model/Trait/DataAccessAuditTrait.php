@@ -3,12 +3,7 @@
 trait DataAccessAuditTrait 
 {
     protected function recordAudit(string $action, $recordId, ?array $changes = null) 
-    {
-        $auditTrail = DAM::get('data_access_audit_trail');
-        
-        // Get current user if available
-        $user = DAM::get("session")->getCurrentUser();
-        
+    {        
         $dataAccessName = get_class($this);
 
         if (method_exists($this, 'getDataAccessorName')) 
@@ -22,17 +17,20 @@ trait DataAccessAuditTrait
             return;
         }   
 
+
+        $auditTrail = DAM::get('data_access_audit_trail');
+        
+        // Get current user if available
+        $user      = DAM::get("session")->getCurrentUser();
+        $userId    = null;
+        $userEmail = null;
+
+        
         if ($user)
         {
             $userID    = DAM::get("persona")->identifierForItem($user);
             $userEmail = DAM::get("persona")->valueForKey("email", $user);
         }
-        else
-        {
-            $userID = null;
-            $userEmail = null;
-        }
-
         $toInsert = [
             'data_access_name' => $dataAccessName,
             'record_id'        => $recordId,
