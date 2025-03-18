@@ -22,7 +22,7 @@ trait DataAccessAuditTrait
         
         // Get current user if available
         $user      = DAM::get("session")->getCurrentUser();
-        $userId    = null;
+        $userID    = null;
         $userEmail = null;
 
         
