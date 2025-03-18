@@ -349,7 +349,8 @@ function doOrCatchAndReport($function, $options = [])
     // die("From ENV: ".$fromEnv);
 
     if ($fromEnv) 
-    {
+    { 
+        error_log("Running `debug.php` - setting log path from env: ".$errorLogPath." --- to --- ".$fromEnv);
         $errorLogPath = $fromEnv;
     } 
     else if (isset($options["not_override_error_log_path"]))
@@ -363,6 +364,13 @@ function doOrCatchAndReport($function, $options = [])
             }
         }
     }
+    else if (!$containsLocal)
+    {
+        error_log("Running `debug.php` - error log original path: ".$errorLogPath);
+        $errorLogPath = setPHPErrorLogPath();
+        error_log("Running `debug.php` - error log new path: ".$errorLogPath);
+    }
+
     
     $shouldPrintToScreen = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
