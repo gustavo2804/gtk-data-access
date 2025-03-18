@@ -7,12 +7,8 @@ trait DataAccessAuditTrait
         $auditTrail = DAM::get('data_access_audit_trail');
         
         // Get current user if available
-        $user = null;
         $user = DAM::get("session")->getCurrentUser();
-        if (method_exists($this, 'getCurrentUser')) {
-            $user = $this->getCurrentUser();
-        }
-
+        
         $dataAccessName = get_class($this);
 
         if (method_exists($this, 'getDataAccessorName')) 
@@ -28,7 +24,7 @@ trait DataAccessAuditTrait
 
         if ($user)
         {
-            $userID = DAM::get("persona")->identifierForItem($user);
+            $userID    = DAM::get("persona")->identifierForItem($user);
             $userEmail = DAM::get("persona")->valueForKey("email", $user);
         }
         else
