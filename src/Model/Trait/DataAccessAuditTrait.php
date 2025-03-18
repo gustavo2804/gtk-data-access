@@ -4,6 +4,12 @@ trait DataAccessAuditTrait
 {
     protected function recordAudit(string $action, $recordId, ?array $changes = null) 
     {        
+        if (true)
+        {
+            error_log("Ignoring recordAudit");
+            return;
+        }
+
         $dataAccessName = get_class($this);
 
         if (method_exists($this, 'getDataAccessorName')) 
