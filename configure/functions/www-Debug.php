@@ -69,8 +69,7 @@ function findAppRootDirectory()
     return null;
 }
 
-
-function setPHPErrorLogPath()
+function getPathToLogFromGTKDeployStructure()
 {
     $repoRoot = dirname($_SERVER["DOCUMENT_ROOT"]);
 
@@ -81,7 +80,7 @@ function setPHPErrorLogPath()
     $nPathParts = count($pathParts);
 
     $releaseNumberIndex = $nPathParts - 1;
-    $repoTypeIndex = $nPathParts - 2;
+    $repoTypeIndex      = $nPathParts - 2;
 
     $releaseNumber = $pathParts[$releaseNumberIndex];
     $repoType      = $pathParts[$repoTypeIndex];
@@ -103,8 +102,25 @@ function setPHPErrorLogPath()
     $pathToLogAsArray[] = "Logs";
     $pathToLogAsArray[] = $repoType;
     $pathToLogAsArray[] = $errorLogName.".log";
-
+    
     $errorLogPath = implode(DIRECTORY_SEPARATOR, $pathToLogAsArray);
+
+    return $errorLogPath;
+}
+
+
+function setPHPErrorLogPath()
+{
+    $errorLogPath = null;
+
+    if (false)
+    {
+        $errorLogPath = getPathToLogFromGTKDeployStructure();
+    }
+    else
+    {
+        $errorLogPath = "C://PHP_Logs//stonewood-app.log";
+    }
 
     error_log("Setting error log path to: ".$errorLogPath);
 
