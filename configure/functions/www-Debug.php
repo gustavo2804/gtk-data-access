@@ -69,8 +69,7 @@ function findAppRootDirectory()
     return null;
 }
 
-
-function setPHPErrorLogPath()
+function getPathToLogFromGTKDeployStructure()
 {
     $repoRoot = dirname($_SERVER["DOCUMENT_ROOT"]);
 
@@ -81,7 +80,7 @@ function setPHPErrorLogPath()
     $nPathParts = count($pathParts);
 
     $releaseNumberIndex = $nPathParts - 1;
-    $repoTypeIndex = $nPathParts - 2;
+    $repoTypeIndex      = $nPathParts - 2;
 
     $releaseNumber = $pathParts[$releaseNumberIndex];
     $repoType      = $pathParts[$repoTypeIndex];
@@ -103,8 +102,25 @@ function setPHPErrorLogPath()
     $pathToLogAsArray[] = "Logs";
     $pathToLogAsArray[] = $repoType;
     $pathToLogAsArray[] = $errorLogName.".log";
-
+    
     $errorLogPath = implode(DIRECTORY_SEPARATOR, $pathToLogAsArray);
+
+    return $errorLogPath;
+}
+
+
+function setPHPErrorLogPath()
+{
+    $errorLogPath = null;
+
+    if (false)
+    {
+        $errorLogPath = getPathToLogFromGTKDeployStructure();
+    }
+    else
+    {
+        $errorLogPath = "C://PHP_Logs//stonewood-app.log";
+    }
 
     error_log("Setting error log path to: ".$errorLogPath);
 
@@ -333,13 +349,27 @@ function doOrCatchAndReport($function, $options = [])
 {
     $debug = false;
 
+    // Set the maximum execution time...
+    $maxExecutionTime = $options["max_execution_time"] ?? false;
+
+
+
     $containsLocal = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
     ]);
     
     $errorLogPath = ini_get("error_log");
 
-    if (isset($options["not_override_error_log_path"]))
+    $fromEnv = getenv('GTK_ERROR_LOG_PATH');
+
+    // die("From ENV: ".$fromEnv);
+
+    if ($fromEnv) 
+    { 
+        error_log("Running `debug.php` - setting log path from env: ".$errorLogPath." --- to --- ".$fromEnv);
+        $errorLogPath = $fromEnv;
+    } 
+    else if (isset($options["not_override_error_log_path"]))
     {
         if (!isTruthy($options["not_override_error_log_path"]))
         {
@@ -350,11 +380,40 @@ function doOrCatchAndReport($function, $options = [])
             }
         }
     }
+    else if (!$containsLocal)
+    {
+        error_log("Running `debug.php` - error log original path: ".$errorLogPath);
+        $errorLogPath = setPHPErrorLogPath();
+        error_log("Running `debug.php` - error log new path: ".$errorLogPath);
+    }
+
     
     $shouldPrintToScreen = idx_containsKeywords($_SERVER["HTTP_HOST"], [
         "local",
         "prueba",
-    ]);
+    ]) || (getenv("GTK_DEBUG") == "true");
+
+    if ($maxExecutionTime)
+    {
+        set_time_limit($maxExecutionTime);
+
+        // Register a shutdown function to capture the last error
+        register_shutdown_function(function() use ($maxExecutionTime, $shouldPrintToScreen) {
+            $error = error_get_last();
+
+            if ($shouldPrintToScreen || strpos($error['message'], 'time') !== false)
+            {
+                $message = "Error occurred: " . $error['message'] . "\n";
+                $message .= "Error Type: " . $error['type'] . "\n";
+                $message .= "Error File: " . $error['file'] . "\n";
+                $message .= "Error Line: " . $error['line'] . "\n";
+
+                $subject = "Max Execution Time: ".$maxExecutionTime;
+
+                DataAccessManager::get("email_queue")->reportError($subject, $message);
+            }
+        });
+    }
     
     
     if (str_ends_with($_SERVER["REQUEST_URI"], ".js"))

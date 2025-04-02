@@ -1,10 +1,5 @@
 <?php
 
-use function Deployer\error;
-use function PHPUnit\Framework\isEmpty;
-use function PHPUnit\Framework\throwException;
-
-
 if (!function_exists("gtk_log"))
 {
 
@@ -36,6 +31,7 @@ class DataAccessManager
     private $dataAccessorConstructions = [];
     private $databaseConfigurations    = [];
     private $databases                 = [];
+	private $nonDefaultDataAccessors   = [];
 
 
 
@@ -199,7 +195,25 @@ class DataAccessManager
 	{
 		$debug = false;
 
+		if (false && ($dataSourceName == "conduce"))
+		{
+			$debug = false;
+		}
+
+		if ($debug)
+		{
+			error_log("Got data source name: ".$dataSourceName);
+			// die("Will get data source name: ".$dataSourceName);
+		}
+
 		$dataSource = self::get($dataSourceName);
+
+		if ($debug)
+		{
+			error_log("Got data source: ".$dataSourceName);
+			// die("`allLinkTo` Got data source: ".$dataSourceName);
+		}
+
 		$href       = self::allURLTo($dataSourceName, $options);
 
 		if ($debug)
@@ -258,6 +272,72 @@ class DataAccessManager
 	public static function maybeGet($name)
 	{
 		return self::getAccessor($name, false);
+	}
+
+	public static function getOnConnection($connectionName, $dataAccessorName)
+	{
+		$singleton = self::getSingleton();
+
+		return $singleton->internalGetOnConnection($connectionName, $dataAccessorName);	
+	}
+
+	public function internalGetOnConnection($connectionName, $dataAccessorName)
+	{
+		// TODO: Implement internalGetOnConnection() method.
+		// This method should lookup the dataAccessor by name,
+		// verify which connection it is configured for.
+		// If the connection name is the same one as the one we are looking for,
+		// return the dataAccessor.
+		// If not, then it should create a new dataAccessor on the fly,
+		// using the PDO instance associated with the connection name 
+		// as the connection and return this new dataAccessor.
+		// this dataAccessor should be stored in the $nonDefaultDataAccessors array,
+		// so that next time this method is called with the same connection name,
+		// it returns the same dataAccessor instance.
+		// The key for this dataAccessor in the $nonDefaultDataAccessors array 
+		// should be the $this->nonDefaultDataAccessors[$connectionName][$dataAccessorName]
+		$debug = false;
+
+		if ($debug) {
+			gtk_log("internalGetOnConnection: connectionName: " . $connectionName);
+			gtk_log("internalGetOnConnection: dataAccessorName: " . $dataAccessorName);
+		}
+
+		// Check if we already have a non-default accessor instance
+		if (isset($this->nonDefaultDataAccessors[$connectionName][$dataAccessorName])) {
+			return $this->nonDefaultDataAccessors[$connectionName][$dataAccessorName];
+		}
+
+		// Get the data accessor configuration
+		$key = $this->keyForDataAccessorConstructions($dataAccessorName);
+		if (!$key) {
+			throw new Exception("Data accessor configuration for '{$dataAccessorName}' not found.");
+		}
+		$config = $this->dataAccessorConstructions[$key];
+
+		// If the requested connection matches the default connection in config,
+		// return the default accessor instance
+		if (isset($config['database']) && $config['database'] === $connectionName) {
+			return $this->getDataAccessor($dataAccessorName);
+		}
+
+		// Get the database instance for the requested connection
+		$db = $this->getDatabaseInstance($connectionName);
+		if (!$db) {
+			throw new Exception("Database connection '{$connectionName}' not found.");
+		}
+
+		// Create new data accessor instance with the specified connection
+		$className = $config['class'];
+		$accessor = new $className($db);
+
+		// Store in nonDefaultDataAccessors array
+		if (!isset($this->nonDefaultDataAccessors[$connectionName])) {
+			$this->nonDefaultDataAccessors[$connectionName] = [];
+		}
+		$this->nonDefaultDataAccessors[$connectionName][$dataAccessorName] = $accessor;
+
+		return $accessor;
 	}
 
     public static function get($name)
@@ -410,13 +490,18 @@ class DataAccessManager
 
     public static function getAccessor($name, $throwException = true)
     {
+		$singleton = self::getSingleton();
+
 	    if ($name === "DataAccessManager")
 	    {
-	    	return self::getSingleton();
+	    	return $singleton;
 	    }
         else
         {
-            return self::getSingleton()->getDataAccessor($name, $throwException);
+			// die("Getting name: ".$name."\n".print_r($singleton, true));
+            $dataAccessor = $singleton->getDataAccessor($name, $throwException);
+			// die("Data accessor: ".$name."\n".print_r($dataAccessor, true));
+			return $dataAccessor;
         }
     }
 
@@ -725,7 +810,12 @@ class DataAccessManager
 
     public function getDataAccessor($name, $throwException = true) 
     {
-        $debug = true;
+		$debug = false;
+
+		if (false && ($name=="conduce"))
+		{
+			$debug = false;
+		}
 
 		// die(print_r($this->dataAccessors, true));
 		
@@ -757,6 +847,12 @@ class DataAccessManager
 
             $config = $this->dataAccessorConstructions[$key];
 
+			if ($debug)
+			{
+				error_log("Got config: ".print_r($config, true));
+				// die("Got config: ".$key);
+			}
+
 			if (!isset($config["class"]))
 			{
 				throw new Exception("Must set class to start up object");
@@ -772,10 +868,20 @@ class DataAccessManager
 			
 			if (method_exists($className, $initFromDataAccessManager))
 			{
+				if ($debug)
+				{
+					error_log("Calling initFromDataAccessManager: ".$className);
+				}
+
 				$instance = $className::$initFromDataAccessManager(
 					$this,
 					$key,
 					$config);
+
+				if ($debug)
+				{
+					error_log("Instance: ".print_r($instance, true));
+				}
 			}
 			else
 			{
@@ -791,6 +897,12 @@ class DataAccessManager
 				{
 					$dbInstance = $this->getDatabaseInstance($dbName);
 				}
+
+				if ($debug)
+				{
+					error_log("DB Instance: ".print_r($dbInstance, true));
+				}
+
 				$instanceOptions = null;
 				if (isset($config['instanceOptions']))
 				{
@@ -998,7 +1110,7 @@ class DataAccessManager
 
 	public function internalCreateTables()
 	{
-		$debug = true;
+		$debug = false;
 
 		foreach ($this->dataAccessorConstructions as $key => $construction)
 		{
@@ -1061,4 +1173,3 @@ class DataAccessManager
 	
 	}
 }
-

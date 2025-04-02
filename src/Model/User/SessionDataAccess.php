@@ -3,27 +3,52 @@
 
 class SessionDataAccess extends DataAccess 
 {
+	public $_currentUser		       = null;
+	public $didCheckForCurrentUser = false;
+
 	public function currentUserHasPermission($permission)
 	{
 		$currentUser = $this->getCurrentUser();
-		
-		return DataAccessManager::get("persona")->hasPermission($permission, $currentUser);
+
+		if ($currentUser)
+		{
+			return DataAccessManager::get("persona")->hasPermission($permission, $currentUser);
+		}
+
+		return false;
 	}
 	public function currentUserHasOneOfPermissions($permissions)
 	{
 		$currentUser = $this->getCurrentUser();
 		
-		return DataAccessManager::get("persona")->hasOneOfPermissions(
-			$permissions, $currentUser);
+		if ($currentUser)
+		{
+			return DataAccessManager::get("persona")->hasOneOfPermissions(
+				$permissions, 
+				$currentUser
+			);
+		}
+
+		return false;
+	}
+
+	public function currentUserHasRoles($roles)
+	{
+		return $this->currentUserIsInGroups($roles);
 	}
 
 	public function currentUserIsInGroups($groups)
 	{
 		$currentUser = $this->getCurrentUser();
-		
-		return DataAccessManager::get("persona")->isInGroup(
-			$currentUser,
-			$groups);
+
+		if ($currentUser)
+		{
+			return DataAccessManager::get("persona")->isInGroup(
+				$currentUser,
+				$groups);
+		}
+
+		return false;
 	}
 	public function clearCurrentSession()
 	{
@@ -31,6 +56,13 @@ class SessionDataAccess extends DataAccess
 	}
 	public function clearCurrentSessioAndRedirectTo($sendWithRedirect = "/auth/login.php")
 	{
+		$currentSession = $this->getCurrentApacheSession();
+
+		if ($currentSession)
+		{
+			$this->cancelSession($currentSession);
+		}
+
 		GTKCookie::clearAuthCookie();
 		
 		header("Cache-Control: no-cache, must-revalidate"); // HTTP 1.1
@@ -65,8 +97,14 @@ class SessionDataAccess extends DataAccess
 
 	public function isDeveloper()
 	{
-		$currentUser = $this->getCurrentUserIfAny();
-		
+		if ($this->currentUserHasRoles([
+			"DEV",
+			"DEVELOPER",
+		]))
+		{
+			return true;
+		}
+
 		return false;
 	}
 
@@ -76,11 +114,17 @@ class SessionDataAccess extends DataAccess
 
 		static $session     = null;
 		static $currentUser = null;
-		static $didCheck    = false;
+
+		if ($debug)
+		{
+			error_log("`getCurrentUser` - Checking if current user is set: ".print_r($currentUser,true));
+		}
 
 		
-		if (!$didCheck)
+		if (!$this->didCheckForCurrentUser)
 		{
+			$this->didCheckForCurrentUser = true;
+
 			$session = $this->getCurrentApacheSession();
 
 			if ($debug)
@@ -106,7 +150,12 @@ class SessionDataAccess extends DataAccess
 				}
 			}
 
-			$didCheck = true;
+			
+		}
+
+		if ($debug)
+		{
+			error_log("`getCurrentUser` - Returning current user: ".print_r($currentUser, true));
 		}
 
 		return $currentUser;
@@ -115,17 +164,7 @@ class SessionDataAccess extends DataAccess
 
 	public function getCurrentUserIfAny()
 	{
-		$session = $this->getCurrentApacheSession();
-
-		$currentUser = null;
-
-		if ($session)
-		{
-			$currentUser = $this->getUserFromSession($session);
-			
-		}
-
-		return $currentUser;
+		return $this->getCurrentUser();
 	}
 
 
@@ -160,21 +199,16 @@ class SessionDataAccess extends DataAccess
 
 				return $user;
 			}
-			else
-			{
-				if ($debug)
-				{
-					error_log("Will redirect...");
-				}
-				redirectToURL("/auth/login.php", null, [
-					"redirectTo" => $sendWithRedirect,
-				]);
-			}
 		}
-		else
+
+		if ($sendWithRedirect)
 		{
-			return null;
+			redirectToURL("/auth/login.php", null, [
+				"redirectTo" => $sendWithRedirect,
+			]);
 		}
+		
+		return null;
 	}
 
 	public function getUserFromSession($session)
@@ -203,9 +237,97 @@ class SessionDataAccess extends DataAccess
 		return $user;
 	}
 
+	public function processAPIKey($apiKey)
+	{
+		global $_GLOBALS;
+		$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
+	
+		if (!$accessKeyArray) {
+			error_log("API Key array not found.");
+			return null;
+		}
+
+		if ($debug)
+		{
+			error_log("API Key: ".$apiKey);
+		}
+		
+		if (array_key_exists($apiKey,$accessKeyArray))
+		{
+			$defaultSessionLength = 60 * 60 * 24 * 30;
+			$email = $accessKeyArray[$apiKey];
+			$user =  DataAccessManager::get('persona')->getOne("email", $email);
+
+			if ($debug)
+			{
+				error_log("API Key found: ".$apiKey);
+				error_log("User found: ".print_r($user, true));
+			}
+
+			$session = [];
+			$session['user']        = $user;
+			$session['user_id']     = DAM::get("persona")->identifierForItem($user);
+			$session['apikey']      = true;
+			$session['valid_until'] = time() + $defaultSessionLength;
+			return $session;
+		}
+		else
+		{
+			error_log("API Key not found: ".$apiKey);
+			return null;
+		}
+	}
+
+	public function processAuthCookie($authToken, $options)
+	{
+		$debug = false;
+
+		if ($debug)
+		{
+			error_log("`getCurrentApacheSession` - Got auth token: ".$authToken);
+		}
+
+		$session = DataAccessManager::get("session")->getSessionById($authToken);
+
+		if ($debug)
+		{
+			error_log("`getCurrentApacheSession` - Got session: ".$session);
+		}
+
+		$isValid = $this->verifySession($session);
+
+		if ($debug)
+		{
+			error_log("Got `isValid`: ".$isValid);
+		}
+
+		if (!$isValid)
+		{
+			if (isTruthy($options["redirectIfInvalid"]))
+			{
+				redirectToURL("/auth/login.php", null, [
+					"redirectTo" => $options["redirectTo"] ?? null,
+				]);
+				return null;
+			}
+
+			if (isTruthy($options["requireValid"]))
+			{
+				return null;
+			}
+		}
+
+		if ($session)
+		{
+			$session["user"] = $this->getUserFromSession($session);
+		}
+		
+		return $session;
+	}
+
 
 	public function getCurrentApacheSession($options = [
-		"requireValid"	    => false,
+		"requireValid"	    => true,
 		"redirectIfInvalid" => false,
 		"redirectTo"        => null,
 	])
@@ -238,99 +360,21 @@ class SessionDataAccess extends DataAccess
 
 		if ($apiKey)
 		{
-			global $_GLOBALS;
-			$accessKeyArray = $_GLOBALS["API_KEY_ARRAY"];
-		
-			if (!$accessKeyArray) {
-				error_log("API Key array not found.");
-				return null;
-			}
-
-			if ($debug)
-			{
-				error_log("API Key: ".$apiKey);
-			}
-			
-			if (array_key_exists($apiKey,$accessKeyArray))
-			{
-				$defaultSessionLength = 60 * 60 * 24 * 30;
-				$email = $accessKeyArray[$apiKey];
-				$user =  DataAccessManager::get('persona')->getOne("email", $email);
-
-				if ($debug)
-				{
-					error_log("API Key found: ".$apiKey);
-					error_log("User found: ".print_r($user, true));
-				}
-
-				$session = [];
-				$session['user']        = $user;
-				$session['user_id']     = DAM::get("persona")->identifierForItem($user);
-				$session['apikey']      = true;
-				$session['valid_until'] = time() + $defaultSessionLength;
-				return $session;
-			}
-			else
-			{
-				error_log("API Key not found: ".$apiKey);
-				return null;
-			}
+			return $this->processAPIKey($apiKey);
 		}
 		elseif (isset($_COOKIE['AuthCookie']))
 		{
-			
 			$authToken = $_COOKIE['AuthCookie'];
 
-			if ($debug)
-			{
-				error_log("`getCurrentApacheSession` - Got auth token: ".$authToken);
-			}
-	
-			$session = DataAccessManager::get("session")->getSessionById($authToken);
-
-			if ($debug)
-			{
-				error_log("`getCurrentApacheSession` - Got session: ".$session);
-			}
-
-			$isValid = $this->verifySession($session);
-
-			if ($debug)
-			{
-				error_log("Got `isValid`: ".$isValid);
-			}
-
-			if (!$isValid)
-			{
-				if (isTruthy($options["redirectIfInvalid"]))
-				{
-					redirectToURL("/auth/login.php", null, [
-						"redirectTo" => $options["redirectTo"] ?? null,
-					]);
-					return null;
-				}
-	
-				if (isTruthy($options["requireValid"]))
-				{
-					return null;
-				}
-			}
-
-			if ($session)
-			{
-				$session["user"] = $this->getUserFromSession($session);
-			}
-			
-			return $session;
+			return $this->processAuthCookie($authToken, $options);
 		}
-		else
+
+		if ($debug)
 		{
-			if ($debug)
-			{
-				error_log("`getCurrentApacheSession` - No auth token or http header for: ".$httpTokenKey);
-			}
-			return null;
+			error_log("`getCurrentApacheSession` - No auth token or http header for: ".$httpTokenKey);
 		}
+
+		return null;
 
 	}
 
@@ -399,8 +443,7 @@ class SessionDataAccess extends DataAccess
 		$defaultSessionLength = 60 * 60 * 24 * 30; // 30 days
 
 		$statement->bindValue(':session_guid', $session_value);
-		// $statement->bindValue(':user_id_column_name',   DataAccessManager::get("persona")->dbColumnNameForKey("id"));
-		$statement->bindValue(':user_id',     			DataAccessManager::get("persona")->valueForKey("id", $user));
+		$statement->bindValue(':user_id',     			DataAccessManager::get("persona")->valueForIdentifier($user));
 		$statement->bindValue(':created_at', 		 	date(DATE_ATOM));
 		$statement->bindValue(':valid_until', 			time() + $defaultSessionLength);
 		$statement->bindValue(':canceled', 	  			0);
@@ -494,7 +537,10 @@ class SessionDataAccess extends DataAccess
 
 		if (time() > $validUntil)
 		{
-			if ($debug) { error_log("Time: ".time()." > valid_until: ".$session["valid_until"]); }
+			if ($debug) 
+			{ 
+				error_log("Time: ".time()." > valid_until: ".$session["valid_until"]); 
+			}
 			return false;
 		}
 		
@@ -529,9 +575,19 @@ class SessionDataAccess extends DataAccess
 		}
 	}
 
-	public static function routeToPage($requestPath, $get, $post, $server, $cookie, $session, $files, $env)
-	{
-		$user = DataAccessManager::get("persona")->getCurrentUser();
+	public static function routeToPage(
+		$requestPath, 
+		$get, 
+		$post, 
+		$server, 
+		$cookie, 
+		$session, 
+		$files, 
+		$env
+	){
+		$user = DataAccessManager::get("session")->getCurrentUser();
+
+		// die(print_r($user, true));
 
 		$isLoginPath = in_array($requestPath, [
 			"/auth/login.php", 
@@ -549,8 +605,10 @@ class SessionDataAccess extends DataAccess
 
 		if ($isLoginPath)
 		{
+			// die("Is Login path");
 			if ($user)
 			{
+				//die("User is logged in");
 				header("Location: /");
 				exit();
 			}

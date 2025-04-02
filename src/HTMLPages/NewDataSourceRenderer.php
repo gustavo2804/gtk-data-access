@@ -6,7 +6,7 @@ class NewDataSourceRenderer extends FormRendererBaseForDataSource
 	{
 		$debug = false;
 
-		$user =  DataAccessManager::get("persona")->getCurrentUser();
+		$user =  DAM::get("session")->getCurrentUser();
 
 		try
 		{					
@@ -63,7 +63,7 @@ class NewDataSourceRenderer extends FormRendererBaseForDataSource
 	{
     	$debug = false;
 		
-		$user = DataAccessManager::get("persona")->getCurrentUser();
+		$user = DAM::get("session")->getCurrentUser();
     	
 		$this->itemIdentifier = $this->dataSource->dataMapping->valueForIdentifier($this->item);
 		

@@ -23,7 +23,6 @@ function validatePasswordIsSecure($password, $delegate = null)
 			error_log("`validatePasswordIsSecure` - No delegate.");
 		}
 	}
-	
 	global $_GLOBALS;
 	if (!isset($_GLOBALS["APP_PASSWORD_REQUIREMENTS"]))
 	{
@@ -132,7 +131,7 @@ class PersonaDataAccess extends DataAccess
     {
 		$debug = false;
 		
-        $flatRoleDataAccess = DataAccessManager::get("flat_roles");
+        $flatRoleDataAccess = DataAccessManager::get("role_person_relationships");
 
 		$isDev              = $flatRoleDataAccess->isUserInRoleNamed("DEV",             $user);
         $isAdminAdmin       = $flatRoleDataAccess->isUserInRoleNamed("SOFTWARE_ADMIN",  $user);
@@ -194,10 +193,7 @@ class PersonaDataAccess extends DataAccess
 		$query->addWhereClause($whereGroup);
 	}
 
-	public static function getCurrentUser()
-	{
-		return DataAccessManager::get("session")->getCurrentApacheUserOrSendToLoginWithRedirect("/auth/login.php");
-	}
+	
 
 	public function getUserFromToken($token)
 	{
@@ -224,6 +220,12 @@ class PersonaDataAccess extends DataAccess
 	{
 		$roles = DataAccessManager::get('role_person_relationships')->rolesForUser($user);
 		$user["roles"] = $roles;
+	}
+
+	public static function deleteCurrentSessionCookie()
+	{
+		unset($_COOKIE['AuthCookie']);
+		setcookie('AuthCookie', '', -1, '/'); 
 	}
 
 	public static function logout($returnToPath = null)
@@ -419,17 +421,17 @@ class PersonaDataAccess extends DataAccess
 				error_log("Not an ADMIM or a dev");
 			}
 			
-			$isUserInAgency     = DataAccessManager::get("flat_roles")->isUserInRoleNamed("AGENCY", $user);
-			$isUserAdminForRole = DataAccessManager::get("flat_roles")->valueForKey("is_admin_for_role", $isUserInAgency);
+			$isUserInAgency     = DataAccessManager::get("role_person_relationships")->isUserInRoleNamed("AGENCY", $user);
+			$isUserAdminForRole = DataAccessManager::get("role_person_relationships")->valueForKey("is_admin_for_role", $isUserInAgency);
 
 			if ($isUserInAgency && $isUserAdminForRole)
 			{
-				$isItemInAgency = DataAccessManager::get("flat_roles")->isUserInRoleNamed("AGENCY", $item);
+				$isItemInAgency = DataAccessManager::get("role_person_relationships")->isUserInRoleNamed("AGENCY", $item);
 				
 				if ($isItemInAgency)
 				{
-					$userQualifier = DataAccessManager::get("flat_roles")->valueForKey("qualifier", $isUserInAgency);
-					$itemQualifier = DataAccessManager::get("flat_roles")->valueForKey("qualifier", $isItemInAgency);
+					$userQualifier = DataAccessManager::get("role_person_relationships")->valueForKey("qualifier", $isUserInAgency);
+					$itemQualifier = DataAccessManager::get("role_person_relationships")->valueForKey("qualifier", $isItemInAgency);
 
 					if ($userQualifier == $itemQualifier)
 					{
@@ -635,18 +637,21 @@ class PersonaDataAccess extends DataAccess
 	// public function createUserWithNoPassword($)
 
 	public function createUserIfNotExists($user)
-	{
-		if (!$this->where("email", $user['email']))
-		{
-			if ($user["password"])
-			{
-				$password_hash = password_hash($user['password'], PASSWORD_DEFAULT);
-				$user['password_hash'] = $password_hash;
-			}
+{
+    $existingUser = $this->where("email", $user['email']);
+    if (!$existingUser)
+    {
+        if ($user["password"])
+        {
+            $password_hash = password_hash($user['password'], PASSWORD_DEFAULT);
+            $user['password_hash'] = $password_hash;
+        }
 
-			$this->createUser($user);		
-		}
-	}
+        $this->createUser($user);
+        return $this->getDB()->lastInsertId(); // Devolver el ID del usuario recién creado
+    }
+
+}
 	
 	public function createUser($user)
 	{
@@ -688,6 +693,17 @@ class PersonaDataAccess extends DataAccess
 
 	public function isInGroup(&$user, $group)
 	{
+		$debug = false;
+
+		if (!$user)
+		{
+			if ($debug)
+			{
+				error_log("User is null");
+			}
+			return false;
+		}
+
 		if (is_array($group))
 		{
 			return $this->isInGroups($user, $group);
@@ -696,12 +712,18 @@ class PersonaDataAccess extends DataAccess
 		{
 			return $this->isInGroups($user, [ $group ]);
 		}
+		else
+		{
+			throw new Exception("Invalid group type");
+		}
 		
 	}
 
 	public function isInGroups(&$user, $groups)
 	{
 		$debug = false;
+
+		// die("isInGroups: ".print_r($user, true));
 
 		if (!$user)
 		{
@@ -715,20 +737,20 @@ class PersonaDataAccess extends DataAccess
 
 		$roleRelations = null;
 
-		if (!isset($user["flat_roles"]))
+		if (!isset($user["role_person_relationships"]))
 		{
 			if ($debug)
 			{
 				error_log("Searching for roles...");
 			}
-			$user["flat_roles"] = DataAccessManager::get("flat_roles")->where("user_id", $this->valueForKey("id", $user));
+			$user["role_person_relationships"] = DataAccessManager::get("role_person_relationships")->where("user_id", $this->valueForKey("id", $user));
 		}
 
-		$roleRelations = $user["flat_roles"];
+		$roleRelations = $user["role_person_relationships"];
 
 		if ($debug)
 		{
-			error_log("Got roles...: ".print_r($roles, true));
+			error_log("Got roles...: ".print_r($roleRelations, true));
 		}
 
 		$userRoles = null;
@@ -782,10 +804,6 @@ class PersonaDataAccess extends DataAccess
 
 	public function isDeveloper($user = null) 
 	{
-		if (!$user)
-		{
-			$user = $this->getCurrentUser();
-		}
 		return $this->isInGroup($user, "DEV");
 	}
 	public function isAdmin($user = null) 
@@ -827,7 +845,7 @@ class PersonaDataAccess extends DataAccess
 		$userID = $this->valueForKey("id", $user);
 
 		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
-		// $rolePersonRelationships = DataAccessManager::get("flat_roles");
+		// $rolePersonRelationships = DataAccessManager::get("role_person_relationships");
 
 		if (DataAccessManager::get("roles")->isQualifiedRole($role))
 		{
@@ -853,56 +871,52 @@ class PersonaDataAccess extends DataAccess
 		{
 			throw new Exception("User ID not found in".print_r($user, true));
 		}
+    
+		$query = new SelectQuery(DataAccessManager::get("role_person_relationships"));
 
-		$query = new SelectQuery(DataAccessManager::get("flat_roles"));
 
-		$query->addClause(new WhereClause("role_id", $roleID));
-		$query->addClause(new WhereClause("user_id", $userID));
+		$toInsert = [
+			"role_id" => $roleID,
+			"user_id" => $userID,
+		];
+		
 
-		$existingRole = $query->executeAndReturnOne();
+		DataAccessManager::get("role_person_relationships")->insert($toInsert);
 
-		if ($existingRole)
-		{
-			return;
-		}
-		else
-		{
-			$toInsert = [
-				"role_id" => $roleID,
-				"user_id" => $userID,
-			];
-			
-			DataAccessManager::get("flat_roles")->insert($toInsert);
-			// DataAccessManager::get("role_person_relationships")->insert($toInsert);
-		}
+		// DataAccessManager::get("role_person_relationships")->insert($toInsert);
+
 	}
 
 	public function permissionsForUser($user)
+{
+    $debug = false;
+    
+    if (!$user)
 	{
-		$debug = false;
+        return ["public",];
+    }
 
-		$roles = DataAccessManager::get("flat_roles")->rolesForUser($user);
+    $roles = DataAccessManager::get("role_person_relationships")->rolesForUser($user);
 
-		$permissions = [];
+    $permissions = [];
 
-		foreach ($roles as $role)
-		{
-			$rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
+    foreach ($roles as $role)
+    {
+        $rolePermissions = DataAccessManager::get("role_permission_relationships")->permissionsForRole($role);
 
-			if ($debug)
-			{
-				gtk_log("`permissionsForUser`: - Role (".$role["name"].") - has permissions: ".print_r($rolePermissions, true));
-			}
+        if ($debug)
+        {
+            gtk_log("`permissionsForUser`: - Role (".$role["name"].") - has permissions: ".print_r($rolePermissions, true));
+        }
 
-			$permissions = array_merge($permissions, $rolePermissions);
-		}
+        $permissions = array_merge($permissions, $rolePermissions);
+    }
 
-		$permissions = array_unique($permissions);
-		sort($permissions);
+    $permissions = array_unique($permissions);
+    sort($permissions);
 
-		return $permissions;
-		
-	}
+    return $permissions;
+}
 
 	public function hasOneOfPermissions($permissions, &$user, $closure = null)
 	{
@@ -1092,9 +1106,12 @@ class PersonaDataAccess extends DataAccess
 			$user = $this->getOne("email", $cedulaOrUsername);
 			
 			// If not found, check for email aliases
-			if (!$user && DAM::get("person_email_aliases")) {
+			if (!$user && DAM::get("person_email_aliases")) 
+			{
 				$personId = DAM::get("person_email_aliases")->findPersonByEmail($cedulaOrUsername);
-				if ($personId) {
+				
+				if ($personId) 
+				{
 					$user = $this->getOne("id", $personId);
 				}
 			}
@@ -1154,24 +1171,7 @@ class PersonaDataAccess extends DataAccess
 
 		echo "Looking for user with names: ".$user['nombres']." ".$user['apellidos']." - ID: ".$toIdentifyBy."\n";
 		
-		$userFromDB = null;
-		
-		if ($cedula)
-		{
-			$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-		}
-		else if ($email)
-		{
-			$userFromDB = DataAccessManager::get("persona")->getOne("email", $email);
-			
-			// If not found by primary email, check aliases
-			if (!$userFromDB && DAM::get("person_email_aliases")) {
-				$personId = DAM::get("person_email_aliases")->findPersonByEmail($email);
-				if ($personId) {
-					$userFromDB = DataAccessManager::get("persona")->getOne("id", $personId);
-				}
-			}
-		}
+		$userFromDB = $this->findUserByIdentifiable($toIdentifyBy);
 
 		if (!$userFromDB)
 		{
@@ -1189,36 +1189,32 @@ class PersonaDataAccess extends DataAccess
 			{
 				$generatedPassword = uniqid();
 				$password = $generatedPassword;
-				// $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
-				echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
-			}
+        		// $password = DataAccessManager::get("SetPasswordTokenDataAccess")->createPasswordPhrase();
+        		echo "Generated password for ".$user["nombres"]." ".$user["apellidos"]." --- Password: ".$password."\n";
+       		}
 
-			if ($password)
-			{
-				$password_hash = password_hash($password, PASSWORD_DEFAULT);
-				$user['password_hash'] = $password_hash;
-			}
-		
-			DataAccessManager::get("persona")->createUser($user);	
+            if ($password)
+            {
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $user['password_hash'] = $password_hash;
+            }
+        
+	    	DataAccessManager::get("persona")->createUser($user);	
 
-		
-			if ($cedula)
-			{
-				$userFromDB = DataAccessManager::get("persona")->findUserByCedula($cedula);
-			}
-			else
-			{
-				$userFromDB = DataAccessManager::get("persona")->getOne("email", $user['email']);
-			}
+            $userFromDB = $this->findUserByIdentifiable($toIdentifyBy);
 
-			if ($email && $generatedPassword)
-			{
-				if (method_exists($this, "sendWelcomeEmail"))
+            if ($email && $generatedPassword)
+            {
+
+				if ($email && $generatedPassword)
 				{
-					$this->sendWelcomeEmail($user, $generatedPassword);
+					if (method_exists($this, "sendWelcomeEmail"))
+					{
+						$this->sendWelcomeEmail($user, $generatedPassword);
+					}
 				}
-			}
-			
+            }
+
 			// Add email aliases if provided
 			if ($userFromDB && !empty($emailAliases) && DAM::get("person_email_aliases")) {
 				foreach ($emailAliases as $alias) {
@@ -1230,9 +1226,12 @@ class PersonaDataAccess extends DataAccess
 			if ($userFromDB && $email && DAM::get("person_email_aliases")) {
 				DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
 			}
-		}
-		else
-		{
+
+	    }
+        else
+        {
+            echo "User exists!\n";
+
 			// User already exists, add any new email aliases
 			if (!empty($emailAliases) && DAM::get("person_email_aliases")) {
 				foreach ($emailAliases as $alias) {
@@ -1247,27 +1246,42 @@ class PersonaDataAccess extends DataAccess
 					DAM::get("person_email_aliases")->addEmailForPerson($userFromDB['id'], $email, true);
 				}
 			}
-		}
-		
-		$roles = $user['roles'] ?? [];
-		
-		echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
+        }
+        
+        $roles = $user['roles'] ?? [];
+        
+        echo "Will assign # of roles (".count($roles).") to user: ".($email ?? $cedula)."...\n";
 
-		foreach ($roles as $role)
-		{
-			DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
-			echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
-		}
+        foreach ($roles as $role)
+        {
+            DataAccessManager::get("persona")->assignRoleToUser($role, $userFromDB);
+            echo "Assigned role: ".$role." to user: ".($email ?? $cedula)."\n";
+        }
 
 		return $userFromDB;
 	}
 
-	/**
-	 * Get all email addresses for a user
-	 * 
-	 * @param array|int $user The user array or user ID
-	 * @return array List of email addresses
-	 */
+
+	public function createUserWithRoles($userData, $roleIds)
+    {
+        // Crear el usuario si no existe
+        $userId = $this->createUserIfNotExists($userData);
+
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Correo Invalido O Duplicado.'];
+        }
+
+        // Asignar roles al usuario
+        $flatRoleDataAccess = DataAccessManager::get('role_person_relationships');
+        $roleResult = $flatRoleDataAccess->assignRolesToUser($userId, $roleIds);
+
+        if ($roleResult) {
+            return ['success' => true, 'message' => 'Usuario y roles asignados exitosamente.'];
+        } else {
+            return ['success' => false, 'message' => 'Usuario creado, pero error al asignar los roles.'];
+        }
+    }
+
 	public function getAllEmailsForUser($user)
 	{
 		$userId = is_array($user) ? $user['id'] : $user;
@@ -1328,4 +1342,75 @@ class PersonaDataAccess extends DataAccess
 		
 		return true;
 	}
+
 }
+
+
+/*
+
+	public static function getCurrentSessionAndAllowRedirectBack($redirectBack = false)
+	{
+		static $didLookForSession = false;
+		static $isAuthenticated   = null;
+		static $currentSession    = null;
+
+		if (!$didLookForSession)
+		{
+			$debug = false;
+
+			$authToken = $_COOKIE['AuthCookie'];
+	
+			if ($debug) 
+			{ 
+				error_log("Searching for current user with `authToken`: ".$authToken); 
+			}
+		
+			$currentSession = DataAccessManager::get("session")->getSessionById($authToken);
+
+			if ($currentSession)
+			{
+				$isAuthenticated = DataAccessManager::get("session")->verifySession($currentSession);
+
+				if (!$isAuthenticated)
+				{
+					self::logout();
+				}
+			}
+
+			$didLookForSession = true;
+		}
+
+		return $currentSession;
+	}
+
+
+	public static function isAuthenticatedSession()
+	{
+		$authToken = $_COOKIE['AuthCookie'];
+
+		return self::isAuthenticatedSession($authToken);
+	}
+
+	public function isAuthenticatedToken($authToken)
+	{
+		$debug = false;
+	
+		if ($debug) 
+		{ 
+			error_log("Searching for current user with `authToken`: ".$authToken); 
+		}
+	
+		$currentSession = DataAccessManager::get("session")->getSessionById($authToken);
+
+		if ($currentSession)
+		{
+			$isAuthenticated = DataAccessManager::get("session")->verifySession($currentSession);
+
+			if (!$isAuthenticated)
+			{
+				self::logout();
+			}
+		}
+	}
+
+*/

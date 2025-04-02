@@ -10,6 +10,14 @@ class GTKHTMLFragment
 	}
 }
 
+
+class GTKMenuPrepObject
+{
+    public $menuString      = "";
+    public $hiddenBoxString = "";
+	public $user;
+}
+
 class GTKMenuItemPair 
 {
     public $menuText;
@@ -36,32 +44,120 @@ class GTKMenuItemPair
         $this->boxId              = 'nav_menu_box_'.$this->sanitizeForHtmlId($menuText);
         $this->boxContent         = $boxContent;
         $this->accessRequirements = $accessRequirements;
+
+		// die("GTKMenuItemPair: ".print_r($this, true));
     }
 
     public function prepareHeaderItemsForUser($user, &$menuString, &$hiddenBoxString) {
-        if ($this->checkAccess($user)) 
+        if ($this->hasPermission($user)) 
         {
-            $menuString      .= "<li><a onclick=\"showContent('{$this->boxId}')\">{$this->menuText}</a></li>\n";
-            $hiddenBoxString .= "<div id=\"{$this->boxId}\" class=\"box\">\n{$this->boxContent}\n</div>\n";
+            $menuString      .= $this->menuString();
+            $hiddenBoxString .= $this->hiddenBoxString();
         }
     }
 
-    public function checkAccess($user) 
-    {
-        if (!$this->accessRequirements) 
-        {
-            return true;
-        }
+	public function prepareHeaderItemsForGTKMenuPrepObject($menuPrepObject)
+	{
+		$debug = true;
 
-        $hasRequiredRole = empty($this->accessRequirements['roles']) || 
-                           DataAccessManager::get("session")->currentUserIsInGroups($this->accessRequirements['roles']);
+		if ($debug)
+		{
+			error_log("Preparing header items for GTKMenuPrepObject: ".print_r($menuPrepObject, true));
+		}
+
+		if ($this->hasPermission($menuPrepObject->user))
+		{
+			if ($debug)
+			{
+				error_log("Adding menu item: ".$this->menuString());
+			}
+			$menuPrepObject->menuString .= $this->menuString();
+			$menuPrepObject->hiddenBoxString .= $this->hiddenBoxString();
+		}
+		else
+		{
+			if ($debug)
+			{
+				error_log("Not authorized, will not add menu item: ".$this->menuText);
+			}
+		}
+	}
+	public function menuString()
+	{
+		return "<li><a onclick=\"showContent('{$this->boxId}')\">{$this->menuText}</a></li>\n";
+	}
+
+	public function hiddenBoxString()
+	{
+		return "<div id=\"{$this->boxId}\" class=\"box\">\n{$this->boxContent}\n</div>\n";
+	}
+
+    public function hasPermission($user) 
+    {
+		$debug = true;
+
+		if ($debug)
+		{
+			error_log("Checking access for user: ".print_r($user, true));
+			error_log("Access requirements: ".print_r($this->accessRequirements, true));
+		}
+
+		$noSpecificPermission = empty($this->accessRequirements['permissions']);
+		$noSpecificRole       = empty($this->accessRequirements['roles']);
+
+		if ($noSpecificPermission && $noSpecificRole)
+		{
+			if ($debug)
+			{
+				error_log("No specific permission or role, will return true");
+			}
+			return true;
+		}
+
+
+        $hasRequiredRole = false;
+		
+		if (!$noSpecificRole)
+		{
+			if ($debug)
+			{
+				error_log("Checking access for user: ".print_r($user, true));
+			}
+			$hasRequiredRole = DAM::get("persona")->isInGroup(
+				$user,
+				$this->accessRequirements['roles']);
+
+			if ($hasRequiredRole)	
+			{
+				if ($debug)
+				{
+					error_log("Has required role: ".print_r($hasRequiredRole, true));
+				}
+				return true;
+			}
+		}
         
-        $hasRequiredPermission = empty($this->accessRequirements['permissions']) || 
-                                 array_reduce($this->accessRequirements['permissions'], function($carry, $permission) {
-                                     return $carry || DataAccessManager::get("session")->currentUserHasPermission($permission);
-                                 }, false);
+        $hasRequiredPermission = false;
+
+		if (!$hasRequiredRole)
+		{
+			if (!$noSpecificPermission)
+			{
+				foreach ($this->accessRequirements['permissions'] as $permission)
+				{
+					if (DAM::get("persona")->hasPermission($permission, $user))
+					{
+						if ($debug)
+						{
+							error_log("Has permission: ".$permission);
+						}
+						return true;
+					}
+				}
+			}
+		}
         
-        return $hasRequiredRole && $hasRequiredPermission;
+        return $hasRequiredRole || $hasRequiredPermission;
     }
 }
 
@@ -88,12 +184,31 @@ class GTKHTMLPage
 	public $header;
 	public $footer;
 
+	public $menuString;
+	public $hiddenBoxString;
+
 	public bool    $authenticationRequired = false; // ovveride in construct
 	public ?string $permissionRequired 	   = null;  // override in construct
+
+	/**
+	 * Array to store stylesheets
+	 */
+	protected $stylesheets = [];
+	
+	/**
+	 * Array to store scripts
+	 */
+	protected $scripts = [];
 
 	public function __construct($options = [])
 	{
 		// $pageOptions = OAM::get(get_class($this));
+	}
+
+	public function addMenuItem($menuText, $boxId)
+	{
+		$this->menuString      .= $menuText;
+		$this->hiddenBoxString .= $boxId;
 	}
 
 	public function setAuthenticate($toSet)
@@ -267,35 +382,46 @@ class GTKHTMLPage
 
 	public function includeOrRenderPathOrIncludeDefault($toIncludeOrRender, $theDefaultPath)
 	{
-		if (is_callable($toIncludeOrRender))
+		/*
+		$toDieWith = "To include or render: ".print_r($toIncludeOrRender, true);
+		$toDieWith .= " The default path: ".print_r($theDefaultPath, true);
+		die($toDieWith);
+		*/
+		if ($toIncludeOrRender)
 		{
-			return $toIncludeOrRender();
+			if (is_callable($toIncludeOrRender))
+			{
+				return $toIncludeOrRender();
+			}
+
+			$classExists = class_exists($toIncludeOrRender);
+
+			if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
+			{
+				$instance = new $toIncludeOrRender();
+				return $instance->renderForUser($this->currentUser());
+			}
+			else if ($classExists && method_exists($toIncludeOrRender, "render"))
+			{
+				$instance = new $toIncludeOrRender();
+				return $instance->render();
+			}
 		}
 
-		$classExists = class_exists($toIncludeOrRender);
+		if ($theDefaultPath)
+		{
+			$classExists = class_exists($theDefaultPath);
 
-		if ($classExists && method_exists($toIncludeOrRender, "renderForUser"))
-		{
-			$instance = new $toIncludeOrRender();
-			return $instance->renderForUser($this->currentUser());
-		}
-		else if ($classExists && method_exists($toIncludeOrRender, "render"))
-		{
-			$instance = new $toIncludeOrRender();
-			return $instance->render();
-		}
-
-		$classExists = class_exists($theDefaultPath);
-
-		if ($classExists && method_exists($theDefaultPath, "renderForUser"))
-		{
-			$instance = new $theDefaultPath();
-			return $instance->renderForUser($this->currentUser());
-		}
-		else if ($classExists && method_exists($theDefaultPath, "render"))
-		{
-			$instance = new $theDefaultPath();
-			return $instance->render();
+			if ($classExists && method_exists($theDefaultPath, "renderForUser"))
+			{
+				$instance = new $theDefaultPath();
+				return $instance->renderForUser($this->currentUser());
+			}
+			else if ($classExists && method_exists($theDefaultPath, "render"))
+			{
+				$instance = new $theDefaultPath();
+				return $instance->render();
+			}
 		}
 
 		return "";
@@ -417,6 +543,12 @@ class GTKHTMLPage
 
 	public function currentUser()
 	{
+		if ($this instanceof GTKDefaultLoginPageDelegate)
+		{
+			// die("GTKDefaultLoginPageDelegate");
+			return null;
+		}
+
 		if (!$this->user)
 		{
 			if (!$this->didSearchForCurrentUser)
@@ -495,6 +627,8 @@ class GTKHTMLPage
 	{
 		$debug = false;
 
+		$html = null;
+
 		$this->setCustomLogFile();
 
 		$this->get 		  = $get;
@@ -537,6 +671,8 @@ class GTKHTMLPage
 			return $this->handleNotAuthorized();
 		}
 
+		// die("Will process get");
+
 		$this->processGet($get);
 
 		switch ($this->server["REQUEST_METHOD"])
@@ -557,19 +693,32 @@ class GTKHTMLPage
 		}
 
 		if ($this->shouldRespondWithJSON())
-        {
-            if (method_exists($this, "renderJSON"))
+		{
+			if (method_exists($this, "renderJSON"))
 			{
 				return $this->renderJSON();
 			}
-        }
+		}
 
-		$text = "";
-		$text .= $this->gtk_renderHeader();
-		$text .= $this->gtk_renderBody();
-		$text .= $this->gtk_renderFooter();
+		// Add stylesheets
+		$html .= $this->renderStylesheets();
 		
-		return $text;
+		$html .= "<body>\n";
+		
+		// Add header, body, footer content
+		// die("Will render header");
+		$html .= $this->gtk_renderHeader();
+		// die("Will render body");
+		$html .= $this->gtk_renderBody();
+		// die("Will render footer");
+		$html .= $this->gtk_renderFooter();
+		
+		// Add scripts at the end of body
+		$html .= $this->renderScripts();
+		
+		$html .= "</body>\n</html>";
+		
+		return $html;
 	}
 
 	public function shouldRespondWithJSON()
@@ -583,6 +732,56 @@ class GTKHTMLPage
     	{
         	return htmlspecialchars($string);
     	}
+	}
+
+	/**
+	 * Adds a stylesheet to the page
+	 * 
+	 * @param string $url URL of the stylesheet to add
+	 * @return void
+	 */
+	public function addStylesheet($url)
+	{
+		$this->stylesheets[] = $url;
+	}
+
+	/**
+	 * Adds a script to the page
+	 * 
+	 * @param string $url URL of the script to add
+	 * @return void
+	 */
+	public function addScript($url)
+	{
+		$this->scripts[] = $url;
+	}
+
+	/**
+	 * Renders the stylesheets in the head section
+	 * 
+	 * @return string HTML for the stylesheets
+	 */
+	protected function renderStylesheets()
+	{
+		$html = '';
+		foreach ($this->stylesheets as $stylesheet) {
+			$html .= '<link rel="stylesheet" href="' . $stylesheet . '">' . PHP_EOL;
+		}
+		return $html;
+	}
+
+	/**
+	 * Renders the scripts at the end of the body
+	 * 
+	 * @return string HTML for the scripts
+	 */
+	protected function renderScripts()
+	{
+		$html = '';
+		foreach ($this->scripts as $script) {
+			$html .= '<script src="' . $script . '"></script>' . PHP_EOL;
+		}
+		return $html;
 	}
 
 }

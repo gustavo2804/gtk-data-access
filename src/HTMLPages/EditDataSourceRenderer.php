@@ -12,7 +12,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 		$debug = false;
 		try
 		{
-			$user =  DataAccessManager::get("persona")->getCurrentUser();
+			$user =  DataAccessManager::get("session")->getCurrentUser();
 			
 			$isInvalid = null;
 			
@@ -56,7 +56,8 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
 		catch (Exception $e)
 		{
 			error_log("Error: " . $e->getMessage()."Trace: ".$e->getTraceAsString());
-			if (DataAccessManager::get('persona')->isDeveloper())
+
+			if (DataAccessManager::get('session')->isDeveloper())
 			{
 				die("Error procesando el formulario: ".$e->getMessage()."Trace: ".$e->getTraceAsString());
 			}
@@ -71,7 +72,7 @@ class EditDataSourceRenderer extends FormRendererBaseForDataSource
     {
         $debug = false;
 
-		$user = DataAccessManager::get("persona")->getCurrentUser();
+		$user = DataAccessManager::get("session")->getCurrentUser();
 
         $this->itemIdentifier = $this->dataSource->dataMapping->valueForIdentifier($this->item);
 

@@ -68,7 +68,15 @@ class GTKColumnMapping extends GTKColumnBase
     public $defaultValue;
     public $isAutoIncrement;
 
-    
+    public function databaseKey()
+    {
+        if ($this->sqlServerKey)
+        {
+            return $this->sqlServerKey;
+        }
+
+        return $this->phpKey;
+    }
 
     public function isUpdatable()
     {
