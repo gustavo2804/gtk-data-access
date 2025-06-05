@@ -636,31 +636,6 @@ class RolePersonRelationshipsDataAccess extends DataAccess
       return $toReturn;
   }
 
-
-
-  /*  public function createTable()
-    {
-        $tableName = $this->tableName();
-
-        $query = "CREATE TABLE IF NOT EXISTS $tableName  
-                  (id INT AUTO_INCREMENT PRIMARY KEY,
-                   user_id INT,
-                   role_id INT,
-                   qualifier VARCHAR(255) DEFAULT NULL,
-                   is_admin_for_role BOOLEAN DEFAULT NULL,
-                    purpose VARCHAR(255) DEFAULT NULL,
-                    is_active BOOLEAN DEFAULT NULL,
-                   permissionsArray JSON DEFAULT NULL,
-                   can_grant_role BOOLEAN DEFAULT NULL,
-                   owns_role BOOLEAN DEFAULT NULL,
-                  date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                  UNIQUE(user_id, role_id, qualifier))";
-
-        $this->getDB()->query($query);
-
-    }*/
-
     public function isInRole($role, $user)
     {
         return $this->isUserInRoleNamed($role, $user);
