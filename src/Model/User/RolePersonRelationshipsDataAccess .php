@@ -638,7 +638,7 @@ class RolePersonRelationshipsDataAccess extends DataAccess
 
 
 
-    public function createTable()
+  /*  public function createTable()
     {
         $tableName = $this->tableName();
 
@@ -659,7 +659,7 @@ class RolePersonRelationshipsDataAccess extends DataAccess
 
         $this->getDB()->query($query);
 
-    }
+    }*/
 
     public function isInRole($role, $user)
     {
