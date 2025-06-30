@@ -30,7 +30,16 @@ class CreateUserHTMLPage extends GTKHTMLPage
                 'email' => $row[3],
                 'password' => $row[4]
             ];
-            $roleIds = explode(',', $row[5]);
+            
+            // Manejar roles - si no hay roles o está vacío, usar array vacío
+            $roleIds = [];
+            if (!empty($row[5])) {
+                $roleIds = explode(',', $row[5]);
+                // Limpiar espacios en blanco
+                $roleIds = array_map('trim', $roleIds);
+                // Filtrar valores vacíos
+                $roleIds = array_filter($roleIds);
+            }
     
             // Llamar al nuevo método en personaDataAccess
             $result = $personaDataAccess->createUserWithRoles($userData, $roleIds);
@@ -52,14 +61,14 @@ class CreateUserHTMLPage extends GTKHTMLPage
             'email' => $user['email'],
             'password' => $user['password']
         ];
-        $roleIds = $user['role_ids'];
+        $roleIds = $user['role_ids'] ?? [];
 
         
         $result = $personaDataAccess->createUserWithRoles($userData, $roleIds);
 
       
         $this->messages[] = json_encode($result);
-    }
+      }
     }
 
     public function renderMessages()

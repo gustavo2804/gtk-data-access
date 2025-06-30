@@ -1271,14 +1271,45 @@ class PersonaDataAccess extends DataAccess
             return ['success' => false, 'message' => 'Correo Invalido O Duplicado.'];
         }
 
+        // Obtener información del usuario creado
+        $user = $this->getOne("id", $userId);
+        $email = $user['email'] ?? 'Sin correo';
+        
+        // Si no hay roles para asignar, solo crear el usuario
+        if (empty($roleIds) || (is_array($roleIds) && count($roleIds) === 0)) {
+            return [
+                'success' => true, 
+                'message' => "Usuario creado exitosamente: {$email} (sin roles asignados)"
+            ];
+        }
+
         // Asignar roles al usuario
         $flatRoleDataAccess = DataAccessManager::get('role_person_relationships');
         $roleResult = $flatRoleDataAccess->assignRolesToUser($userId, $roleIds);
 
         if ($roleResult) {
-            return ['success' => true, 'message' => 'Usuario y roles asignados exitosamente.'];
+            // Obtener nombres de los roles asignados
+            $rolesDataAccess = DataAccessManager::get('roles');
+            $assignedRoles = [];
+            
+            foreach ($roleIds as $roleId) {
+                $role = $rolesDataAccess->getOne("id", $roleId);
+                if ($role) {
+                    $assignedRoles[] = $role['name'];
+                }
+            }
+            
+            $rolesText = implode(', ', $assignedRoles);
+            
+            return [
+                'success' => true, 
+                'message' => "Usuario creado exitosamente: {$email} - Roles asignados: {$rolesText}"
+            ];
         } else {
-            return ['success' => false, 'message' => 'Usuario creado, pero error al asignar los roles.'];
+            return [
+                'success' => false, 
+                'message' => "Usuario creado: {$email}, pero error al asignar los roles."
+            ];
         }
     }
 
