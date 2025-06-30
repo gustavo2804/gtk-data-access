@@ -479,7 +479,21 @@ class PersonaDataAccess extends DataAccess
 	{
 		$debug = false;
 
-		$newPassword = $this->generateReadableRandomString(12);
+		// Generar 4 letras aleatorias mayusculas
+		$letras = [];
+		$abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		for ($i = 0; $i < 4; $i++) {
+			$letras[] = $abc[random_int(0, strlen($abc) - 1)];
+		}
+
+		// Generar 4 números aleatorios
+		$numeros = [];
+		for ($i = 0; $i < 4; $i++) {
+			$numeros[] = random_int(0, 9);
+		}
+
+		// Unir primero letras y luego números
+		$newPassword = implode('', $letras) . implode('', $numeros);
 
 		if ($debug)
 		{
@@ -490,9 +504,7 @@ class PersonaDataAccess extends DataAccess
 
 		$toPublish = "Nueva contraseña: ".$newPassword;
 		$toPublish .= "<br/>";
-
 		$toPublish .= "Apuntar! Esto solo se va a mostrar una vez."."<br/>";
-
 
 		$toPublish .=  AllLinkTo("persona", ["label" => "Volver a lista", ]);
 		$toPublish .= "<br/>";
