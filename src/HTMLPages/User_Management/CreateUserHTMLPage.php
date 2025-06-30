@@ -161,6 +161,28 @@ class CreateUserHTMLPage extends GTKHTMLPage
                 padding: 15px;
                 margin-bottom: 15px;
                 border-radius: 5px;
+                position: relative;
+            }
+            .btn-remove {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: transparent;
+                color: #dc3545;
+                border: none;
+                cursor: pointer;
+                font-size: 20px;
+                font-weight: bold;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                width: auto;
+                height: auto;
+            }
+            .btn-remove:hover {
+                color: #c82333;
             }
             /* Nuevos estilos para los roles */
             .roles-container {
@@ -297,6 +319,7 @@ class CreateUserHTMLPage extends GTKHTMLPage
                 const newUserForm = document.createElement('div');
                 newUserForm.classList.add('user-form');
                 newUserForm.innerHTML = `
+                    <button type="button" class="btn-remove" onclick="removeUserForm(this)" title="Eliminar usuario">×</button>
                     <div class="form-group">
                         <label for="cedula">Cédula:</label>
                         <input type="text" name="users[${userFormCount}][cedula]" required>
@@ -344,6 +367,11 @@ class CreateUserHTMLPage extends GTKHTMLPage
                 userFormCount++;
             }
 
+            function removeUserForm(button) {
+                const userForm = button.closest('.user-form');
+                userForm.remove();
+            }
+
             function filterRoles(input, formIndex) {
                 const searchTerm = input.value.toLowerCase();
                 const container = input.closest('.form-group').querySelector('.roles-container');
@@ -377,20 +405,34 @@ class CreateUserHTMLPage extends GTKHTMLPage
 
                         // Skip header row and add forms for each row
                         json.slice(1).forEach((row, index) => {
+                            // Add new form
                             addUserForm();
-                            document.querySelector(`input[name="users[${index}][cedula]"]`).value = row[0];
-                            document.querySelector(`input[name="users[${index}][nombres]"]`).value = row[1];
-                            document.querySelector(`input[name="users[${index}][apellidos]"]`).value = row[2];
-                            document.querySelector(`input[name="users[${index}][email]"]`).value = row[3];
-                            document.querySelector(`input[name="users[${index}][password]"]`).value = row[4];
-                            const roleIds = row[5].split(',');
-                            roleIds.forEach(roleId => {
-                                const checkbox = document.querySelector(`input[name="users[${index}][role_ids][]"][value="${roleId}"]`);
-                                if (checkbox) {
-                                    checkbox.checked = true;
-                                }
-                            });
+                            
+                            // Get the newly created form (it will be the last one)
+                            const forms = userFormsContainer.querySelectorAll('.user-form');
+                            const currentForm = forms[forms.length - 1];
+                            
+                            // Fill the form fields
+                            currentForm.querySelector(`input[name="users[${userFormCount - 1}][cedula]"]`).value = row[0] || '';
+                            currentForm.querySelector(`input[name="users[${userFormCount - 1}][nombres]"]`).value = row[1] || '';
+                            currentForm.querySelector(`input[name="users[${userFormCount - 1}][apellidos]"]`).value = row[2] || '';
+                            currentForm.querySelector(`input[name="users[${userFormCount - 1}][email]"]`).value = row[3] || '';
+                            currentForm.querySelector(`input[name="users[${userFormCount - 1}][password]"]`).value = row[4] || '';
+                            
+                            // Handle roles if they exist
+                            if (row[5]) {
+                                const roleIds = row[5].toString().split(',').map(id => id.trim());
+                                roleIds.forEach(roleId => {
+                                    const checkbox = currentForm.querySelector(`input[name="users[${userFormCount - 1}][role_ids][]"][value="${roleId}"]`);
+                                    if (checkbox) {
+                                        checkbox.checked = true;
+                                    }
+                                });
+                            }
                         });
+                        
+                        // Reset userFormCount to the correct value
+                        userFormCount = json.length - 1;
                     };
                     reader.readAsArrayBuffer(file);
                 }
