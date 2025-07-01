@@ -479,7 +479,21 @@ class PersonaDataAccess extends DataAccess
 	{
 		$debug = false;
 
-		$newPassword = $this->generateReadableRandomString(12);
+		// Generar 4 letras aleatorias mayusculas
+		$letras = [];
+		$abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		for ($i = 0; $i < 4; $i++) {
+			$letras[] = $abc[random_int(0, strlen($abc) - 1)];
+		}
+
+		// Generar 4 números aleatorios
+		$numeros = [];
+		for ($i = 0; $i < 4; $i++) {
+			$numeros[] = random_int(0, 9);
+		}
+
+		// Unir primero letras y luego números
+		$newPassword = implode('', $letras) . implode('', $numeros);
 
 		if ($debug)
 		{
@@ -490,9 +504,7 @@ class PersonaDataAccess extends DataAccess
 
 		$toPublish = "Nueva contraseña: ".$newPassword;
 		$toPublish .= "<br/>";
-
 		$toPublish .= "Apuntar! Esto solo se va a mostrar una vez."."<br/>";
-
 
 		$toPublish .=  AllLinkTo("persona", ["label" => "Volver a lista", ]);
 		$toPublish .= "<br/>";
@@ -1271,14 +1283,45 @@ class PersonaDataAccess extends DataAccess
             return ['success' => false, 'message' => 'Correo Invalido O Duplicado.'];
         }
 
+        // Obtener información del usuario creado
+        $user = $this->getOne("id", $userId);
+        $email = $user['email'] ?? 'Sin correo';
+        
+        // Si no hay roles para asignar, solo crear el usuario
+        if (empty($roleIds) || (is_array($roleIds) && count($roleIds) === 0)) {
+            return [
+                'success' => true, 
+                'message' => "Usuario creado exitosamente: {$email} (sin roles asignados)"
+            ];
+        }
+
         // Asignar roles al usuario
         $flatRoleDataAccess = DataAccessManager::get('role_person_relationships');
         $roleResult = $flatRoleDataAccess->assignRolesToUser($userId, $roleIds);
 
         if ($roleResult) {
-            return ['success' => true, 'message' => 'Usuario y roles asignados exitosamente.'];
+            // Obtener nombres de los roles asignados
+            $rolesDataAccess = DataAccessManager::get('roles');
+            $assignedRoles = [];
+            
+            foreach ($roleIds as $roleId) {
+                $role = $rolesDataAccess->getOne("id", $roleId);
+                if ($role) {
+                    $assignedRoles[] = $role['name'];
+                }
+            }
+            
+            $rolesText = implode(', ', $assignedRoles);
+            
+            return [
+                'success' => true, 
+                'message' => "Usuario creado exitosamente: {$email} - Roles asignados: {$rolesText}"
+            ];
         } else {
-            return ['success' => false, 'message' => 'Usuario creado, pero error al asignar los roles.'];
+            return [
+                'success' => false, 
+                'message' => "Usuario creado: {$email}, pero error al asignar los roles."
+            ];
         }
     }
 
