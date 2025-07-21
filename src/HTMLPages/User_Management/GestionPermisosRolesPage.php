@@ -6,6 +6,8 @@ class GestionPermisosRolesPage extends GTKHTMLPage
     public $roles;
     public $mensaje;
     public $tipoMensaje;
+    public $busquedaPermisos;
+    public $busquedaRoles;
 
     public function __construct()
     {
@@ -374,6 +376,64 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                 color: #721c24;
             }
 
+            /* Buscadores */
+            .search-container {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-bottom: 20px;
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+            }
+
+            .search-input {
+                flex: 1;
+                padding: 10px 15px;
+                border: 2px solid #e1e8ed;
+                border-radius: 6px;
+                font-size: 0.9em;
+                background: white;
+                transition: border-color 0.3s ease;
+            }
+
+            .search-input:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+            .search-button {
+                display: none !important;
+            }
+
+            .search-results {
+                background: #e3f2fd;
+                color: #1565c0;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 0.85em;
+                font-weight: 500;
+                margin-bottom: 15px;
+            }
+
+            .clear-search {
+                background: #6c757d;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 0.85em;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .clear-search:hover {
+                background: #5a6268;
+            }
+
             /* Botones de acción */
             .btn-crear {
                 background: linear-gradient(135deg, #3498db, #2980b9);
@@ -584,6 +644,26 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                     gap: 10px;
                     align-items: flex-start;
                 }
+
+                .search-container {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
+                .search-container form {
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .search-input {
+                    width: 100%;
+                }
+
+                .search-button,
+                .clear-search {
+                    width: 100%;
+                    text-align: center;
+                }
             }
         </style>
         <?php
@@ -603,8 +683,23 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                     </div>
                     <button class="btn-crear" onclick="abrirModalCrearPermiso()">➕ Crear Permiso</button>
                 </div>
+                
+                <!-- Buscador de Permisos -->
+                <div class="search-container">
+                    <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                        <input type="text" 
+                               id="searchPermisos" 
+                               class="search-input" 
+                               placeholder="🔍 Buscar permisos por nombre..." 
+                               oninput="filterPermisos(this.value)">
+                        <button type="button" class="clear-search" onclick="clearSearchPermisos()" style="display: none;">Limpiar</button>
+                    </div>
+                </div>
+                
+                <div id="searchResultsPermisos" class="search-results" style="display: none;"></div>
+                
                 <div class="table-content">
-                    <table class="data-table">
+                    <table class="data-table" id="tablaPermisos">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -617,7 +712,7 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                         </thead>
                         <tbody>
                             <?php foreach ($this->permisos as $permiso): ?>
-                            <tr>
+                            <tr data-permiso-name="<?php echo htmlspecialchars(strtolower($permiso['name'])) ?>">
                                 <td><strong><?php echo htmlspecialchars($permiso['id']) ?></strong></td>
                                 <td><?php echo htmlspecialchars($permiso['name']) ?></td>
                                 <td><?php echo htmlspecialchars($permiso['comments'] ?? 'N/A') ?></td>
@@ -650,8 +745,23 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                     </div>
                     <button class="btn-crear" onclick="abrirModalCrearRol()">➕ Crear Rol</button>
                 </div>
+                
+                <!-- Buscador de Roles -->
+                <div class="search-container">
+                    <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                        <input type="text" 
+                               id="searchRoles" 
+                               class="search-input" 
+                               placeholder="🔍 Buscar roles por nombre..." 
+                               oninput="filterRoles(this.value)">
+                        <button type="button" class="clear-search" onclick="clearSearchRoles()" style="display: none;">Limpiar</button>
+                    </div>
+                </div>
+                
+                <div id="searchResultsRoles" class="search-results" style="display: none;"></div>
+                
                 <div class="table-content">
-                    <table class="data-table">
+                    <table class="data-table" id="tablaRoles">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -665,7 +775,7 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                         </thead>
                         <tbody>
                             <?php foreach ($this->roles as $rol): ?>
-                            <tr>
+                            <tr data-rol-name="<?php echo htmlspecialchars(strtolower($rol['name'])) ?>">
                                 <td><strong><?php echo htmlspecialchars($rol['id']) ?></strong></td>
                                 <td><?php echo htmlspecialchars($rol['name']) ?></td>
                                 <td><?php echo htmlspecialchars($rol['purpose'] ?? 'N/A') ?></td>
@@ -1016,6 +1126,101 @@ class GestionPermisosRolesPage extends GTKHTMLPage
                         }
                     }
                 }
+            });
+
+            // Búsqueda dinámica en tiempo real - Versión simplificada
+            function filterPermisos(searchTerm) {
+                console.log("Filtrando permisos:", searchTerm);
+                
+                var table = document.getElementById("tablaPermisos");
+                if (!table) {
+                    console.error("Tabla de permisos no encontrada");
+                    return;
+                }
+                
+                var rows = table.querySelectorAll("tbody tr");
+                var clearButton = document.querySelector("button[onclick=\"clearSearchPermisos()\"]");
+                var resultsDiv = document.getElementById("searchResultsPermisos");
+                
+                var visibleCount = 0;
+                var searchLower = searchTerm.toLowerCase();
+                
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    var permisoName = row.getAttribute("data-permiso-name");
+                    
+                    if (searchTerm === "" || permisoName.indexOf(searchLower) !== -1) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                }
+                
+                if (searchTerm.length > 0) {
+                    clearButton.style.display = "block";
+                    resultsDiv.style.display = "block";
+                    resultsDiv.innerHTML = "🔍 Mostrando " + visibleCount + " permisos que coinciden con \"" + searchTerm + "\"";
+                } else {
+                    clearButton.style.display = "none";
+                    resultsDiv.style.display = "none";
+                }
+            }
+            
+            function clearSearchPermisos() {
+                document.getElementById("searchPermisos").value = "";
+                filterPermisos("");
+            }
+            
+            function filterRoles(searchTerm) {
+                console.log("Filtrando roles:", searchTerm);
+                
+                var table = document.getElementById("tablaRoles");
+                if (!table) {
+                    console.error("Tabla de roles no encontrada");
+                    return;
+                }
+                
+                var rows = table.querySelectorAll("tbody tr");
+                var clearButton = document.querySelector("button[onclick=\"clearSearchRoles()\"]");
+                var resultsDiv = document.getElementById("searchResultsRoles");
+                
+                var visibleCount = 0;
+                var searchLower = searchTerm.toLowerCase();
+                
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    var rolName = row.getAttribute("data-rol-name");
+                    
+                    if (searchTerm === "" || rolName.indexOf(searchLower) !== -1) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                }
+                
+                if (searchTerm.length > 0) {
+                    clearButton.style.display = "block";
+                    resultsDiv.style.display = "block";
+                    resultsDiv.innerHTML = "🔍 Mostrando " + visibleCount + " roles que coinciden con \"" + searchTerm + "\"";
+                } else {
+                    clearButton.style.display = "none";
+                    resultsDiv.style.display = "none";
+                }
+            }
+            
+            function clearSearchRoles() {
+                document.getElementById("searchRoles").value = "";
+                filterRoles("");
+            }
+            
+            // Verificar que las funciones estén disponibles
+            console.log("Funciones de búsqueda cargadas:", {
+                filterPermisos: typeof filterPermisos,
+                filterRoles: typeof filterRoles,
+                clearSearchPermisos: typeof clearSearchPermisos,
+                clearSearchRoles: typeof clearSearchRoles
             });
         </script>';
         
