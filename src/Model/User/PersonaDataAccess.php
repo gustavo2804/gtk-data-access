@@ -338,6 +338,13 @@ class PersonaDataAccess extends DataAccess
 
 		$this->addAction($createAndDisplayNewPassword);
 
+		$createManualPassword = new GTKAction($this, "persona.createManualPassword", "actionCreateManualPassword", [ 
+            "label"         => "Crear contraseña manual",
+            "canEchoResult" => true,
+        ]);
+
+		$this->addAction($createManualPassword);
+
 
 		
 		$resetPasswordAction = new DataAccessAction($this, "resetPassword", "Send Reset Password Link");
@@ -509,6 +516,110 @@ class PersonaDataAccess extends DataAccess
 		$toPublish .=  AllLinkTo("persona", ["label" => "Volver a lista", ]);
 		$toPublish .= "<br/>";
 		$toPublish .= '<a href="/">Ir a inicio</a>';
+
+		die($toPublish);
+	}
+
+	public function actionCreateManualPassword($user, $userToUpdate)
+	{
+		$debug = false;
+
+		// Verificar si se envió el formulario
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_password'])) {
+			$newPassword = $_POST['new_password'];
+			$confirmPassword = $_POST['confirm_password'] ?? '';
+
+			// Validar que las contraseñas coincidan
+			if ($newPassword !== $confirmPassword) {
+				$error = "Las contraseñas no coinciden.";
+			}
+			// Validar longitud mínima
+			elseif (strlen($newPassword) < 8) {
+				$error = "La contraseña debe tener al menos 8 caracteres.";
+			}
+			// Validar que no esté vacía
+			elseif (empty(trim($newPassword))) {
+				$error = "La contraseña no puede estar vacía.";
+			}
+			else {
+				// Actualizar la contraseña
+				$this->updatePasswordHashForPersona($userToUpdate, $newPassword);
+
+				$toPublish = "<div style='background-color: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0;'>";
+				$toPublish .= "<h3>✅ Contraseña actualizada exitosamente</h3>";
+				$toPublish .= "<p><strong>Usuario:</strong> " . htmlspecialchars($this->getFullName($userToUpdate)) . "</p>";
+				$toPublish .= "<p><strong>Email:</strong> " . htmlspecialchars($userToUpdate['email']) . "</p>";
+				$toPublish .= "<p><strong>Nueva contraseña:</strong> " . htmlspecialchars($newPassword) . "</p>";
+				$toPublish .= "<p style='color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 3px;'>";
+				$toPublish .= "⚠️ <strong>Importante:</strong> Esta contraseña solo se muestra una vez. Guárdala en un lugar seguro.";
+				$toPublish .= "</p>";
+				$toPublish .= "</div>";
+
+				$toPublish .= "<div style='margin: 20px 0;'>";
+				$toPublish .= AllLinkTo("persona", ["label" => "Volver a lista", ]);
+				$toPublish .= " | ";
+				$toPublish .= '<a href="/">Ir a inicio</a>';
+				$toPublish .= "</div>";
+
+				die($toPublish);
+			}
+		}
+
+		// Mostrar formulario para crear contraseña manual
+		$userName = $this->getFullName($userToUpdate);
+		$userEmail = $userToUpdate['email'];
+
+		$toPublish = "<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>";
+		$toPublish .= "<h2>🔐 Crear Contraseña Manual</h2>";
+		$toPublish .= "<div style='background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;'>";
+		$toPublish .= "<p><strong>Usuario:</strong> " . htmlspecialchars($userName) . "</p>";
+		$toPublish .= "<p><strong>Email:</strong> " . htmlspecialchars($userEmail) . "</p>";
+		$toPublish .= "</div>";
+
+		if (isset($error)) {
+			$toPublish .= "<div style='background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0;'>";
+			$toPublish .= "❌ " . htmlspecialchars($error);
+			$toPublish .= "</div>";
+		}
+
+		$toPublish .= "<form method='POST' style='background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>";
+		$toPublish .= "<div style='margin-bottom: 15px;'>";
+		$toPublish .= "<label for='new_password' style='display: block; margin-bottom: 5px; font-weight: bold;'>Nueva Contraseña:</label>";
+		$toPublish .= "<input type='password' id='new_password' name='new_password' required ";
+		$toPublish .= "style='width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;' ";
+		$toPublish .= "placeholder='Ingrese la nueva contraseña' minlength='8'>";
+		$toPublish .= "<small style='color: #666;'>Mínimo 8 caracteres</small>";
+		$toPublish .= "</div>";
+
+		$toPublish .= "<div style='margin-bottom: 20px;'>";
+		$toPublish .= "<label for='confirm_password' style='display: block; margin-bottom: 5px; font-weight: bold;'>Confirmar Contraseña:</label>";
+		$toPublish .= "<input type='password' id='confirm_password' name='confirm_password' required ";
+		$toPublish .= "style='width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;' ";
+		$toPublish .= "placeholder='Confirme la nueva contraseña' minlength='8'>";
+		$toPublish .= "</div>";
+
+		$toPublish .= "<div style='display: flex; gap: 10px;'>";
+		$toPublish .= "<button type='submit' style='background-color: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;'>";
+		$toPublish .= "✅ Actualizar Contraseña";
+		$toPublish .= "</button>";
+		$toPublish .= "<a href='" . AllLinkTo("persona", ["label" => "Cancelar", "returnUrl" => true]) . "' ";
+		$toPublish .= "style='background-color: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block;'>";
+		$toPublish .= "❌ Cancelar";
+		$toPublish .= "</a>";
+		$toPublish .= "</div>";
+		$toPublish .= "</form>";
+
+		$toPublish .= "<div style='margin-top: 20px; padding: 15px; background-color: #e7f3ff; border-radius: 5px;'>";
+		$toPublish .= "<h4>💡 Recomendaciones de seguridad:</h4>";
+		$toPublish .= "<ul style='margin: 0; padding-left: 20px;'>";
+		$toPublish .= "<li>Usa al menos 8 caracteres</li>";
+		$toPublish .= "<li>Combina letras mayúsculas y minúsculas</li>";
+		$toPublish .= "<li>Incluye números y símbolos</li>";
+		$toPublish .= "<li>Evita información personal fácil de adivinar</li>";
+		$toPublish .= "</ul>";
+		$toPublish .= "</div>";
+
+		$toPublish .= "</div>";
 
 		die($toPublish);
 	}

@@ -10,6 +10,7 @@ $_GTK_DATA_ACCESS["PERMISSIONS"] = [
     "persona.change_password_for_user",
     //-----------------------------------
     "persona.createAndDisplayNewPassword",
+    "persona.createManualPassword",
     //-----------------------------------
     "reset_password",
     "solicitud_usuario.approve",
